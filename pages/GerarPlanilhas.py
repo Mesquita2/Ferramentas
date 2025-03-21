@@ -5,7 +5,7 @@ import io
 # Função para carregar os alunos do arquivo Excel
 def carregar_alunos():
     try:
-        df = pd.read_excel("alunos.xlsx")
+        df = pd.read_excel("alunos.xlsx", dtype={"RA": str})
         df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                            'NOMECURSO': 'CURSO',
                            'NOMEALUNO': 'ALUNO',
@@ -21,7 +21,7 @@ def gerar_excel(df_alunos, disciplina, turma):
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO']
     df_filtrado = df_filtrado[colunas]
     df_filtrado['RA'] = df_filtrado['RA'].astype(str)
-    df_filtrado["Nota"] = 0  # Coluna vazia para o professor preencher
+    df_filtrado["NOTAS"] = 0  # Coluna vazia para o professor preencher
     
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
