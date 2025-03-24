@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import io
+from auth import check_authentication
+
+check_authentication()
 
 # Configuração da página
 st.set_page_config(page_title="Limpeza de Notas", page_icon="📊", layout="wide")

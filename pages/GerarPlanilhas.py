@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import io
+from auth import check_authentication
+
+check_authentication()
 
 # Função para carregar os alunos do arquivo Excel
 def carregar_alunos():
