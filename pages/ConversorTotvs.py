@@ -101,6 +101,7 @@ if uploaded_file:
     
     df_limpo['RA'] = df_limpo['RA'].astype(str)
     df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))
+    df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ','))
     # Criar o arquivo .txt com separador ';'
     output = io.BytesIO()  # Usando BytesIO para gerar um arquivo binário
     df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8')
