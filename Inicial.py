@@ -34,7 +34,7 @@ def login():
     st.sidebar.header("Login")
     username = st.sidebar.text_input("Usuário")
     password = st.sidebar.text_input("Senha", type="password")
-
+    
     if username in users and users[username] == password:
         st.session_state["authenticated"] = True
         st.sidebar.success("Login bem-sucedido!")
@@ -44,6 +44,7 @@ def login():
 # **🚨 Interrompe tudo caso o usuário não esteja autenticado**
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     login()
+    login_button = st.sidebar.button("Login") 
     st.stop()
 
 # Função para carregar dados de alunos
