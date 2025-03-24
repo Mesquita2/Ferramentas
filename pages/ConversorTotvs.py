@@ -69,6 +69,8 @@ tipoetapa = 'N'  # Tipo de etapa
 codetapa = 2  # Código da etapa
 codprova = 1  # Código da prova
 
+
+
 # Limitar as opções de Etapa com base na escolha da Prova
 if etapa == 'P1' and prova == "Prova":
     codetapa = 1  # P1 = 1
@@ -94,6 +96,11 @@ if uploaded_file:
     st.subheader("✅ Dados Após Limpeza")
     st.dataframe(df_limpo)
     
+    disciplina = df_limpo['DISCIPLINA'].iloc[0]
+    turma = df_limpo['TURMADISC'].iloc[0]
+    
+    df_limpo['RA'] = df_limpo['RA'].astype(str)
+    
     # Criar o arquivo .txt com separador ';'
     output = io.BytesIO()  # Usando BytesIO para gerar um arquivo binário
     df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8')
@@ -103,6 +110,6 @@ if uploaded_file:
     st.download_button(
         label="⬇ Baixar Notas Tratadas (TXT)",
         data=output,
-        file_name="notas_tratadas.txt",
+        file_name=f"{disciplina}_{turma}_{prova}.txt",
         mime="text/plain"
     )
