@@ -11,7 +11,7 @@ check_authentication()
 st.title("Gerador de QR Code")
 
 # Entrada para o nome do participante e o link do evento
-nome = st.text_input("Digite o nome do participante:")
+nome = st.text_input("Digite o nome Evento:")
 link = st.text_input("Digite o link do evento:")
 
 # Gerar o QR Code quando o botão for pressionado

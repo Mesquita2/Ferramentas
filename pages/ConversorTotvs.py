@@ -35,12 +35,6 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
                        'NOMECURSO': 'CURSO',
                        'NOMEALUNO': 'ALUNO'}, inplace=True)
 
-    # Atualizar as notas (supondo que df_professor tenha as notas)
-    df_professor = pd.DataFrame()  # Aqui você deve carregar os dados do professor de forma adequada
-    if not df_professor.empty:
-        df = pd.merge(df, df_professor[['DISCIPLINA', 'ALUNO', 'NOTAS']],
-                      on=['DISCIPLINA', 'ALUNO'], how='left')
-
     # Nova ordem das colunas
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
     df = df[colunas]
@@ -50,7 +44,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     if prova == "Prova":
         df_teste = df_teste.dropna(subset=['NOTAS'])
     elif prova == "Recuperação":
-        df_teste = df_teste.dropna(subset=['NOTAS'])
+        df_teste = df_teste.dropna(subset=[0])
     else:
         df_teste = df_teste.dropna(subset=['NOTAS'])
 
@@ -102,10 +96,11 @@ if uploaded_file:
     df_limpo['RA'] = df_limpo['RA'].astype(str)
     df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))
     df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ','))
+    
     # Criar o arquivo .txt com separador ';'
-    output = io.BytesIO()  # Usando BytesIO para gerar um arquivo binário
-    df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8')
-    output.seek(0)  # Resetar o ponteiro do arquivo para o início
+    output = io.BytesIO()  
+    df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
+    output.seek(0) 
     
     # Botão para baixar o arquivo tratado como .txt
     st.download_button(
