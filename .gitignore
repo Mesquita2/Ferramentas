@@ -1,3 +1,2 @@
 # Ignorar arquivos de configuração do Streamlit
 .streamlit/secrets.toml
-.streamlit/config.toml
