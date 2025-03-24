@@ -1,6 +1,7 @@
 import os 
 import streamlit as st
 import pandas as pd
+from auth import check_authentication
 
 # Estilo personalizado para os botões
 st.markdown(
@@ -30,21 +31,7 @@ ARQUIVO_ALUNOS = "alunos.xlsx"
 # Autenticação
 users = st.secrets["auth"]
 
-def login():
-    st.sidebar.header("Login")
-    username = st.sidebar.text_input("Usuário")
-    password = st.sidebar.text_input("Senha", type="password")
-
-    if username in users and users[username] == password:
-        st.session_state["authenticated"] = True
-        st.sidebar.success("Login bem-sucedido!")
-    else:
-        st.sidebar.error("Usuário ou senha incorretos!")
-
-# **🚨 Interrompe tudo caso o usuário não esteja autenticado**
-if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
-    login()
-    st.stop()
+check_authentication()
 
 # Função para carregar dados de alunos
 def carregar_dados_alunos():
