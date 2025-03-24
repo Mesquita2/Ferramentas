@@ -100,7 +100,7 @@ if uploaded_file:
     turma = df_limpo['TURMADISC'].iloc[0]
     
     df_limpo['RA'] = df_limpo['RA'].astype(str)
-    
+    df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))
     # Criar o arquivo .txt com separador ';'
     output = io.BytesIO()  # Usando BytesIO para gerar um arquivo binário
     df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8')

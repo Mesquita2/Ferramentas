@@ -56,6 +56,8 @@ df_filtrado = df_alunos[(df_alunos["DISCIPLINA"] == disciplina) & (df_alunos["TU
 st.write(f"📝 **Alunos da Disciplina: {disciplina} | Turma: {turma}**")
 st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
+df_filtrado['RA'] = df_filtrado['RA'].apply(lambda x: str(x).zfill(7))
+
 if disciplina and turma:
     excel_file = gerar_excel(df_alunos, disciplina, turma)
     st.download_button(
