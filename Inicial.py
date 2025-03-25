@@ -2,6 +2,8 @@ import os
 import streamlit as st
 import pandas as pd
 
+st.set_page_config(page_title="Alteração de Dados", page_icon="🔄", layout="wide")
+
 # Estilo personalizado para os botões
 st.markdown(
     """

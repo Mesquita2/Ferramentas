@@ -20,7 +20,6 @@ def carregar_dados(arquivo):
 
 # Função para limpar os dados
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
-    
     df_base = pd.read_excel("alunos.xlsx")
 
     df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
