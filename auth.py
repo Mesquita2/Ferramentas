@@ -20,4 +20,5 @@ def check_authentication():
             else:
                 st.sidebar.error("Usuário ou senha incorretos!")
                 st.stop()  
-
+    else: 
+        st.sidebar.error("Faça o login primeiro!")
