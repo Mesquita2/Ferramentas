@@ -5,6 +5,7 @@ from auth import check_authentication
 import qrcode
 from PIL import Image
 
+
 check_authentication()
 
 st.set_page_config(
@@ -12,6 +13,7 @@ st.set_page_config(
     page_icon=" ",
     layout="wide"
 )
+
 # Título da aplicação
 st.title("Gerador de QR Code")
 
