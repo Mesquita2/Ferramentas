@@ -3,8 +3,16 @@ import pandas as pd
 import io
 from auth import check_authentication
 
-check_authentication()
+st.set_page_config(
+    page_title="Criador de Planilhas",
+    page_icon=" ",
+    layout="wide"
+)
 
+
+if not check_authentication():
+    st.stop()
+    
 # Função para carregar os alunos do arquivo Excel
 def carregar_alunos():
     try:
@@ -33,12 +41,6 @@ def gerar_excel(df_alunos, disciplina, turma):
         df_filtrado.to_excel(writer, index=False, sheet_name="Notas")
     output.seek(0)
     return output
-
-st.set_page_config(
-    page_title="Criador de Planilhas",
-    page_icon=" ",
-    layout="wide"
-)
 
 st.title("📚 Gerador de Planilha de Notas")
 

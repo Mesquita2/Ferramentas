@@ -3,10 +3,11 @@ import pandas as pd
 import io
 from auth import check_authentication
 
-check_authentication()
-
 # Configuração da página
 st.set_page_config(page_title="Limpeza de Notas", page_icon="📊", layout="wide")
+
+if not check_authentication():
+    st.stop()
 
 # Função para carregar o arquivo
 @st.cache_data

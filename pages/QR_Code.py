@@ -5,25 +5,28 @@ from auth import check_authentication
 import qrcode
 from PIL import Image
 
-
-check_authentication()
-
 st.set_page_config(
     page_title="Gerador de QR Code",
-    page_icon=" ",
+    page_icon="🔗",
     layout="wide"
 )
+
+if not check_authentication():
+    st.stop()
+    
+# Configuração da página
+
 
 # Título da aplicação
 st.title("Gerador de QR Code")
 
-# Entrada para o nome do participante e o link do evento
-nome = st.text_input("Digite o nome Evento:")
+# Entrada para o nome do evento e o link do evento
+nome = st.text_input("Digite o nome do evento:")
 link = st.text_input("Digite o link do evento:")
 
 # Gerar o QR Code quando o botão for pressionado
 if st.button("Gerar QR Code"):
-    if nome and link:
+    if nome.strip() and link.strip():
         # Criar um objeto QRCode
         qr = qrcode.QRCode(
             version=1,
@@ -51,10 +54,10 @@ if st.button("Gerar QR Code"):
         st.download_button(
             label="Baixar QR Code",
             data=img_byte_arr,
-            file_name=f"QR_Code_{nome}.png",
+            file_name=f"QR_Code_{nome.replace(' ', '_')}.png",
             mime="image/png"
         )
 
-        st.success(f"QR Code gerado e pronto para ser baixado.")
+        st.success("QR Code gerado e pronto para ser baixado.")
     else:
-        st.warning("Por favor, insira o nome do participante e o link do evento.")
+        st.warning("Por favor, insira o nome do evento e o link do evento.")
