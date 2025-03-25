@@ -97,3 +97,4 @@ if not dados_atual.empty:
     st.dataframe(dados_atual)
 else:
     st.write("Nenhum dado de aluno disponível.")
+    

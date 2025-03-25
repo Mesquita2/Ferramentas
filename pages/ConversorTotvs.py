@@ -20,6 +20,24 @@ def carregar_dados(arquivo):
 
 # Função para limpar os dados
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
+    
+    df_base = pd.read_excel("alunos.xlsx")
+
+    df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
+    df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
+    # Renomear colunas
+    df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
+                            'NOMECURSO': 'CURSO',
+                            'NOMEALUNO': 'ALUNO'}, inplace=True)
+    
+    df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
+                       'NOMECURSO': 'CURSO',
+                       'NOMEALUNO': 'ALUNO'}, inplace=True)
+    
+    df = pd.merge(df_base, df[['DISCIPLINA', 'ALUNO', 'NOTAS']],
+                  on=['DISCIPLINA', 'ALUNO'],
+                  how='left')  
+    
     df = df.copy()
     
     # Adicionar as novas colunas
@@ -30,10 +48,8 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df['ETAPA'] = etapa
     df['RA novo'] = df['RA'].astype(int)
     
-    # Renomear colunas
-    df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
-                       'NOMECURSO': 'CURSO',
-                       'NOMEALUNO': 'ALUNO'}, inplace=True)
+
+    
 
     # Nova ordem das colunas
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']

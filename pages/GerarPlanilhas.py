@@ -25,6 +25,8 @@ def gerar_excel(df_alunos, disciplina, turma):
     df_filtrado = df_filtrado[colunas]
     df_filtrado['RA'] = df_filtrado['RA'].astype(str)
     df_filtrado["NOTAS"] = 0  # Coluna vazia para o professor preencher
+    colunas = ['TURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'NOTAS']
+    df_filtrado = df_filtrado[colunas]
     
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
