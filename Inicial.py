@@ -40,6 +40,7 @@ def login():
     if username in users and users[username] == password:
         st.session_state["authenticated"] = True
         st.sidebar.success("Login bem-sucedido!")
+        st.rerun()
     else:
         st.sidebar.error("Usuário ou senha incorretos!")
 
