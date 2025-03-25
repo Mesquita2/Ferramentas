@@ -1,7 +1,7 @@
 import os 
 import streamlit as st
 import pandas as pd
-from auth import check_authentication, logout
+from auth import check_authentication
 
 st.set_page_config(page_title="Alteração de Dados", page_icon="🔄", layout="wide")
 
