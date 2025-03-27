@@ -102,6 +102,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
 # Interface do Streamlit
 st.title("📊 Limpeza e Tratamento de Notas Quizzes")
 
+
 # Upload do arquivo Excel
 uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
 
@@ -126,6 +127,7 @@ turma = st.selectbox("🏫 Escolha a turma", turmas_filtradas)
 
 codigo_disciplina = df_totvs[(df_totvs["DISCIPLINA"] == disciplina) & (df_totvs["TURMADISC"] == turma)]["IDTURMADISC"].unique().tolist()
 st.write(f"📌 ID da disciplina: **{codigo_disciplina}**")
+st.write(f"http://icev.digital/grade/export/xls/index.php?id={codigo_disciplina[0]}")
 
 
  
