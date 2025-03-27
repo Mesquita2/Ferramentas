@@ -73,6 +73,9 @@ def substituir_arquivo_alunos(novo_arquivo):
     file_extension = novo_arquivo.name.split('.')[-1]
     if file_extension == 'xlsx':
         df_novo = pd.read_excel(novo_arquivo)
+        df_novo.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
+                            'NOMECURSO': 'CURSO',
+                            'NOMEALUNO': 'ALUNO'}, inplace=True)
         df_novo.to_excel(ARQUIVO_ALUNOS, index=False)
         st.success("Dados de alunos substituídos com sucesso!")
     else:

@@ -34,8 +34,8 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
                        'NOMECURSO': 'CURSO',
                        'NOMEALUNO': 'ALUNO'}, inplace=True)
     
-    df = pd.merge(df_base, df[['DISCIPLINA', 'ALUNO', 'NOTAS']],
-                  on=['DISCIPLINA', 'ALUNO'],
+    df = pd.merge(df_base, df[['DISCIPLINA', 'ALUNO', 'RA',  'NOTAS']],
+                  on=['DISCIPLINA', 'ALUNO', 'RA'],
                   how='left')  
     
     df = df.copy()
