@@ -20,11 +20,17 @@ df_totvs = pd.read_excel("alunos.xlsx")
 @st.cache_data
 def carregar_dados(arquivo):
     try:
+        # Tenta carregar como arquivo Excel
         df = pd.read_excel(arquivo)
         return df
     except Exception as e:
-        st.error(f"Erro ao carregar o arquivo: {e}")
-        return pd.DataFrame()
+        try:
+            # Se falhar, tenta carregar como arquivo TXT (tabulado)
+            df = pd.read_csv(arquivo, delimiter=",")
+            return df
+        except Exception as e:
+            st.error(f"Erro ao carregar o arquivo: {e}")
+            return pd.DataFrame()
 
 # Função para limpar os dados
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
@@ -127,10 +133,23 @@ turma = st.selectbox("🏫 Escolha a turma", turmas_filtradas)
 
 codigo_disciplina = df_totvs[(df_totvs["DISCIPLINA"] == disciplina) & (df_totvs["TURMADISC"] == turma)]["IDTURMADISC"].unique().tolist()
 st.write(f"📌 ID da disciplina: **{codigo_disciplina}**")
-st.write(f"http://icev.digital/grade/export/xls/index.php?id={codigo_disciplina[0]}")
 
+id_curso = st.file_uploader("📤 Envie o arquivo de notas (txt)", type=["txt"])
 
- 
+if id_curso: 
+    df_curso =carregar_dados(id_curso)
+    df_curso = df_curso[['disciplina', 'id', 'CODTURMA']]
+
+    codigo_disciplina = df_curso[(df_curso["disciplina"] == disciplina) & (df_curso['CODTURMA'] == turma)]["id"].tolist()
+    codturma = df_curso[(df_curso["disciplina"] == disciplina) & (df_curso['CODTURMA'] == turma)]["CODTURMA"].tolist()
+    st.write(f"📌 ID da disciplina: **{codigo_disciplina}**, Turma: **{codturma}**")
+    if codturma is not None:
+        st.write(f"http://icev.digital/grade/export/xls/index.php?id={codigo_disciplina[0]}")
+    else: 
+        st.write(f"CODTURMA VAZIO")
+        
+    st.subheader("Documento gerado para saber id do icev")
+    st.dataframe(df_curso)
 
 # Carregar e limpar os dados
 if uploaded_file:
