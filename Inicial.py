@@ -78,6 +78,7 @@ def substituir_arquivo_alunos(novo_arquivo):
                             'NOMECURSO': 'CURSO',
                             'NOMEALUNO': 'ALUNO'}, inplace=True)
         df_novo.to_excel(ARQUIVO_ALUNOS, index=False)
+        df_novo['RA'] = df_novo['RA'].apply(lambda x: str(x).zfill(7))
         st.success("Dados de alunos substituídos com sucesso!")
     else:
         st.warning("Formato de arquivo não suportado para substituição!")
@@ -103,8 +104,6 @@ if uploaded_file is not None:
 # Exibir dados atuais
 st.subheader("📊 Dados Atuais dos Alunos")
 dados_atual = carregar_dados_alunos()
-
-dados_atual['RA'] = dados_atual['RA'].apply(lambda x: str(x).zfill(7))
 
 
 if not dados_atual.empty:
