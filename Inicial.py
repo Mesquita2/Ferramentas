@@ -103,11 +103,17 @@ if uploaded_file is not None:
 
 # Exibir dados atuais
 st.subheader("📊 Dados Atuais dos Alunos")
+
+
 dados_atual = carregar_dados_alunos()
 
+if dados_atual.empty:
+    try:
+        dados_atual = pd.read_csv("alunos.xlsx")  # Ajuste o nome do arquivo conforme necessário
+        st.write("Dados carregados do arquivo local.")
+    except FileNotFoundError:
+        st.write("Nenhum dado de aluno disponível e o arquivo local não foi encontrado.")
 
+# Exibir os dados se existirem
 if not dados_atual.empty:
     st.dataframe(dados_atual)
-else:
-    st.write("Nenhum dado de aluno disponível.")
-    
