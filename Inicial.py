@@ -106,8 +106,8 @@ st.subheader("📊 Dados Atuais dos Alunos")
 
 
 dados_atual = carregar_dados_alunos()
-if "RA" in dados_atual.columns:
-    dados_atual["RA"] = dados_atual["RA"].astype(str).str.zfill(7)
+if 'RA' in dados_atual.columns:
+    dados_atual['RA'] = dados_atual['RA'].astype(str).str.zfill(7)
 else:
     st.write("A coluna 'RA' não foi encontrada no arquivo.")
 
