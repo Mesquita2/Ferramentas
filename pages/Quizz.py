@@ -4,6 +4,8 @@ import io
 from auth import check_authentication
 import math 
 
+ARQUIVO_DISCIPLINA = "disciplina.txt"
+
 def arrendondar_para_cima(numero, decimal):
     fator = 10 ** decimal
     return math.ceil(numero * fator) / fator
@@ -15,6 +17,23 @@ if not check_authentication():
     st.stop()
     
 df_totvs = pd.read_excel("alunos.xlsx")
+
+
+def organizar(df):
+    # Substituir "-" por 0
+    df.replace("-", 0, inplace=True)
+    df = df.infer_objects(copy=False)
+
+    # Converter colunas para número onde for possível
+    for col in df.columns:
+        try:
+            df[col] = pd.to_numeric(df[col])
+        except ValueError:
+            pass  # Mantém colunas não numéricas inalteradas
+
+    # Remover colunas que possuem apenas zeros
+    df = df.loc[:, (df != 0).any(axis=0)]
+    return df
 
 # Função para carregar o arquivo
 @st.cache_data
@@ -36,8 +55,10 @@ def carregar_dados(arquivo):
 @st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df_base = pd.read_excel("alunos.xlsx")
-
+    
     df['Nomes'] = df['Nome'] + ' ' + df['Sobrenome']
+    
+    print(df.head())
     
     # Selecionando as notas dos quizzes
     notas = df.filter(regex='Questionário:')
@@ -50,6 +71,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     # Calcular a média das 75% melhores notas de cada aluno
     media = notas.apply(lambda x: x.nlargest(int(len(x)*0.75)).mean(), axis=1)
 
+    
     # Calcular média final de cada aluno
     df = df.assign(media=media)
     df['Media_Final'] = df['media'].apply(lambda x: round(x * 0.2, 2))
@@ -67,7 +89,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df_arredondamento = df.loc[:, colunas]
     df_arredondamento = df_arredondamento.sort_values(by='Nomes')
         
-    #Ajustes df_quizz
+    #Ajustes
     df_arredondamento.rename(columns={'Número de identificação': 'RA',
                                     'Media_Final': 'NOTAS',
                                     'Nomes': 'ALUNO'}, inplace=True)
@@ -90,6 +112,9 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df = pd.merge(df_base, df[['DISCIPLINA', 'RA', 'ALUNO', 'NOTAS']],
                   on=['DISCIPLINA', 'RA' , 'ALUNO'],
                   how='left')  
+    
+    
+    
         
     print(df.head())
     # Adicionar as novas colunas
@@ -103,15 +128,13 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     # Nova ordem das colunas
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
     df_limpo = df[colunas]
+    
+    df_limpo = df_limpo[(df_limpo['DISCIPLINA'] == disciplina) & (df_limpo['TURMADISC'] == turma)].copy()
 
     return df_limpo
 
 # Interface do Streamlit
 st.title("📊 Limpeza e Tratamento de Notas Quizzes")
-
-
-# Upload do arquivo Excel
-uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
 
 # Definir as variáveis de configuração para o filtro
 etapa = st.selectbox('Selecione a etapa', ['P1', 'P2'])
@@ -132,10 +155,14 @@ disciplina = st.selectbox("📖 Escolha a disciplina", disciplinas)
 turmas_filtradas = df_totvs[df_totvs["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
 turma = st.selectbox("🏫 Escolha a turma", turmas_filtradas)
 
+# Upload do arquivo Excel
+uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
+
 codigo_disciplina = df_totvs[(df_totvs["DISCIPLINA"] == disciplina) & (df_totvs["TURMADISC"] == turma)]["IDTURMADISC"].unique().tolist()
 st.write(f"📌 ID da disciplina: **{codigo_disciplina}**")
 
 id_curso = st.file_uploader("📤 Envie o arquivo de notas (txt)", type=["txt"])
+
 
 if id_curso: 
     df_curso =carregar_dados(id_curso)
@@ -156,11 +183,18 @@ if id_curso:
 if uploaded_file:
     df_original = carregar_dados(uploaded_file)
     st.subheader("📋 Dados Originais")
+    
+    df_original = organizar(df_original)
+    
     st.dataframe(df_original)
     
     # Limpar dados
     df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
     st.subheader("✅ Dados Após Limpeza")
+    
+    print(disciplina)
+    df_limpo = df_limpo[(df_limpo['DISCIPLINA'] == disciplina) & (df_limpo['TURMADISC'] == turma)].copy()
+    
     st.dataframe(df_limpo)
     
     disciplina = df_limpo['DISCIPLINA'].iloc[0]
