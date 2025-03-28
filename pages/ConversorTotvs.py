@@ -20,6 +20,7 @@ def carregar_dados(arquivo):
         return pd.DataFrame()
 
 # Função para limpar os dados
+@st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df_base = pd.read_excel("alunos.xlsx")
 
