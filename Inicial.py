@@ -106,9 +106,11 @@ st.subheader("📊 Dados Atuais dos Alunos")
 
 
 dados_atual = carregar_dados_alunos()
+dados_atual['RA'] = dados_atual['RA'].apply(lambda x: str(x).zfill(7))
 
 if dados_atual.empty:
     try:
+        dados_atual = pd.read_excel("alunos.xlsx")  # Ajuste o nome do arquivo conforme necessário
         st.write("Dados carregados do arquivo local.")
     except FileNotFoundError:
         st.write("Nenhum dado de aluno disponível e o arquivo local não foi encontrado.")
