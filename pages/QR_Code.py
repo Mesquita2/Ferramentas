@@ -32,7 +32,7 @@ if st.button("Gerar QR Code"):
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
             box_size=8,
-            border=4,
+            border=3,
         )
 
         # Adicionar o link ao QR Code
