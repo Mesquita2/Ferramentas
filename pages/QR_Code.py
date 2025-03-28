@@ -31,7 +31,7 @@ if st.button("Gerar QR Code"):
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
+            box_size=8,
             border=4,
         )
 
