@@ -106,7 +106,6 @@ st.subheader("📊 Dados Atuais dos Alunos")
 
 
 dados_atual = carregar_dados_alunos()
-dados_atual['RA'] = dados_atual['RA'].apply(lambda x: str(x).zfill(7))
 
 if dados_atual.empty:
     try:
