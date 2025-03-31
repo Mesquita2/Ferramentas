@@ -148,6 +148,9 @@ if etapa == 'P1':
     codetapa = 1
 elif etapa == 'P2':
     codetapa = 2   
+    
+curso = df_totvs['CURSO'].unique().tolist()
+curso = st.selectbox("Escolha o Curso", curso)
 
 disciplinas = df_totvs["DISCIPLINA"].unique().tolist()
 disciplina = st.selectbox("📖 Escolha a disciplina", disciplinas)
