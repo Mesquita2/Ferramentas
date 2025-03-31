@@ -58,7 +58,7 @@ if "authenticated" not in st.session_state or not st.session_state["authenticate
     st.stop()
 
 # Função para carregar dados de alunos
-@st.cache_data
+@st.cache_resource
 def carregar_dados_alunos():
     if os.path.exists(ARQUIVO_ALUNOS):
         if ARQUIVO_ALUNOS.endswith('.xlsx'):
