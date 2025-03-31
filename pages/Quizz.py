@@ -152,7 +152,7 @@ elif etapa == 'P2':
 curso = df_totvs['CURSO'].unique().tolist()
 curso = st.selectbox("Escolha o Curso", curso)
 
-disciplinas = df_totvs["DISCIPLINA"].unique().tolist()
+disciplinas = df_totvs[df_totvs["Curso"] == curso]["DISCIPLINA"].unique().tolist()
 disciplina = st.selectbox("📖 Escolha a disciplina", disciplinas)
 
 turmas_filtradas = df_totvs[df_totvs["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
