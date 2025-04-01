@@ -35,56 +35,64 @@ st.markdown(
 
 # Caminho do arquivo onde os dados de alunos são armazenados
 ARQUIVO_ALUNOS = "alunos.xlsx"
+ARQUIVO_DISCIPLINA = "disciplinas.xlsx"
 
 # Autenticação
 users = st.secrets["authentication"]
 
-def login():
-    st.sidebar.header("Login")
-    username = st.sidebar.text_input("Usuário")
-    password = st.sidebar.text_input("Senha", type="password")
-    
-    if username in users and users[username] == password:
-        st.session_state["authenticated"] = True
-        st.sidebar.success("Login bem-sucedido!")
-        st.rerun()
-    else:
-        st.sidebar.error("Usuário ou senha incorretos!")
-
-# **🚨 Interrompe tudo caso o usuário não esteja autenticado**
-if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
-    login()
-    login_button = st.sidebar.button("Login") 
-    st.stop()
-
 # Função para carregar dados de alunos
 @st.cache_resource
-def carregar_dados_alunos():
-    if os.path.exists(ARQUIVO_ALUNOS):
-        if ARQUIVO_ALUNOS.endswith('.xlsx'):
-            return pd.read_excel(ARQUIVO_ALUNOS)
+def carregar_dados_alunos(opcao):
+    if opcao == 'alunos':
+        if os.path.exists(ARQUIVO_ALUNOS):
+            if ARQUIVO_ALUNOS.endswith('.xlsx'):
+                return pd.read_excel(ARQUIVO_ALUNOS)
+            else:
+                st.warning("Formato de arquivo não suportado!")
         else:
-            st.warning("Formato de arquivo não suportado!")
-    else:
-        st.warning("Arquivo de dados dos alunos não encontrado!")
+            st.warning("Arquivo de dados dos alunos não encontrado!")
+    elif opcao == 'disciplina':
+        if os.path.exists(ARQUIVO_DISCIPLINA):
+            if ARQUIVO_DISCIPLINA.endswith('.xlsx'):
+                return pd.read_excel(ARQUIVO_DISCIPLINA)
+            else:
+                st.warning('Formato de arquivo não suportado!')
+        else:
+            st.warning("Arquivo de dados das disciplinas não encontrado!")    
     return pd.DataFrame()
 
 # Função para substituir o arquivo de alunos
-def substituir_arquivo_alunos(novo_arquivo):
-    file_extension = novo_arquivo.name.split('.')[-1]
-    if file_extension == 'xlsx':
-        df_novo = pd.read_excel(novo_arquivo)
-        df_novo.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
-                            'NOMECURSO': 'CURSO',
-                            'NOMEALUNO': 'ALUNO'}, inplace=True)
-        df_novo.to_excel(ARQUIVO_ALUNOS, index=False)
-        df_novo['RA'] = df_novo['RA'].apply(lambda x: str(x).zfill(7))
-        st.success("Dados de alunos substituídos com sucesso!")
-    else:
-        st.warning("Formato de arquivo não suportado para substituição!")
+def substituir_arquivo_alunos(novo_arquivo, opcao):
+    if opcao == 'alunos':
+        file_extension = novo_arquivo.name.split('.')[-1]
+        if file_extension == 'xlsx':
+            df_novo = pd.read_excel(novo_arquivo)
+            df_novo.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
+                                'NOMECURSO': 'CURSO',
+                                'NOMEALUNO': 'ALUNO'}, inplace=True)
+            df_novo.to_excel(ARQUIVO_ALUNOS, index=False)
+            df_novo['RA'] = df_novo['RA'].apply(lambda x: str(x).zfill(7))
+            st.success("Dados de alunos substituídos com sucesso!")
+        else:
+            st.warning("Formato de arquivo não suportado para substituição!")
+    elif opcao == 'disciplinas':
+        file_extension = novo_arquivo.name.split('.')[-1]
+        if file_extension == 'xlsx':
+            df_novo = pd.read_excel(novo_arquivo)
+            df_novo.to_excel(ARQUIVO_DISCIPLINA, index=False)
+            st.success("Dados de alunos substituídos com sucesso!")
+            
+def dash (df):
+    dash = pd.read_excel(df)
+    
+    return pd.DataFrame(dash)
+
 
 # Interface após login
 st.title("📚 Gerenciamento de Dados de Alunos")
+
+st.subheader("Qual opção deseja fazer o updownload ?")
+ARQUIVO = st.selectbox("Selecione uma opção", ['alunos' , 'disciplinas'])
 
 # Opção para carregar e visualizar dados
 st.subheader("📥 Importar e Substituir Dados de Alunos")
@@ -99,26 +107,16 @@ if uploaded_file is not None:
     st.dataframe(df_novo.head())
 
     if st.button("🔄 Substituir Dados"):
-        substituir_arquivo_alunos(uploaded_file)
+        substituir_arquivo_alunos(uploaded_file, ARQUIVO)
 
 # Exibir dados atuais
 st.subheader("📊 Dados Atuais dos Alunos")
+dados_atual = dash(ARQUIVO_ALUNOS)
+dados_atual['RA'] = dados_atual['RA'].apply(lambda x: str(x).zfill(7))
+st.dataframe(dados_atual[['CODTURMA','CURSO','ALUNO', 'RA']])
+
+st.subheader("📊 Dados Disciplinas")
+dados_disciplina = dash(ARQUIVO_DISCIPLINA)
+st.dataframe(dados_disciplina[['CODTURMA','NOME','IDMOODLE']])
 
 
-dados_atual = carregar_dados_alunos()
-if "RA" in dados_atual.columns:
-    dados_atual["RA"] = dados_atual["RA"].astype(str).str.zfill(7)
-else:
-    st.write("A coluna 'RA' não foi encontrada no arquivo.")
-
-
-if dados_atual.empty:
-    try:
-        dados_atual = pd.read_excel("alunos.xlsx")  # Ajuste o nome do arquivo conforme necessário
-        st.write("Dados carregados do arquivo local.")
-    except FileNotFoundError:
-        st.write("Nenhum dado de aluno disponível e o arquivo local não foi encontrado.")
-
-# Exibir os dados se existirem
-if not dados_atual.empty:
-    st.dataframe(dados_atual)
