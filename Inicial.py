@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 from auth import check_authentication, logout
 
-st.set_page_config(page_title="Alteração de Dados", page_icon="🔄", layout="wide")
+st.set_page_config(page_title="Alteração de Dados", page_icon="Icev", layout="wide")
 
 
 # Verifica se o usuário está autenticado
@@ -117,6 +117,8 @@ if uploaded_file is not None:
 st.subheader("Dados Atuais dos Alunos")
 if not ARQUIVO_ALUNOS:
     st.write("Data Frame Vazio")
+elif not os.path.exists(ARQUIVO_ALUNOS):  
+    st.write(f"🚨 O arquivo '{ARQUIVO_ALUNOS}' não existe. Verifique o caminho ou envie o arquivo.")
 else:
     dados_atual = dash(ARQUIVO_ALUNOS)
     if not dados_atual.empty:
@@ -126,6 +128,8 @@ else:
 st.subheader("Dados Disciplinas")
 if not ARQUIVO_DISCIPLINA:
     st.write("Data frame Vazio")
+elif not os.path.exists(ARQUIVO_DISCIPLINA):  
+    st.write(f"O arquivo '{ARQUIVO_DISCIPLINA}' não existe. Verifique o caminho ou envie o arquivo.")
 else:
     dados_disciplina = dash(ARQUIVO_DISCIPLINA)
     if not dados_disciplina.empty:  # Verifica se o DataFrame não está vazio
