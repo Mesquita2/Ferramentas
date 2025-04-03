@@ -82,10 +82,14 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
             df_novo.to_excel(ARQUIVO_DISCIPLINA, index=False)
             st.success("Dados de alunos substituídos com sucesso!")
             
-def dash (df):
-    dash = pd.read_excel(df)
-    
-    return pd.DataFrame(dash)
+def dash(df):
+    if not df:
+        st.write("Data frame Vazio")
+        return pd.DataFrame() 
+    if not os.path.exists(df):
+        st.write(f"Erro: Arquivo '{df}' não encontrado.")
+        return pd.DataFrame()  
+    return pd.read_excel(df) 
 
 
 # Interface após login
@@ -110,13 +114,20 @@ if uploaded_file is not None:
         substituir_arquivo_alunos(uploaded_file, ARQUIVO)
 
 # Exibir dados atuais
-st.subheader("📊 Dados Atuais dos Alunos")
-dados_atual = dash(ARQUIVO_ALUNOS)
-dados_atual['RA'] = dados_atual['RA'].apply(lambda x: str(x).zfill(7))
-st.dataframe(dados_atual[['CODTURMA','CURSO','ALUNO', 'RA']])
+st.subheader("Dados Atuais dos Alunos")
+if not ARQUIVO_ALUNOS:
+    st.write("Data Frame Vazio")
+else:
+    dados_atual = dash(ARQUIVO_ALUNOS)
+    if not dados_atual.empty:
+        dados_atual['RA'] = dados_atual['RA'].apply(lambda x: str(x).zfill(7))
+        st.dataframe(dados_atual[['CODTURMA','CURSO','ALUNO', 'RA']])
 
-st.subheader("📊 Dados Disciplinas")
-dados_disciplina = dash(ARQUIVO_DISCIPLINA)
-st.dataframe(dados_disciplina[['CODTURMA','NOME','IDMOODLE']])
-
+st.subheader("Dados Disciplinas")
+if not ARQUIVO_DISCIPLINA:
+    st.write("Data frame Vazio")
+else:
+    dados_disciplina = dash(ARQUIVO_DISCIPLINA)
+    if not dados_disciplina.empty:  # Verifica se o DataFrame não está vazio
+        st.dataframe(dados_disciplina[['CODTURMA','NOME','IDMOODLE']])
 
