@@ -93,7 +93,7 @@ def dash(df):
 
 
 # Interface após login
-st.title("📚 Gerenciamento de Dados de Alunos")
+st.title("📚 Teste de Dados de Alunos")
 
 st.subheader("Qual opção deseja fazer o updownload ?")
 ARQUIVO = st.selectbox("Selecione uma opção", ['alunos' , 'disciplinas'])
