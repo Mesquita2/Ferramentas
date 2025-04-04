@@ -16,7 +16,7 @@ if not check_authentication():
     st.stop()
     
 df_totvs = pd.read_excel("alunos.xlsx")
-df_disciplina = pd.read_excel("disciplina.xlsx")
+df_disciplina = pd.read_excel("disciplinas.xlsx")
 
 def organizar(df):
     # Substituir "-" por 0
@@ -151,7 +151,7 @@ elif etapa == 'P2':
 curso = df_totvs['CURSO'].unique().tolist()
 curso = st.selectbox("Escolha o Curso", curso)
 
-disciplinas = df_totvs[df_totvs["CURSO"] == curso]["DISCIPLINA"].unique().tolist()
+disciplinas = sorted(df_totvs[df_totvs["CURSO"] == curso]["DISCIPLINA"].unique().tolist())
 disciplina = st.selectbox("📖 Escolha a disciplina", disciplinas)
 
 turmas_filtradas = df_totvs[df_totvs["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
@@ -163,23 +163,20 @@ uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=[
 codigo_disciplina = df_totvs[(df_totvs["DISCIPLINA"] == disciplina) & (df_totvs["TURMADISC"] == turma)]["IDTURMADISC"].unique().tolist()
 st.write(f"ID da disciplina: **{codigo_disciplina}**")
 
-id_curso = st.file_uploader("📤 Envie o arquivo de notas (txt)", type=["txt"])
+df_curso = pd.DataFrame(df_disciplina)
 
+df_curso = df_curso[['NOME', 'IDMOODLE', 'CODTURMA']]
 
-if id_curso: 
-    df_curso =carregar_dados(id_curso)
-    df_curso = df_curso[['disciplina', 'id', 'CODTURMA']]
-
-    codigo_disciplina = df_curso[(df_curso["disciplina"] == disciplina) & (df_curso['CODTURMA'] == turma)]["id"].tolist()
-    codturma = df_curso[(df_curso["disciplina"] == disciplina) & (df_curso['CODTURMA'] == turma)]["CODTURMA"].tolist()
-    st.write(f"ID da disciplina: **{codigo_disciplina}**, Turma: **{codturma}**")
-    if codturma is not None:
-        st.write(f"http://icev.digital/grade/export/xls/index.php?id={codigo_disciplina[0]}")
-    else: 
-        st.write(f"CODTURMA VAZIO")
+codigo_disciplina = df_curso[(df_curso["NOME"] == disciplina) & (df_curso['CODTURMA'] == turma)]["IDMOODLE"].tolist()
+codturma = df_curso[(df_curso["NOME"] == disciplina) & (df_curso['CODTURMA'] == turma)]["CODTURMA"].tolist()
+st.write(f"ID da disciplina: **{codigo_disciplina}**, Turma: **{codturma}**")
+if codturma is not None:
+    st.write(f"http://icev.digital/grade/export/xls/index.php?id={codigo_disciplina[0]}")
+else: 
+    st.write(f"CODTURMA VAZIO")
         
-    st.subheader("Documento gerado para saber id do icev")
-    st.dataframe(df_curso)
+st.subheader("Documento gerado para saber id do icev")
+st.dataframe(df_curso)
 
 # Carregar e limpar os dados
 if uploaded_file:
