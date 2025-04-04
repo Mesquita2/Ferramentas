@@ -93,7 +93,7 @@ def dash(df):
 
 
 # Interface após login
-st.title("📚 Teste de Dados de Alunos")
+st.title("Gerenciamento de Dados de Alunos")
 
 st.subheader("Qual opção deseja fazer o updownload ?")
 ARQUIVO = st.selectbox("Selecione uma opção", ['alunos' , 'disciplinas'])
@@ -118,7 +118,7 @@ st.subheader("Dados Atuais dos Alunos")
 if not ARQUIVO_ALUNOS:
     st.write("Data Frame Vazio")
 elif not os.path.exists(ARQUIVO_ALUNOS):  
-    st.write(f"🚨 O arquivo '{ARQUIVO_ALUNOS}' não existe. Verifique o caminho ou envie o arquivo.")
+    st.write(f" O arquivo '{ARQUIVO_ALUNOS}' não existe. Verifique o caminho ou envie o arquivo.")
 else:
     dados_atual = dash(ARQUIVO_ALUNOS)
     if not dados_atual.empty:
