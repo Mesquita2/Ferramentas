@@ -152,10 +152,10 @@ curso = df_totvs['CURSO'].unique().tolist()
 curso = st.selectbox("Escolha o Curso", curso)
 
 disciplinas = sorted(df_totvs[df_totvs["CURSO"] == curso]["DISCIPLINA"].unique().tolist())
-disciplina = st.selectbox("📖 Escolha a disciplina", disciplinas)
+disciplina = st.selectbox("Escolha a disciplina", disciplinas)
 
 turmas_filtradas = df_totvs[df_totvs["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
-turma = st.selectbox("🏫 Escolha a turma", turmas_filtradas)
+turma = st.selectbox("Escolha a turma", turmas_filtradas)
 
 # Upload do arquivo Excel
 uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])

@@ -129,7 +129,7 @@ st.subheader("Dados Disciplinas")
 if not ARQUIVO_DISCIPLINA:
     st.write("Data frame Vazio")
 elif not os.path.exists(ARQUIVO_DISCIPLINA):  
-    st.write(f"O arquivo '{ARQUIVO_DISCIPLINA}' não existe. Verifique o caminho ou envie o arquivo.")
+    st.write(f"O arquivo '{ARQUIVO_DISCIPLINA}' não existe. Verifique o caminho ou envie o arquivo. ")
 else:
     dados_disciplina = dash(ARQUIVO_DISCIPLINA)
     if not dados_disciplina.empty:  # Verifica se o DataFrame não está vazio
