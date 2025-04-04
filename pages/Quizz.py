@@ -4,7 +4,6 @@ import io
 from auth import check_authentication
 import math 
 
-ARQUIVO_DISCIPLINA = "disciplina.txt"
 
 def arrendondar_para_cima(numero, decimal):
     fator = 10 ** decimal
@@ -17,7 +16,7 @@ if not check_authentication():
     st.stop()
     
 df_totvs = pd.read_excel("alunos.xlsx")
-
+df_disciplina = pd.read_excel("disciplina.xlsx")
 
 def organizar(df):
     # Substituir "-" por 0
@@ -162,7 +161,7 @@ turma = st.selectbox("🏫 Escolha a turma", turmas_filtradas)
 uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
 
 codigo_disciplina = df_totvs[(df_totvs["DISCIPLINA"] == disciplina) & (df_totvs["TURMADISC"] == turma)]["IDTURMADISC"].unique().tolist()
-st.write(f"📌 ID da disciplina: **{codigo_disciplina}**")
+st.write(f"ID da disciplina: **{codigo_disciplina}**")
 
 id_curso = st.file_uploader("📤 Envie o arquivo de notas (txt)", type=["txt"])
 
@@ -173,7 +172,7 @@ if id_curso:
 
     codigo_disciplina = df_curso[(df_curso["disciplina"] == disciplina) & (df_curso['CODTURMA'] == turma)]["id"].tolist()
     codturma = df_curso[(df_curso["disciplina"] == disciplina) & (df_curso['CODTURMA'] == turma)]["CODTURMA"].tolist()
-    st.write(f"📌 ID da disciplina: **{codigo_disciplina}**, Turma: **{codturma}**")
+    st.write(f"ID da disciplina: **{codigo_disciplina}**, Turma: **{codturma}**")
     if codturma is not None:
         st.write(f"http://icev.digital/grade/export/xls/index.php?id={codigo_disciplina[0]}")
     else: 
@@ -185,7 +184,7 @@ if id_curso:
 # Carregar e limpar os dados
 if uploaded_file:
     df_original = carregar_dados(uploaded_file)
-    st.subheader("📋 Dados Originais")
+    st.subheader("Dados Originais")
     
     df_original = organizar(df_original)
     
@@ -193,7 +192,7 @@ if uploaded_file:
     
     # Limpar dados
     df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
-    st.subheader("✅ Dados Após Limpeza")
+    st.subheader("Dados Após Limpeza")
     
     print(disciplina)
     df_limpo = df_limpo[(df_limpo['DISCIPLINA'] == disciplina) & (df_limpo['TURMADISC'] == turma)].copy()
