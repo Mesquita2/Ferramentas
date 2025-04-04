@@ -102,13 +102,14 @@ if uploaded_file:
     st.subheader("📋 Dados Originais")
     st.dataframe(df_original)
     
+    disciplina = df_original['DISCIPLINA'].iloc[0]
+    turma = df_original['TURMADISC'].iloc[0]
+    
     # Limpar dados
     df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
     st.subheader("✅ Dados Após Limpeza")
     st.dataframe(df_limpo)
     
-    disciplina = df_limpo['DISCIPLINA'].iloc[0]
-    turma = df_limpo['TURMADISC'].iloc[0]
     
     df_limpo['RA'] = df_limpo['RA'].astype(str)
     df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))
@@ -118,6 +119,7 @@ if uploaded_file:
     output = io.BytesIO()  
     df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
     output.seek(0) 
+
     
     # Botão para baixar o arquivo tratado como .txt
     st.download_button(
