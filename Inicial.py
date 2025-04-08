@@ -133,5 +133,5 @@ elif not os.path.exists(ARQUIVO_DISCIPLINA):
 else:
     dados_disciplina = dash(ARQUIVO_DISCIPLINA)
     if not dados_disciplina.empty:  # Verifica se o DataFrame não está vazio
-        st.dataframe(dados_disciplina[['CODTURMA','NOME','IDMOODLE']])
+        st.dataframe(dados_disciplina[['CODTURMA','NOME','IDMOODLE']]) # teste 
 
