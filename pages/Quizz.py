@@ -108,8 +108,8 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
                             'NOMECURSO': 'CURSO',
                             'NOMEALUNO': 'ALUNO'}, inplace=True)
     
-    df = pd.merge(df_base, df[['DISCIPLINA', 'RA', 'ALUNO', 'NOTAS']],
-                  on=['DISCIPLINA', 'RA' , 'ALUNO'],
+    df = pd.merge(df_base, df[['DISCIPLINA', 'RA', 'NOTAS']],
+                  on=['DISCIPLINA', 'RA' ],
                   how='left')  
     
     
@@ -161,7 +161,7 @@ turma = st.selectbox("Escolha a turma", turmas_filtradas)
 uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
 
 codigo_disciplina = df_totvs[(df_totvs["DISCIPLINA"] == disciplina) & (df_totvs["TURMADISC"] == turma)]["IDTURMADISC"].unique().tolist()
-st.write(f"ID da disciplina: **{codigo_disciplina}**")
+st.write(f"📌 ID da disciplina: **{codigo_disciplina}**")
 
 df_curso = pd.DataFrame(df_disciplina)
 
