@@ -2,6 +2,7 @@ import os
 import streamlit as st
 import pandas as pd
 import io
+from auth import check_authentication
 
 ARQUIVOREC = 'arquivorec.xlsx'
 
@@ -9,8 +10,8 @@ ARQUIVOREC = 'arquivorec.xlsx'
 # Configuração da página
 st.set_page_config(page_title="Limpeza Dados REC", page_icon=" ", layout="wide")
 
-#st.warning("Estamos em obra !!")
-#st.stop()
+if not check_authentication():
+    st.stop()
     
 # Função para carregar o arquivo
 @st.cache_resource
