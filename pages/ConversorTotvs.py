@@ -59,7 +59,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     if prova == "Prova":
         df_teste = df_teste.dropna(subset=['NOTAS'])
     elif prova == "Recuperação":
-        df_teste = df_teste.dropna(subset=[0])
+        df_teste = df_teste.dropna()
     else:
         df_teste = df_teste.dropna(subset=['NOTAS'])
 
