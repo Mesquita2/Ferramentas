@@ -48,13 +48,16 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
             .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
             .str.strip()
         )
-            
+        
+        
         df.rename(columns={'VALOR': 'DISCIPLINA',
                             'NOME': 'ALUNO',
-                            'CODTURMA' : 'TURMADISC',
                             'RA': 'RA'}, inplace=True)
         
-        
+        df = pd.merge(df, df_base[['DISCIPLINA', 'RA',  'TURMADISC']],
+                  on=['DISCIPLINA', 'RA'],
+                  how='left')        
+
         df = df.drop_duplicates(subset=['ALUNO', 'DISCIPLINA', 'TURMADISC', 'RA'])
         df.to_excel(ARQUIVOREC, index=False)
         df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
