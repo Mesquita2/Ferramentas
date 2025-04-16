@@ -157,6 +157,7 @@ disciplina = st.selectbox("Escolha a disciplina", disciplinas)
 turmas_filtradas = df_totvs[df_totvs["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
 turma = st.selectbox("Escolha a turma", turmas_filtradas)
 
+
 # Upload do arquivo Excel
 uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
 
@@ -213,6 +214,6 @@ if uploaded_file:
     st.download_button(
         label="⬇ Baixar Notas Tratadas (TXT)",
         data=output,
-        file_name=f"{disciplina}_{turma}_{prova}.txt",
+        file_name=f"{disciplina}_{turma}_{prova}_{etapa}.txt",
         mime="text/plain"
     )
