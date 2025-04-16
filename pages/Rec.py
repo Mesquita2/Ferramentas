@@ -53,7 +53,7 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
                             'NOME': 'ALUNO',
                             'CODTURMA' : 'TURMADISC',
                             'RA': 'RA'}, inplace=True)
-        df = df.drop_duplicates()
+        df = df.drop_duplicates(subset=['ALUNO', 'DISCIPLINA', 'TURMADISC', 'RA'])
         df.to_excel(ARQUIVOREC, index=False)
         df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
         st.success("Dados de alunos substituídos com sucesso!")
@@ -67,7 +67,7 @@ def adicionar_imagem_no_cabecalho(doc, imagem_cabecalho):
 
     # Criando um parágrafo no cabeçalho e adicionando uma imagem
     paragraph = header.paragraphs[0]  # Usando o primeiro parágrafo do cabeçalho
-    section.header_distance = Inches(0.3)   
+    section.header_distance = Inches(0.2)   
     run = paragraph.add_run()
 
     # Adicionando a imagem ao cabeçalho
@@ -81,7 +81,7 @@ def adicionar_imagem_no_rodape(doc, imagem_rodape):
 
     # Criando um parágrafo no rodapé e adicionando uma imagem
     paragraph = footer.paragraphs[0]  # Usando o primeiro parágrafo do rodapé
-    section.footer_distance = Inches(0.3)
+    section.footer_distance = Inches(0.2)
     run = paragraph.add_run()
 
     # Adicionando a imagem ao rodapé
