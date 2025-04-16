@@ -72,6 +72,7 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
             df_novo.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                                 'NOMECURSO': 'CURSO',
                                 'NOMEALUNO': 'ALUNO'}, inplace=True)
+            df_novo = df_novo[df_novo['NOMESTATUS'] != 'Cancelamento']
             df_novo.to_excel(ARQUIVO_ALUNOS, index=False)
             df_novo['RA'] = df_novo['RA'].apply(lambda x: str(x).zfill(7))
             st.success("Dados de alunos substituídos com sucesso!")
