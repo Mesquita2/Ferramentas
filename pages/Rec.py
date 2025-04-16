@@ -1,9 +1,14 @@
 import os
+from docx import Document
+from docx.shared import Pt, RGBColor
+from docx.shared import Inches
 import streamlit as st
 import pandas as pd
 import io
 from auth import check_authentication
 
+imagem_rodape = "Endereço.jpeg"
+imagem_cabecalho = 'Logo.jpg'
 ARQUIVOREC = 'arquivorec.xlsx'
 
 
@@ -52,7 +57,89 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
         st.success("Dados de alunos substituídos com sucesso!")
     else:
         st.warning("Formato de arquivo não suportado para substituição!")
+        
+def adicionar_imagem_no_cabecalho(doc, imagem_cabecalho):
+    # Acessando o cabeçalho da primeira seção do documento
+    section = doc.sections[0]
+    header = section.header
 
+    # Criando um parágrafo no cabeçalho e adicionando uma imagem
+    paragraph = header.paragraphs[0]  # Usando o primeiro parágrafo do cabeçalho
+    run = paragraph.add_run()
+
+    # Adicionando a imagem ao cabeçalho
+    run.add_picture(imagem_cabecalho, width=Inches(7.5), height=Inches(1))  # Ajuste o tamanho conforme necessário
+
+def adicionar_imagem_no_rodape(doc, imagem_rodape):
+    # Acessando o rodapé da primeira seção do documento
+    section = doc.sections[0]
+    footer = section.footer
+
+    # Criando um parágrafo no rodapé e adicionando uma imagem
+    paragraph = footer.paragraphs[0]  # Usando o primeiro parágrafo do rodapé
+    run = paragraph.add_run()
+
+    # Adicionando a imagem ao rodapé
+    run.add_picture(imagem_rodape, width=Inches(7.5), height=Inches(1))  # Ajuste o tamanho conforme necessário
+
+
+def gerar_relatorio(df, disciplina, turma):
+    
+    df = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
+    doc = Document()
+    
+    adicionar_imagem_no_cabecalho(doc, imagem_cabecalho)
+    adicionar_imagem_no_rodape(doc, imagem_rodape)
+    
+    #Ajustar margens da página para estreitas
+    section = doc.sections[0]
+    section.left_margin = Inches(0.5) 
+    section.right_margin = Inches(0.5)
+    section.top_margin = Inches(0.5)  
+    section.bottom_margin = Inches(0.5) 
+    
+    # Cabeçalho principal
+    doc.add_heading('Relatório de Dados', level=1)
+    
+    # Adicionando título "Disciplina" com personalização
+    p = doc.add_paragraph()
+    run = p.add_run(f"Disciplina: {disciplina}")
+    run.font.name = 'Arial'           # Definindo a fonte para Arial
+    run.font.size = Pt(14)            # Tamanho da fonte para 14 pt
+    run.font.color.rgb = RGBColor(0, 0, 0)  # Cor preta (RGB: 0,0,0)
+    
+    # Adicionando título "Turma" com personalização
+    p = doc.add_paragraph()
+    run = p.add_run(f"Turma: {turma}")
+    run.font.name = 'Arial'
+    run.font.size = Pt(12)            # Tamanho da fonte para 12 pt
+    run.font.color.rgb = RGBColor(0, 0, 0)
+    
+    
+    
+    colunas = ['ALUNO', 'DISCIPLINA', 'TURMADISC']
+    df = df[colunas]
+    df['ASSINATURA'] = '  '
+    # Adiciona a tabela
+    table = doc.add_table(rows=1, cols=len(df.columns))
+    table.style = 'Table Grid'
+
+    # Cabeçalho da tabela
+    hdr_cells = table.rows[0].cells
+    for i, col_name in enumerate(df.columns):
+        hdr_cells[i].text = col_name
+
+    # Dados
+    for _, row in df.iterrows():
+        row_cells = table.add_row().cells
+        for i, item in enumerate(row):
+            row_cells[i].text = str(item)
+
+    # Salva em memória
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
 
 # Função para limpar os dados
 @st.cache_data
@@ -85,7 +172,6 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df['PROVA'] = prova
     df['ETAPA'] = etapa
     df['RA novo'] = df['RA'].astype(int)
-
     # Nova ordem das colunas
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
     df_teste = df[colunas]
@@ -133,7 +219,7 @@ else:
 def gerar_excel(df_rec, disciplina, turma):
     df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
     df_filtrado['RA'] = df_filtrado['RA'].astype(str)
-    df_filtrado["NOTAS"] = 0
+    df_filtrado['NOTAS'] = 0 
     colunas = ['TURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'NOTAS']
     df_filtrado = df_filtrado[colunas]
     
@@ -173,4 +259,13 @@ if disciplina and turma:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
         
+st.title("Criar Relatorio de Assinatura")
+if disciplina and turma:
+    relatorio = gerar_relatorio(df_rec, disciplina, turma)
+    st.download_button(
+        label="Gerar e Baixar Relatorio de Assinaturas",
+        data= relatorio,
+        file_name=f"{disciplina}_{turma}_{prova}.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )    
     
