@@ -42,7 +42,7 @@ def gerar_excel(df_alunos, disciplina, turma):
     output.seek(0)
     return output
 
-st.title("📚 Gerador de Planilha de Notas")
+st.title("Gerador de Planilha de Notas")
 
 df_alunos = carregar_alunos()
 if df_alunos.empty:
@@ -64,7 +64,7 @@ st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 if disciplina and turma:
     excel_file = gerar_excel(df_alunos, disciplina, turma)
     st.download_button(
-        label="Gerar e Baixar Planilha Excel",
+        label="⬇ Gerar e Baixar Planilha Excel",
         data=excel_file,
         file_name=f"{disciplina}_{turma}_{prova}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

@@ -68,7 +68,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     return df_teste
 
 # Interface do Streamlit
-st.title("📊 Limpeza e Tratamento de Notas")
+st.title("Limpeza e Tratamento de Notas")
 
 # Upload do arquivo Excel
 uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
@@ -105,7 +105,7 @@ elif etapa == 'P2' and prova == 'Quizz':
 # Carregar e limpar os dados
 if uploaded_file:
     df_original = carregar_dados(uploaded_file)
-    st.subheader("📋 Dados Originais")
+    st.subheader("Dados Originais")
     st.dataframe(df_original)
     
     disciplina = df_original['DISCIPLINA'].iloc[0]
@@ -113,7 +113,7 @@ if uploaded_file:
     
     # Limpar dados
     df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
-    st.subheader("✅ Dados Após Limpeza")
+    st.subheader("Dados Após Limpeza")
     st.dataframe(df_limpo)
     
     

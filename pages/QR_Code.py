@@ -52,7 +52,7 @@ if st.button("Gerar QR Code"):
 
         # Adicionar botão para download
         st.download_button(
-            label="Baixar QR Code",
+            label="⬇ Baixar QR Code",
             data=img_byte_arr,
             file_name=f"QR_Code_{nome.replace(' ', '_')}.png",
             mime="image/png"

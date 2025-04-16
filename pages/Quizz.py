@@ -212,7 +212,7 @@ if uploaded_file:
     
     # Botão para baixar o arquivo tratado como .txt
     st.download_button(
-        label="⬇ Baixar Notas Tratadas (TXT)",
+        label="Baixar Notas Tratadas (TXT)",
         data=output,
         file_name=f"{disciplina}_{turma}_{prova}_{etapa}.txt",
         mime="text/plain"

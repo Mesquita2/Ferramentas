@@ -167,7 +167,7 @@ st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 if disciplina and turma:
     excel_file = gerar_excel(df_rec, disciplina, turma)
     st.download_button(
-        label="Gerar e Baixar Planilha Excel",
+        label="⬇ Gerar e Baixar Planilha Excel",
         data=excel_file,
         file_name=f"{disciplina}_{turma}_{prova}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
