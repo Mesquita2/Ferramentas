@@ -89,11 +89,11 @@ def adicionar_imagem_no_rodape(doc, imagem_rodape):
 
 
 def gerar_relatorio(df, disciplina, turma):
-    
-    df = df.sort_values(by="ALUNO", ascending = True)
+      
     dataatual = date.today().strftime('%d/%m/%Y')
     
     df = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
+    df = df.sort_values(by="ALUNO", ascending = True)
     doc = Document()
     
     adicionar_imagem_no_cabecalho(doc, imagem_cabecalho)
