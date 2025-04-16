@@ -1,3 +1,4 @@
+from datetime import date
 import os
 from docx import Document
 from docx.shared import Pt, RGBColor
@@ -65,6 +66,7 @@ def adicionar_imagem_no_cabecalho(doc, imagem_cabecalho):
 
     # Criando um parágrafo no cabeçalho e adicionando uma imagem
     paragraph = header.paragraphs[0]  # Usando o primeiro parágrafo do cabeçalho
+    section.header_distance = Inches(0.3)   
     run = paragraph.add_run()
 
     # Adicionando a imagem ao cabeçalho
@@ -74,9 +76,11 @@ def adicionar_imagem_no_rodape(doc, imagem_rodape):
     # Acessando o rodapé da primeira seção do documento
     section = doc.sections[0]
     footer = section.footer
+    
 
     # Criando um parágrafo no rodapé e adicionando uma imagem
     paragraph = footer.paragraphs[0]  # Usando o primeiro parágrafo do rodapé
+    section.footer_distance = Inches(0.3)
     run = paragraph.add_run()
 
     # Adicionando a imagem ao rodapé
@@ -84,6 +88,8 @@ def adicionar_imagem_no_rodape(doc, imagem_rodape):
 
 
 def gerar_relatorio(df, disciplina, turma):
+    
+    dataatual = date.today().strftime('%d/%m/%Y')
     
     df = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
     doc = Document()
@@ -98,11 +104,10 @@ def gerar_relatorio(df, disciplina, turma):
     section.top_margin = Inches(0.5)  
     section.bottom_margin = Inches(0.5) 
     
-    # Cabeçalho principal
-    doc.add_heading('Relatório de Dados', level=1)
     
     # Adicionando título "Disciplina" com personalização
     p = doc.add_paragraph()
+    run = p.add_run("\n\n")
     run = p.add_run(f"Disciplina: {disciplina}")
     run.font.name = 'Arial'           # Definindo a fonte para Arial
     run.font.size = Pt(14)            # Tamanho da fonte para 14 pt
@@ -112,17 +117,24 @@ def gerar_relatorio(df, disciplina, turma):
     p = doc.add_paragraph()
     run = p.add_run(f"Turma: {turma}")
     run.font.name = 'Arial'
-    run.font.size = Pt(12)            # Tamanho da fonte para 12 pt
+    run.font.size = Pt(12)            
+    run.font.color.rgb = RGBColor(0, 0, 0)
+    
+    p = doc.add_paragraph()
+    run = p.add_run(f"Data: {dataatual}")
+    run.font.name = 'Arial'
+    run.font.size = Pt(12)            
     run.font.color.rgb = RGBColor(0, 0, 0)
     
     
     
-    colunas = ['ALUNO', 'DISCIPLINA', 'TURMADISC']
+    colunas = ['ALUNO']
     df = df[colunas]
     df['ASSINATURA'] = '  '
     # Adiciona a tabela
     table = doc.add_table(rows=1, cols=len(df.columns))
     table.style = 'Table Grid'
+
 
     # Cabeçalho da tabela
     hdr_cells = table.rows[0].cells
@@ -134,6 +146,7 @@ def gerar_relatorio(df, disciplina, turma):
         row_cells = table.add_row().cells
         for i, item in enumerate(row):
             row_cells[i].text = str(item)
+
 
     # Salva em memória
     buffer = io.BytesIO()
