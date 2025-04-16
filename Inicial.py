@@ -3,7 +3,9 @@ import streamlit as st
 import pandas as pd
 from auth import check_authentication, logout
 
-st.set_page_config(page_title="Alteração de Dados", page_icon="Icev", layout="wide")
+st.set_page_config(page_title="Alteração de Dados", 
+                   page_icon="", 
+                   layout="wide")
 
 
 # Verifica se o usuário está autenticado
@@ -99,18 +101,18 @@ st.subheader("Qual opção deseja fazer o updownload ?")
 ARQUIVO = st.selectbox("Selecione uma opção", ['alunos' , 'disciplinas'])
 
 # Opção para carregar e visualizar dados
-st.subheader("📥 Importar e Substituir Dados de Alunos")
+st.subheader("Importar e Substituir Dados de Alunos")
 uploaded_file = st.file_uploader("Escolha um arquivo Excel", type=["xlsx"])
 
 if uploaded_file is not None:
     df_novo = pd.read_excel(uploaded_file)
     
-    st.write("📋 Prévia do arquivo enviado:")
+    st.write("Prévia do arquivo enviado:")
     st.write(f"Total de linhas: {len(df_novo)}")
     st.write(f"Colunas: {', '.join(df_novo.columns)}")
     st.dataframe(df_novo.head())
 
-    if st.button("🔄 Substituir Dados"):
+    if st.button(":: Substituir Dados"):
         substituir_arquivo_alunos(uploaded_file, ARQUIVO)
 
 # Exibir dados atuais

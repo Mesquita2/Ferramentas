@@ -71,7 +71,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
 st.title("Limpeza e Tratamento de Notas")
 
 # Upload do arquivo Excel
-uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
+uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
 
 # Definir as variáveis de configuração para o filtro
 etapa = st.selectbox('Selecione a etapa', ['P1', 'P2'])
