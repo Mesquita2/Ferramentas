@@ -8,7 +8,9 @@ ARQUIVOREC = 'arquivorec.xlsx'
 
 
 # Configuração da página
-st.set_page_config(page_title="Limpeza Dados da REC", page_icon=" ", layout="wide")
+st.set_page_config(page_title="Limpeza Dados da REC", 
+                   page_icon=" ", 
+                   layout="wide")
 
 if not check_authentication():
     st.stop()
@@ -32,11 +34,11 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
     file_extension = novo_arquivo.name.split('.')[-1].lower()
     if file_extension == 'xlsx':
         df = pd.read_excel(novo_arquivo)
-        #retirar o codigo em () do nome da disciplina
             
         df['VALOR'] = (
             df['VALOR']
-            .str.replace(r'\s*\(.*?\)', '', regex=True)  # remove (qualquer coisa)
+             #retirar o codigo em () do nome da disciplina
+            .str.replace(r'\s*\(.*?\)', '', regex=True) 
             .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
             .str.strip()
         )
@@ -108,7 +110,7 @@ uploaded_file = st.file_uploader("Escolha um arquivo Excel da Rec para analise",
 if uploaded_file is not None:
     df_novo = pd.read_excel(uploaded_file)
     
-    st.write("📋 Prévia do arquivo enviado:")
+    st.write("**Prévia do arquivo enviado:**")
     st.write(f"Total de linhas: {len(df_novo)}")
     st.write(f"Colunas: {', '.join(df_novo.columns)}")
     st.dataframe(df_novo.head())
@@ -121,7 +123,7 @@ st.subheader("Dados dos Cadastrados na REC")
 if not ARQUIVOREC:
     st.write("Data frame Vazio")
 elif not os.path.exists(ARQUIVOREC):  
-    st.write(f"O arquivo '{ARQUIVOREC}' não existe. Verifique o caminho ou envie o arquivo. ")
+    st.write(f"**O arquivo '{ARQUIVOREC}' não existe. Verifique o caminho ou envie o arquivo. **")
 else:
     dados_disciplina = dash(ARQUIVOREC)
     if not dados_disciplina.empty:  # Verifica se o DataFrame não está vazio
@@ -158,14 +160,14 @@ prova = st.selectbox("Escolha se é REC_P1 ou REC_P2", ["REC_P1", "REC_P2"])
 df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
 st.write(f"📝 **Alunos da Disciplina: {disciplina} | Turma: {turma}**")
 total = df_filtrado['ALUNO'].count()
-st.write(f"📝 **Quatidade de REC solicitadas**: {total}")
+st.write(f"📝 **Quatidade de REC solicitadas: {total}**")
 st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
 
 if disciplina and turma:
     excel_file = gerar_excel(df_rec, disciplina, turma)
     st.download_button(
-        label="📥 Gerar e Baixar Planilha Excel",
+        label="Gerar e Baixar Planilha Excel",
         data=excel_file,
         file_name=f"{disciplina}_{turma}_{prova}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

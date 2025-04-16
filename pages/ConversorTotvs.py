@@ -4,7 +4,9 @@ import io
 from auth import check_authentication
 
 # Configuração da página
-st.set_page_config(page_title="Limpeza de Notas", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Limpeza de Notas",
+                   page_icon="", # Criar icon Icev 
+                   layout="wide")
 
 if not check_authentication():
     st.stop()

@@ -49,10 +49,10 @@ if df_alunos.empty:
     st.stop()
 
 disciplinas = df_alunos["DISCIPLINA"].unique().tolist()
-disciplina = st.selectbox("📖 Escolha a disciplina", disciplinas)
+disciplina = st.selectbox("Escolha a disciplina", disciplinas)
 
 turmas_filtradas = df_alunos[df_alunos["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
-turma = st.selectbox("🏫 Escolha a turma", turmas_filtradas)
+turma = st.selectbox("Escolha a turma", turmas_filtradas)
 
 prova = st.selectbox("Escolha se é P1 ou P2", ["P1", "P2"])
 
@@ -64,7 +64,7 @@ st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 if disciplina and turma:
     excel_file = gerar_excel(df_alunos, disciplina, turma)
     st.download_button(
-        label="📥 Gerar e Baixar Planilha Excel",
+        label="Gerar e Baixar Planilha Excel",
         data=excel_file,
         file_name=f"{disciplina}_{turma}_{prova}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

@@ -7,7 +7,7 @@ from PIL import Image
 
 st.set_page_config(
     page_title="Gerador de QR Code",
-    page_icon="🔗",
+    page_icon="", # Criar icone Icev
     layout="wide"
 )
 

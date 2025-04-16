@@ -133,7 +133,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     return df_limpo
 
 # Interface do Streamlit
-st.title("📊 Limpeza e Tratamento de Notas Quizzes")
+st.title("Limpeza e Tratamento de Notas Quizzes")
 
 # Definir as variáveis de configuração para o filtro
 etapa = st.selectbox('Selecione a etapa', ['P1', 'P2'])
@@ -159,10 +159,10 @@ turma = st.selectbox("Escolha a turma", turmas_filtradas)
 
 
 # Upload do arquivo Excel
-uploaded_file = st.file_uploader("📤 Envie o arquivo de notas (Excel)", type=["xlsx"])
+uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
 
 codigo_disciplina = df_totvs[(df_totvs["DISCIPLINA"] == disciplina) & (df_totvs["TURMADISC"] == turma)]["IDTURMADISC"].unique().tolist()
-st.write(f"📌 ID da disciplina: **{codigo_disciplina}**")
+st.write(f"ID da disciplina: **{codigo_disciplina}**")
 
 df_curso = pd.DataFrame(df_disciplina)
 
