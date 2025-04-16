@@ -264,7 +264,7 @@ df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"]
 st.write(f"**Alunos da Disciplina: {disciplina} | Turma: {turma}**")
 total = df_filtrado['ALUNO'].count()
 st.write(f"**Quatidade de REC solicitadas: {total}**")
-df_filtrado = df_filtrado.sort_values(by ="ALUNO", ascending= False)
+df_filtrado = df_filtrado.sort_values(by ="ALUNO", ascending= True)
 st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
 
