@@ -40,9 +40,7 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
     file_extension = novo_arquivo.name.split('.')[-1].lower()
     if file_extension == 'xlsx':
         df = pd.read_excel(novo_arquivo)
-        
         df_base = pd.read_excel('alunos.xlsx')
-        
         df['VALOR'] = (
             df['VALOR']
              #retirar o codigo em () do nome da disciplina
@@ -53,13 +51,9 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
             
         df.rename(columns={'VALOR': 'DISCIPLINA',
                             'NOME': 'ALUNO',
+                            'CODTURMA' : 'TURMADISC',
                             'RA': 'RA'}, inplace=True)
         
-        df = pd.merge(df_base, df[['DISCIPLINA', 'RA']],
-                  on=['DISCIPLINA', 'RA'],
-                  how='left')  
-        
-        print(df.columns)
         
         df = df.drop_duplicates(subset=['ALUNO', 'DISCIPLINA', 'TURMADISC', 'RA'])
         df.to_excel(ARQUIVOREC, index=False)
@@ -178,6 +172,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     
     df['nomelimpo'] = df['VALOR'].str.lower().str.strip()
     df.rename(columns={'nomelimpo': 'DISCIPLINA',
+                       'CODTURMA': 'TURMADISC',
                        'NOME': 'ALUNO',
                        'RA': 'RA'}, inplace=True)
     
@@ -195,7 +190,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df['ETAPA'] = etapa
     df['RA novo'] = df['RA'].astype(int)
     # Nova ordem das colunas
-    colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'TURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
+    colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
     df_teste = df[colunas]
 
     return df_teste
