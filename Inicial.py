@@ -103,7 +103,7 @@ ARQUIVO = st.selectbox("Selecione uma opção", ['alunos' , 'disciplinas'])
 # Opção para carregar e visualizar dados
 st.subheader("Importar e Substituir Dados de Alunos")
 uploaded_file = st.file_uploader("Escolha um arquivo Excel", type=["xlsx"])
-
+#
 if uploaded_file is not None:
     df_novo = pd.read_excel(uploaded_file)
     

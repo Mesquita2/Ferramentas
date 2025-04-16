@@ -66,6 +66,7 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
         st.warning("Formato de arquivo não suportado para substituição!")
         
 def adicionar_imagem_no_cabecalho(doc, imagem_cabecalho):
+    #testetetete
     # Acessando o cabeçalho da primeira seção do documento
     section = doc.sections[0]
     header = section.header
