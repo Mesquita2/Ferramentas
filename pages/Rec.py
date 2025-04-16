@@ -53,6 +53,7 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
                             'NOME': 'ALUNO',
                             'CODTURMA' : 'TURMADISC',
                             'RA': 'RA'}, inplace=True)
+        df = df.drop_duplicates()
         df.to_excel(ARQUIVOREC, index=False)
         df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
         st.success("Dados de alunos substituídos com sucesso!")
