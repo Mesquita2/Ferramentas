@@ -90,7 +90,7 @@ def adicionar_imagem_no_rodape(doc, imagem_rodape):
 
 def gerar_relatorio(df, disciplina, turma):
     
-    df = df.sort_values(by="ALUNO", ascending = False )
+    df = df.sort_values(by="ALUNO", ascending = False)
     dataatual = date.today().strftime('%d/%m/%Y')
     
     df = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
@@ -238,6 +238,8 @@ def gerar_excel(df_rec, disciplina, turma):
     colunas = ['TURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'NOTAS']
     df_filtrado = df_filtrado[colunas]
     
+    df_filtrado = df_filtrado.sort_values(by ="ALUNO", ascending= False)
+    
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df_filtrado.to_excel(writer, index=False, sheet_name="Notas")
@@ -262,6 +264,7 @@ df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"]
 st.write(f"**Alunos da Disciplina: {disciplina} | Turma: {turma}**")
 total = df_filtrado['ALUNO'].count()
 st.write(f"**Quatidade de REC solicitadas: {total}**")
+df_filtrado = df_filtrado.sort_values(by ="ALUNO", ascending= False)
 st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
 
