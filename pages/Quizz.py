@@ -171,7 +171,7 @@ df_curso = df_curso[['NOME', 'IDMOODLE', 'CODTURMA']]
 codigo_disciplina = df_curso[(df_curso["NOME"] == disciplina) & (df_curso['CODTURMA'] == turma)]["IDMOODLE"].tolist()
 codturma = df_curso[(df_curso["NOME"] == disciplina) & (df_curso['CODTURMA'] == turma)]["CODTURMA"].tolist()
 st.write(f"ID da disciplina: **{codigo_disciplina}**, Turma: **{codturma}**")
-if codturma is not None:
+if codturma:
     st.write(f"http://icev.digital/grade/export/xls/index.php?id={codigo_disciplina[0]}")
 else: 
     st.write(f"CODTURMA VAZIO")
