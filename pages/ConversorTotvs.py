@@ -61,9 +61,9 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     if prova == "Prova":
         df_teste = df_teste.dropna(subset=['NOTAS'])
     elif prova == "Recuperação":
-        df_teste = df_teste.dropna(subset=['NOTAS'])
+        df_teste = df_teste[(df_teste['NOTAS'] != 0 or df_teste['NOTAS'].notna())]
     else:
-        df_teste = df_teste.dropna(subset=['NOTAS'])
+        df_teste
 
     return df_teste
 
@@ -79,8 +79,6 @@ prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação', 'Qu
 tipoetapa = 'N'  # Tipo de etapa
 codetapa = 2  # Código da etapa
 codprova = 1  # Código da prova
-
-
 
 # Limitar as opções de Etapa com base na escolha da Prova
 if etapa == 'P1' and prova == "Prova":
@@ -120,6 +118,8 @@ if uploaded_file:
     df_limpo['RA'] = df_limpo['RA'].astype(str)
     df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))
     df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ',') if isinstance(x, (int, float)) else x)
+    if df_limpo['NOTAS'] >= 8:
+        st.info("As notas estão maiores que 8 Verificar no Totvs se a Disciplina aceita notas maiores que 8") 
     
     # Criar o arquivo .txt com separador ';'
     output = io.BytesIO()  
