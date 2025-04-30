@@ -3,8 +3,6 @@ import streamlit as st
 import pandas as pd
 import json 
 from auth import check_authentication, logout
-#from google.oauth2 import service_account #type: ignore 
-#from googleapiclient.discovery import build #type: ignore 
 
 
 st.set_page_config(page_title="Alteração de Dados", 
