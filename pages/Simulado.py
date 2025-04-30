@@ -1,0 +1,129 @@
+import io
+import streamlit as st
+from auth import check_authentication
+import pandas as pd
+import numpy as np
+
+# Configuração da página
+st.set_page_config(page_title="Limpeza Simulado e REC Simulado",
+                   page_icon="", # Criar icon Icev 
+                   layout="wide")
+
+#if not check_authentication():
+#    st.stop()
+
+# Recebe dados do Zip
+# Função para carregar o arquivo
+@st.cache_data
+def carregar_dados(arquivo):
+    try:
+        df = pd.read_excel(arquivo)
+        return df
+    except Exception as e:
+        st.error(f"Erro ao carregar o arquivo: {e}")
+        return pd.DataFrame()
+
+# Função para limpar os dados
+@st.cache_data
+def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
+    df_base = pd.read_excel("alunos.xlsx")
+
+
+    df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
+    df['Student ID'] = df['Student ID'].apply(lambda x: str(x).zfill(7))
+    # Renomear colunas
+    df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
+                            'NOMECURSO': 'CURSO',
+                            'NOMEALUNO': 'ALUNO'}, inplace=True)
+    
+    df['ALUNO'] = df['Student First Name'].fillna('') + ' ' + df['Student Last Name'].fillna('')
+    df['ALUNO'] = df['ALUNO'].str.strip()
+    df['NOTAS'] = np.minimum(((df['Earned Points'].fillna(0) + anuladas) * 1.25) / df['Possible Points'].replace(0, np.nan),1.0) * 10
+
+
+    df = pd.merge(df_base, df[['RA',  'NOTAS']],
+                  on=['RA'],
+                  how='left') 
+
+
+ 
+    
+    df = df.copy()
+    
+    # Adicionar as novas colunas
+    df['CODETAPA'] = codetapa
+    df['CODPROVA'] = codprova
+    df['TIPOETAPA'] = tipoetapa
+    df['PROVA'] = prova
+    df['ETAPA'] = etapa
+    df['RA novo'] = df['RA'].astype(int)
+        
+
+    # Nova ordem das colunas
+    colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
+    df = df[colunas]
+
+    # Condicional para a limpeza das notas
+    df_teste = df.copy()
+    if prova == "Prova":
+        df_teste = df_teste.dropna(subset=['NOTAS'])
+    elif prova == "Recuperação":
+        df_teste = df_teste[(df_teste['NOTAS'] != 0 or df_teste['NOTAS'].notna())]
+
+    return df_teste
+
+# Interface do Streamlit
+st.title("Tratamento de Notas Simulado e REC Simulado")
+
+# Upload do arquivo Excel
+uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
+
+# Definir as variáveis de configuração para o filtro
+etapa = "P3"
+prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação'])
+tipoetapa = 'N'  # Tipo de etapa
+codetapa = 3  # Código da etapa
+codprova = 1  # Código da prova
+
+anuladas = st.number_input("Indique o número de questões anuladas:", min_value=0, max_value=50, step=1)
+anuladas = int(anuladas)
+
+
+# Limitar as opções de Etapa com base na escolha da Prova
+if prova == "Prova":
+    codprova = 1  # Prova = 1
+elif prova == "Recuperação":
+    codprova = 2  # Recuperação = 2
+
+# Carregar e limpar os dados
+if uploaded_file:
+    df_original = carregar_dados(uploaded_file)
+    st.subheader("Dados Originais")
+    st.dataframe(df_original)
+    
+    # Limpar dados
+    df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
+    st.subheader("Dados Após Limpeza")
+    st.dataframe(df_limpo)
+    
+    
+    df_limpo['RA'] = df_limpo['RA'].astype(str)
+    df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))
+    df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ',') if isinstance(x, (int, float)) else x)
+    if df_limpo['NOTAS'] >= 8:
+        st.info("As notas estão maiores que 8 Verificar no Totvs se a Disciplina aceita notas maiores que 8") 
+    
+    # Criar o arquivo .txt com separador ';'
+    output = io.BytesIO()  
+    df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
+    output.seek(0) 
+
+    classe = df_original['Class'].iloc()
+    
+    # Botão para baixar o arquivo tratado como .txt
+    st.download_button(
+        label="⬇ Baixar Notas Tratadas (TXT)",
+        data=output,
+        file_name=f"{classe}_{prova}.txt",
+        mime="text/plain"
+    )
