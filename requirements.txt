@@ -11,7 +11,6 @@ charset-normalizer==3.3.2
 click==8.1.8
 clr-loader==0.2.6
 distro==1.9.0
-docx==0.2.4
 dotenv==0.9.9
 Flask==3.1.0
 gitdb==4.0.12
