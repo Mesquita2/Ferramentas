@@ -50,8 +50,6 @@ pydantic_core==2.23.4
 pydeck==0.9.1
 PyGetWindow==0.0.9
 PyMsgBox==1.0.9
-pyobjc-framework-Cocoa==10.3.1
-pyobjc-framework-Quartz==10.3.1
 pyparsing==3.1.4
 pyperclip==1.9.0
 PyRect==0.2.0
