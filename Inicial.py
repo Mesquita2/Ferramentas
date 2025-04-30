@@ -3,11 +3,9 @@ import streamlit as st
 import pandas as pd
 import json 
 from auth import check_authentication, logout
-from google.oauth2 import service_account #type: ignore 
-from googleapiclient.discovery import build #type: ignore 
+#from google.oauth2 import service_account #type: ignore 
+#from googleapiclient.discovery import build #type: ignore 
 
-creds_dict = st.secrets["google_service_account"]
-creds = service_account.Credentials.from_service_account_info(creds_dict)
 
 st.set_page_config(page_title="Alteração de Dados", 
                    page_icon="", 
