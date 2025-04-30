@@ -1,13 +1,12 @@
 import os 
 import streamlit as st
 import pandas as pd
-import json 
 from auth import check_authentication, logout
-
 
 st.set_page_config(page_title="Alteração de Dados", 
                    page_icon="", 
                    layout="wide")
+
 
 # Verifica se o usuário está autenticado
 if not check_authentication():
@@ -138,3 +137,4 @@ else:
     dados_disciplina = dash(ARQUIVO_DISCIPLINA)
     if not dados_disciplina.empty:  # Verifica se o DataFrame não está vazio
         st.dataframe(dados_disciplina[['CODTURMA','NOME','IDMOODLE']]) # teste 
+
