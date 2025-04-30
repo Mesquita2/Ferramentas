@@ -40,6 +40,8 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df['ALUNO'] = df['ALUNO'].str.strip()
     df['NOTAS'] = np.minimum(((df['Earned Points'].fillna(0) + anuladas) * 1.25) / df['Possible Points'].replace(0, np.nan),1.0) * 10
 
+    df.rename(columns={'Student ID': 'RA',
+                            'NOMEALUNO': 'ALUNO'}, inplace=True)
 
     df = pd.merge(df_base, df[['RA',  'NOTAS']],
                   on=['RA'],
