@@ -67,10 +67,10 @@ destinatario = st.text_input("Destinatário")
 
 print(list(df_base.columns))
 
-cursos = df_base["CURSO"].unique().tolist()
-curso = st.selectbox("Escolha o Bacharelado")
+curso = df_base['CURSO'].unique().tolist()
+curso = st.selectbox("Escolha o Curso", curso)
 
-disciplinas = df_base["DISCIPLINA"].unique().tolist()
+disciplinas = sorted(df_base[df_base["CURSO"] == curso]["DISCIPLINA"].unique().tolist())
 disciplina = st.selectbox("Escolha a disciplina", disciplinas)
 
 turmas_filtradas = df_base[df_base["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
@@ -78,6 +78,7 @@ turma = st.selectbox("Escolha a turma", turmas_filtradas)
 
 df_filtrado = df_base[(df_base["DISCIPLINA"] == disciplina) & (df_base["TURMADISC"] == turma)]
 quantidade = (df_filtrado['ALUNO'].count()) + 5 
+st.write(quantidade)
 
 
 data_aplicar = st.date_input("Selecione a data em que a prova será realizada: ")
