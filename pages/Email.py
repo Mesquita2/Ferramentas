@@ -35,7 +35,7 @@ def semestres():
     else: 
         ano = ano+'.02'
 
-def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova):
+def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar):
 
         assunto = f'Prova iCEV {disciplina} {tipo} - {quantidade} cópias'
         
