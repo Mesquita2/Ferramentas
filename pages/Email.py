@@ -24,11 +24,10 @@ def saudacao():
     
     return saudacao
 
-def semestres():
-    
-    agora = datetime.now()
-    ano = str(agora.year)
-    mes = agora.month
+def semestres(data_aplicar):
+
+    ano = str(data_aplicar.year)
+    mes = data_aplicar.month
     
     if 1 <= mes <= 6:
         return f"{ano}.01"
@@ -40,7 +39,7 @@ def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar
         assunto = f'Prova iCEV {disciplina} {tipo} - {quantidade} cópias'
         
         comprimento = saudacao()
-        ano = semestres()
+        ano = semestres(data_aplicar)
     
         mensagem = (                    
             f"{comprimento}.\n\n"
