@@ -7,8 +7,8 @@ from email.mime.application import MIMEApplication
 from datetime import datetime
 
 
-st.warning("🚧 Esta página está em manutenção. Por favor, volte mais tarde.")
-st.stop()
+#st.warning("🚧 Esta página está em manutenção. Por favor, volte mais tarde.")
+#st.stop()
 
 df_base = pd.read_excel('alunos.xlsx')
 
