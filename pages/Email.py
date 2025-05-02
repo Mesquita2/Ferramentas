@@ -48,8 +48,8 @@ def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar
             f"Tipo: {tipo_prova}\n"
             f"Curso/Turma: {curso} {ano}\n"
             f"Disciplina: {disciplina}\n"
-            f"Quantidade: {quantidade}\n\n"
-            f"Data: {data_aplicar}"
+            f"Quantidade: {quantidade} cópias\n\n"
+            f"Data: {data_aplicar.strftime("%d/%m/%Y")}"
         )
         
         return assunto, mensagem
