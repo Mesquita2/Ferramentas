@@ -65,7 +65,7 @@ senha = st.text_input("Senha do e-mail", type="password") # Senha no secrets aju
 destinatario = st.text_input("Destinatário")
 
 
-cursos = df_base["CURSO"].unique().tolist()
+cursos = df_base["NOMECURSO"].unique().tolist()
 curso = st.selectbox("Escolha o Bacharelado")
 
 disciplinas = df_base["DISCIPLINA"].unique().tolist()
