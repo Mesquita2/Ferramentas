@@ -35,7 +35,7 @@ def semestres():
         ano = ano+'.02'
 
 def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova):
-    if curso == 'Direito':
+
         assunto = f'Prova iCEV {disciplina} {tipo} - {quantidade} cópias'
         
         comprimento = saudacao()
@@ -57,7 +57,7 @@ def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova):
         return assunto, mensagem
 
 
-st.title("📧 Envio de E-mail Automático com Anexo")
+st.title("Envio de E-mail Automático com Anexo")
 
 # Inputs do usuário
 remetente = st.text_input("Seu e-mail") # Email sistema turoria 
@@ -65,7 +65,7 @@ senha = st.text_input("Senha do e-mail", type="password") # Senha no secrets aju
 destinatario = st.text_input("Destinatário")
 
 
-cursos = df_base['NOMECURSO'].unique().tolist()
+cursos = df_base["CURSO"].unique().tolist()
 curso = st.selectbox("Escolha o Bacharelado")
 
 disciplinas = df_base["DISCIPLINA"].unique().tolist()
