@@ -3,18 +3,33 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+from datetime import datetime
 
 st.warning("🚧 Esta página está em manutenção. Por favor, volte mais tarde.")
 st.stop()
 
 df_base = 'alunos.xlsx'
 
+def saudacao():
+    hora = datetime.now().hour
+
+    if 5 <= hora < 12:
+        saudacao = "Bom dia"
+    elif 12 <= hora < 18:
+        saudacao = "Boa tarde"
+    else:
+        saudacao = "Boa noite"
+    
+    return saudacao
+
 def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova):
     if curso == 'Direito':
         assunto = f'Prova iCEV {disciplina} {tipo} - {quantidade} cópias'
         
+        comprimento = saudacao()
+        
         mensagem = f'''
-            Boa Tarde. 
+            {comprimento}. 
 
             Solicitamos a impressão de:
 
