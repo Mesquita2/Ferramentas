@@ -41,19 +41,16 @@ def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova):
         
         comprimento = saudacao()
         ano = semestres()
-        
-        mensagem = f'''
-            {comprimento}. 
-
-            Solicitamos a impressão de:
-
-            Tipo: {tipo_prova} 
-            Curso/Turma: {curso} {ano}
-            Disciplina: {disciplina}
-            Quantidade: {quantidade}
-
-            Data: {data_aplicar}
-        '''
+    
+        mensagem = (                    
+            f"{comprimento}.\n\n"
+            "Solicitamos a impressão de:\n\n"
+            f"Tipo: {tipo_prova}\n"
+            f"Curso/Turma: {curso} {ano}\n"
+            f"Disciplina: {disciplina}\n"
+            f"Quantidade: {quantidade}\n\n"
+            f"Data: {data_aplicar}"
+        )
         
         return assunto, mensagem
 
