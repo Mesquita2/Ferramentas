@@ -9,8 +9,8 @@ st.set_page_config(page_title="Limpeza Simulado e REC Simulado",
                    page_icon="", # Criar icon Icev 
                    layout="wide")
 
-#if not check_authentication():
-#    st.stop()
+if not check_authentication():
+    st.stop()
 
 # Recebe dados do Zip
 # Função para carregar o arquivo
@@ -41,7 +41,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df['NOTAS'] = np.minimum(((df['Earned Points'].fillna(0) + anuladas) * 1.25) / df['Possible Points'].replace(0, np.nan),1.0) * 10
 
     df.rename(columns={'Student ID': 'RA',
-                            'NOMEALUNO': 'ALUNO'}, inplace=True)
+                        'NOMEALUNO': 'ALUNO'}, inplace=True)
 
     df = pd.merge(df_base, df[['RA',  'NOTAS']],
                   on=['RA'],
@@ -58,21 +58,19 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df['TIPOETAPA'] = tipoetapa
     df['PROVA'] = prova
     df['ETAPA'] = etapa
-    df['RA novo'] = df['RA'].astype(int)
-        
 
     # Nova ordem das colunas
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
     df = df[colunas]
 
     # Condicional para a limpeza das notas
-    df_teste = df.copy()
+    df_final = df.copy()
     if prova == "Prova":
-        df_teste = df_teste.dropna(subset=['NOTAS'])
+        df_final = df_final.dropna(subset=['NOTAS']) 
     elif prova == "Recuperação":
-        df_teste = df_teste[(df_teste['NOTAS'] != 0 or df_teste['NOTAS'].notna())]
+        df_final = df_final[(df_final['NOTAS'] != 0 or df_final['NOTAS'].notna())]
 
-    return df_teste
+    return df_final
 
 # Interface do Streamlit
 st.title("Tratamento de Notas Simulado e REC Simulado")
