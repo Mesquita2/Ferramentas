@@ -36,7 +36,7 @@ def semestres(data_aplicar):
 
 def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar):
 
-        assunto = f'Prova iCEV {disciplina} {tipo} - {quantidade} cópias'
+        assunto = f'Prova iCEV {disciplina} - {tipo} - {quantidade} cópias'
         
         comprimento = saudacao()
         ano = semestres(data_aplicar)
@@ -47,7 +47,7 @@ def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar
             f"Tipo: {tipo_prova}\n"
             f"Curso/Turma: {curso} {ano}\n"
             f"Disciplina: {disciplina}\n"
-            f"Quantidade: {quantidade} cópias\n\n"
+            f"**Quantidade: {quantidade} cópias**\n\n"
             f"Data: {data_aplicar.strftime("%d/%m/%Y")}"
         )
         
