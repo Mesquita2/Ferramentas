@@ -34,7 +34,7 @@ def semestres(data_aplicar):
     else:
         return f"{ano}.02"
 
-def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar):
+def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar, turma):
 
         assunto = f'Prova iCEV {disciplina} - {tipo} - {quantidade} cópias'
         
@@ -45,7 +45,7 @@ def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar
             f"{comprimento}.\n\n"
             "Solicitamos a impressão de:\n\n"
             f"Tipo: {tipo_prova}\n"
-            f"Curso/Turma: {curso} {ano}\n"
+            f"Curso/Turma: {curso} {ano} {turma}\n"
             f"Disciplina: {disciplina}\n"
             f"Quantidade: {quantidade} cópias\n\n"
             f"Data: {data_aplicar.strftime("%d/%m/%Y")}"
@@ -103,7 +103,7 @@ tipo = st.selectbox("Escolha o tipo da prova", ["Prova", "Recuperação"])
 tipo_prova = "Analisando o que é isso"
 
 
-assunto, mensagem = create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar)
+assunto, mensagem = create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar, turma)
 destinario = destinatarios(curso)
 
 
