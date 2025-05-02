@@ -31,10 +31,9 @@ def semestres():
     mes = agora.month
     
     if 1 <= mes <= 6:
-        ano = ano+.01
-        return
-    else: 
-        ano = ano+.02
+        return f"{ano}.01"
+    else:
+        return f"{ano}.02"
 
 def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar):
 
