@@ -5,8 +5,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from datetime import datetime
 
-st.warning("🚧 Esta página está em manutenção. Por favor, volte mais tarde.")
-st.stop()
+#st.warning("🚧 Esta página está em manutenção. Por favor, volte mais tarde.")
+#st.stop()
 
 df_base = 'alunos.xlsx'
 
@@ -22,11 +22,24 @@ def saudacao():
     
     return saudacao
 
+def semestres():
+    
+    agora = datetime.now()
+    ano = str(agora.year)
+    mes = agora.month
+    
+    if 1 <= mes <= 6:
+        ano = ano+'.01'
+        return
+    else: 
+        ano = ano+'.02'
+
 def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova):
     if curso == 'Direito':
         assunto = f'Prova iCEV {disciplina} {tipo} - {quantidade} cópias'
         
         comprimento = saudacao()
+        ano = semestres()
         
         mensagem = f'''
             {comprimento}. 
@@ -34,9 +47,9 @@ def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova):
             Solicitamos a impressão de:
 
             Tipo: {tipo_prova} 
-            Curso/Turma: Direito Período 2025.1
+            Curso/Turma: {curso} {ano}
             Disciplina: {disciplina}
-            Quantidade: 20
+            Quantidade: {quantidade}
 
             Data: {data_aplicar}
         '''
