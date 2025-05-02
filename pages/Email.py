@@ -75,8 +75,8 @@ def destinatarios(curso):
 st.title("Envio de E-mail Automático com Anexo")
 
 # Inputs do usuário
-remetente = st.text_input("Seu e-mail") # Email sistema turoria 
-senha = st.text_input("Senha do e-mail", type="password") # Senha no secrets ajustar o duas etapas 
+remetente = st.secrets["email_sis"]["sistema"]
+senha = st.secrets["email_sis"]["senha"]
 
 
 print(list(df_base.columns))
