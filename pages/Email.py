@@ -56,7 +56,7 @@ def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar
         return assunto, mensagem
 
 
-def destinatarios(destinatario, curso):
+def destinatarios(curso):
     emails = st.secrets["emails"]
     email_cord = st.secrets["email_cord"]
 
@@ -70,9 +70,6 @@ def destinatarios(destinatario, curso):
         lista_emails.append(email_cord["dir"])
     elif curso == "Administração":
         lista_emails.append(email_cord["adm"])
-
-    # Adiciona também o destinatário principal (ex: professor solicitante)
-    lista_emails.append(destinatario)
 
     return lista_emails
 
@@ -109,7 +106,7 @@ tipo_prova = "Analisando o que é isso"
 
 
 assunto, mensagem = create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar)
-destinario = destinatarios()
+destinario = destinatarios(curso)
 
 
 # Upload de arquivo
