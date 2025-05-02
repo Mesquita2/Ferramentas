@@ -31,10 +31,10 @@ def semestres():
     mes = agora.month
     
     if 1 <= mes <= 6:
-        ano = ano+'.01'
+        ano = ano+.01
         return
     else: 
-        ano = ano+'.02'
+        ano = ano+.02
 
 def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar):
 
@@ -99,7 +99,7 @@ st.write(quantidade)
 
 #data_aplicar = st.date_input("Selecione a data em que a prova será realizada: ")
 data_aplicar = st.date_input("Selecione a data", format="DD/MM/YYYY")  # Novo parâmetro desde Streamlit 1.25
-st.write("📅 Data selecionada:", data_aplicar.strftime("%d/%m/%Y"))
+st.write("Data selecionada:", data_aplicar.strftime("%d/%m/%Y"))
 
 tipo = st.selectbox("Escolha o tipo da prova", ["Prova", "Recuperação"])
 tipo_prova = "Analisando o que é isso"
@@ -115,14 +115,14 @@ arquivo = st.file_uploader("Anexar arquivo", type=None)
 if st.button("Enviar E-mail"):
     try:
         # Mostra os dados antes de enviar
-        st.subheader("📤 Prévia do E-mail:")
+        st.subheader("Prévia do E-mail:")
         st.write("**Remetente:**", remetente)
         st.write("**Destinatário(s):**", destinario)
         st.write("**Assunto:**", assunto)
         st.write("**Mensagem:**")
         st.code(mensagem, language="markdown")
         if arquivo is not None:
-            st.write("📎 **Anexo:**", arquivo.name)
+            st.write("**Anexo:**", arquivo.name)
 
         # Monta e envia
         msg = MIMEMultipart()
