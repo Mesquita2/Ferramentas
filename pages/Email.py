@@ -67,7 +67,7 @@ def destinatarios(curso):
         lista_emails.append(email_cord["eng"])
     elif curso == "Bacharelado em Direito":
         lista_emails.append(email_cord["dir"])
-    elif curso == "Administração":
+    elif curso == "Bacharelado em Administração de Empresas":
         lista_emails.append(email_cord["adm"])
 
     return lista_emails
@@ -113,7 +113,7 @@ arquivo = st.file_uploader("Anexar arquivo", type=None)
 
 if st.button("Enviar E-mail"):
     try:
-        # Mostra os dados antes de enviar
+        # Teste
         st.subheader("Prévia do E-mail:")
         st.write("**Remetente:**", remetente)
         st.write("**Destinatário(s):**", destinario)
