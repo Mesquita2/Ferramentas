@@ -67,7 +67,7 @@ destinatario = st.text_input("Destinatário")
 
 print(list(df_base.columns))
 
-cursos = df_base["NOMECURSO"].unique().tolist()
+cursos = df_base["CURSO"].unique().tolist()
 curso = st.selectbox("Escolha o Bacharelado")
 
 disciplinas = df_base["DISCIPLINA"].unique().tolist()
