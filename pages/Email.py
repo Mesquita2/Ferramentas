@@ -64,7 +64,7 @@ remetente = st.text_input("Seu e-mail") # Email sistema turoria
 senha = st.text_input("Senha do e-mail", type="password") # Senha no secrets ajustar o duas etapas 
 destinatario = st.text_input("Destinatário")
 
-print(df_base.columns())
+print(df_base.columns)
 
 cursos = df_base["NOMECURSO"].unique().tolist()
 curso = st.selectbox("Escolha o Bacharelado")
