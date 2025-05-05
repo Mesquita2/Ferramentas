@@ -36,7 +36,7 @@ def semestres(data_aplicar):
 
 def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar, turma):
 
-        assunto = f'Prova iCEV {disciplina} - {tipo} - {quantidade} cópias'
+        assunto = f'Prova iCEV {disciplina} - Tipo {tipo} - {quantidade} cópias, Turma: {turma}'
         
         comprimento = saudacao()
         ano = semestres(data_aplicar)
@@ -100,7 +100,7 @@ data_aplicar = st.date_input("Selecione a data", format="DD/MM/YYYY")  # Novo pa
 st.write("Data selecionada:", data_aplicar.strftime("%d/%m/%Y"))
 
 tipo = st.selectbox("Escolha o tipo da prova", ["Prova", "Recuperação"])
-tipo_prova = "Analisando o que é isso"
+tipo_prova = st.selectbox("Escolha o tipo da prova", ["1", "2"])
 
 
 assunto, mensagem = create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar, turma)
