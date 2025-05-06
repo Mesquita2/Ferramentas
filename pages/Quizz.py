@@ -54,12 +54,10 @@ def carregar_dados(arquivo):
 # Função para limpar os dados
 @st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
-    df = st.session_state["dados"].get("alunosxdisciplinas")
-    df_base = df.copy()
+    df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
+    df_base = df_alunos.copy()
     
     df['Nomes'] = df['Nome'] + ' ' + df['Sobrenome']
-    
-    print(df.head())
     
     # Selecionando as notas dos quizzes
     notas = df.filter(regex='Questionário:')
