@@ -9,8 +9,8 @@ from datetime import datetime
 
 st.warning("🚧 Esta página está em manutenção. Por favor, volte mais tarde.")
 st.stop()
-
-df_base = pd.read_excel('alunos.xlsx')
+df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
+df_base = df_alunos.copy()
 
 def saudacao():
     hora = datetime.now().hour

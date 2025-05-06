@@ -10,7 +10,8 @@ from auth import check_authentication
 
 imagem_rodape = "Endereço.jpeg"
 imagem_cabecalho = 'Logo.jpg'
-ARQUIVOREC = 'arquivorec.xlsx'
+ARQUIVOBASE = "alunosxdisciplinas"
+ARQUIVOREC = "rec"
 
 
 # Configuração da página
@@ -20,27 +21,11 @@ st.set_page_config(page_title="Limpeza Dados da REC",
 
 if not check_authentication():
     st.stop()
-    
-
-    
-# Função para carregar o arquivo
-@st.cache_resource
-def carregar_dados_REC(opcao):
-    if os.path.exists(ARQUIVOREC):
-        if ARQUIVOREC.endswith('.xlsx'):
-            return pd.read_excel(ARQUIVOREC)
-        else:
-            st.warning("Formato de arquivo não suportado!")
-    else:
-            st.warning("Arquivo de dados dos alunos não encontrado!")
-    return pd.DataFrame()
 
 # Função para substituir o arquivo de alunos
-def substituir_arquivo_alunos(novo_arquivo, opcao):
-    file_extension = novo_arquivo.name.split('.')[-1].lower()
-    if file_extension == 'xlsx':
-        df = pd.read_excel(novo_arquivo)
-        df_base = pd.read_excel('alunos.xlsx')
+def limpar_rec(df):
+    if df is not None:
+        df_base = st.session_state["dados"].get(ARQUIVOBASE)
         df['VALOR'] = (
             df['VALOR']
              #retirar o codigo em () do nome da disciplina
@@ -49,6 +34,8 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
             .str.strip()
         )
         
+        df["RA"] = df["RA"].astype(str).str.zfill(7)
+        df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
         
         df.rename(columns={'VALOR': 'DISCIPLINA',
                             'NOME': 'ALUNO',
@@ -62,14 +49,13 @@ def substituir_arquivo_alunos(novo_arquivo, opcao):
         
         df = df[df['CODSTATUS'] != 'C']
         
-        df.to_excel(ARQUIVOREC, index=False)
         df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
         st.success("Dados de alunos substituídos com sucesso!")
+        return df
     else:
-        st.warning("Formato de arquivo não suportado para substituição!")
+        st.warning("Não existe arquivo REC, Voltar a pagina Inicial!")
         
 def adicionar_imagem_no_cabecalho(doc, imagem_cabecalho):
-    #testetetete
     # Acessando o cabeçalho da primeira seção do documento
     section = doc.sections[0]
     header = section.header
@@ -165,42 +151,6 @@ def gerar_relatorio(df, disciplina, turma):
     buffer.seek(0)
     return buffer
 
-# Função para limpar os dados
-@st.cache_data
-def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
-    df_base = pd.read_excel("alunos.xlsx")
-
-    df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
-    df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
-    # Renomear colunas
-    df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
-                            'NOMECURSO': 'CURSO',
-                            'NOMEALUNO': 'ALUNO'}, inplace=True)
-    
-    df['nomelimpo'] = df['VALOR'].str.lower().str.strip()
-    df.rename(columns={'nomelimpo': 'DISCIPLINA',
-                       'CODTURMA': 'TURMADISC',
-                       'NOME': 'ALUNO',
-                       'RA': 'RA'}, inplace=True)
-    
-    df = pd.merge(df_base, df[['DISCIPLINA', 'ALUNO', 'RA',  'NOTAS']],
-                  on=['DISCIPLINA', 'ALUNO', 'RA'],
-                  how='left')  
-    
-    df = df.copy()
-    
-    # Adicionar as novas colunas
-    df['CODETAPA'] = codetapa
-    df['CODPROVA'] = codprova
-    df['TIPOETAPA'] = tipoetapa
-    df['PROVA'] = prova
-    df['ETAPA'] = etapa
-    df['RA novo'] = df['RA'].astype(int)
-    # Nova ordem das colunas
-    colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
-    df_teste = df[colunas]
-
-    return df_teste
 
 def dash(df):
     if not df:
@@ -213,31 +163,12 @@ def dash(df):
 
 # Interface do Streamlit
 st.title("Limpeza e tratamento de notas de REC")
-
-# Upload do arquivo Excel
-uploaded_file = st.file_uploader("Escolha um arquivo Excel da Rec para analise", type=["xlsx"])
-
-if uploaded_file is not None:
-    df_novo = pd.read_excel(uploaded_file)
-    
-    st.write("**Prévia do arquivo enviado:**")
-    st.write(f"Total de linhas: {len(df_novo)}")
-    st.write(f"Colunas: {', '.join(df_novo.columns)}")
-    st.dataframe(df_novo.head())
-
-    if st.button(":: Substituir Dados"):
-        substituir_arquivo_alunos(uploaded_file, ARQUIVOREC)
-
         
 st.subheader("Dados dos Cadastrados na REC")
-if not ARQUIVOREC:
-    st.write("Data frame Vazio")
-elif not os.path.exists(ARQUIVOREC):  
-    st.write(f"**O arquivo '{ARQUIVOREC}' não existe. Verifique o caminho ou envie o arquivo. **")
-else:
-    dados_disciplina = dash(ARQUIVOREC)
-    if not dados_disciplina.empty:  # Verifica se o DataFrame não está vazio
-        st.dataframe(dados_disciplina[['DISCIPLINA','ALUNO']]) # teste 
+df_cadastro = st.session_state["dados"].get(ARQUIVOREC)
+df = df_cadastro.copy()
+if df_cadastro is not None: 
+    st.dataframe(df_cadastro[['VALOR', 'NOME']])
 
 
 def gerar_excel(df_rec, disciplina, turma):
@@ -257,7 +188,7 @@ def gerar_excel(df_rec, disciplina, turma):
 
 st.title("Gerador de Planilha de Notas para REC")
 
-df_rec = dash(ARQUIVOREC)
+df_rec = limpar_rec(df)
 if df_rec.empty:
     st.stop()
     

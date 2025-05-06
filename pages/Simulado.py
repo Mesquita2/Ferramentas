@@ -26,8 +26,8 @@ def carregar_dados(arquivo):
 # Função para limpar os dados
 @st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
-    df_base = pd.read_excel("alunos.xlsx")
-
+    df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
+    df_base = df_alunos.copy()
 
     df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
     df['Student ID'] = df['Student ID'].apply(lambda x: str(x).zfill(7))
@@ -42,6 +42,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
 
     df.rename(columns={'Student ID': 'RA',
                         'NOMEALUNO': 'ALUNO'}, inplace=True)
+    
 
     df = pd.merge(df_base, df[['RA',  'NOTAS']],
                   on=['RA'],
@@ -100,6 +101,8 @@ if uploaded_file:
     df_original = carregar_dados(uploaded_file)
     st.subheader("Dados Originais")
     st.dataframe(df_original)
+
+
     
     # Limpar dados
     df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)

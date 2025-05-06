@@ -24,10 +24,14 @@ def carregar_dados(arquivo):
 # Função para limpar os dados
 @st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
-    df_base = pd.read_excel("alunos.xlsx")
+    df_aluno = st.session_state["dados"].get("alunosxdisciplinas")
+    df_base = df_aluno.copy()
+    
+    
 
-    df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
-    df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
+    df_base['RA'] = df_base['RA'].astype(str).str.zfill(7)
+    df['RA'] = df['RA'].astype(str).str.zfill(7)
+    
     # Renomear colunas
     df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                             'NOMECURSO': 'CURSO',
@@ -36,6 +40,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                        'NOMECURSO': 'CURSO',
                        'NOMEALUNO': 'ALUNO'}, inplace=True)
+
     
     df = pd.merge(df_base, df[['DISCIPLINA', 'RA',  'NOTAS']],
                   on=['DISCIPLINA', 'RA'],
@@ -50,20 +55,20 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df['PROVA'] = prova
     df['ETAPA'] = etapa
     df['RA novo'] = df['RA'].astype(int)
-        
-
+    
     # Nova ordem das colunas
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
     df = df[colunas]
 
     # Condicional para a limpeza das notas
-    df_teste = df.copy()
+    df_teste = df
     if prova == "Prova":
-        df_teste = df_teste.dropna(subset=['NOTAS'])
+        df_teste = df_teste.dropna(subset=['NOTAS']).copy()
     elif prova == "Recuperação":
-        df_teste = df_teste[(df_teste['NOTAS'] != 0 or df_teste['NOTAS'].notna())]
-    else:
-        df_teste
+        df_teste = df_teste.dropna(subset=['NOTAS']).copy()
+        df_teste = df_teste[(df_teste['NOTAS'] != '0') | (df_teste['NOTAS'].notna())]
+    elif prova == "Quizz":
+        df_teste = df_teste.dropna(subset=['NOTAS'])
 
     return df_teste
 
@@ -111,18 +116,23 @@ if uploaded_file:
     
     # Limpar dados
     df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
-    st.subheader("Dados Após Limpeza")
+    st.subheader("Dados Após Limpeza")    
     st.dataframe(df_limpo)
     
     
     df_limpo['RA'] = df_limpo['RA'].astype(str)
-    df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))
-    df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ',') if isinstance(x, (int, float)) else x)
-    if df_limpo['NOTAS'] >= 8:
-        st.info("As notas estão maiores que 8 Verificar no Totvs se a Disciplina aceita notas maiores que 8") 
+    df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))# Remove espaços e substitui vírgula por ponto
+
+    # Converte para float (NaN se não conseguir)
+    df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce')
+
+    if (df_limpo['NOTAS'] >= 8).any():
+        st.info("Existem alunos com nota maior ou igual a 8.")
+
     
     # Criar o arquivo .txt com separador ';'
     output = io.BytesIO()  
+    df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ',') if isinstance(x, (int, float)) else x)
     df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
     output.seek(0) 
 

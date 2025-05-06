@@ -14,9 +14,10 @@ st.set_page_config(page_title="Limpeza Quiz", page_icon="", layout="wide")
 
 if not check_authentication():
     st.stop()
-    
-df_totvs = pd.read_excel("alunos.xlsx")
-df_disciplina = pd.read_excel("disciplinas.xlsx")
+df = st.session_state["dados"].get("alunosxdisciplinas")
+df_totvs = df.copy()    
+df_disciplina = st.session_state["dados"].get("disciplina")
+
 
 def organizar(df):
     # Substituir "-" por 0
@@ -53,7 +54,8 @@ def carregar_dados(arquivo):
 # Função para limpar os dados
 @st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
-    df_base = pd.read_excel("alunos.xlsx")
+    df = st.session_state["dados"].get("alunosxdisciplinas")
+    df_base = df.copy()
     
     df['Nomes'] = df['Nome'] + ' ' + df['Sobrenome']
     
@@ -185,7 +187,6 @@ if uploaded_file:
     st.subheader("Dados Originais")
     
     df_original = organizar(df_original)
-    
     st.dataframe(df_original)
     
     # Limpar dados

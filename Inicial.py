@@ -2,6 +2,10 @@ import os
 import streamlit as st
 import pandas as pd
 from auth import check_authentication, logout
+import io
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
 
 st.set_page_config(page_title="Alteração de Dados", 
                    page_icon="", 
@@ -35,106 +39,106 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Caminho do arquivo onde os dados de alunos são armazenados
-ARQUIVO_ALUNOS = "alunos.xlsx"
-ARQUIVO_DISCIPLINA = "disciplinas.xlsx"
+COLUNAS_VISIVEIS = {
+    "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "RA"],
+    "disciplina": ["CODTURMA", "NOME", "IDMOODLE"],
+    "rec": ["VALOR", "NOME"]
+}
 
 # Autenticação
-users = st.secrets["authentication"]
+credentials = service_account.Credentials.from_service_account_info(
+    st.secrets["google_service_account"],
+    scopes=["https://www.googleapis.com/auth/drive.readonly"]
+)
+drive_service = build("drive", "v3", credentials=credentials)
 
-# Função para carregar dados de alunos
-@st.cache_resource
-def carregar_dados_alunos(opcao):
-    if opcao == 'alunos':
-        if os.path.exists(ARQUIVO_ALUNOS):
-            if ARQUIVO_ALUNOS.endswith('.xlsx'):
-                return pd.read_excel(ARQUIVO_ALUNOS)
-            else:
-                st.warning("Formato de arquivo não suportado!")
-        else:
-            st.warning("Arquivo de dados dos alunos não encontrado!")
-    elif opcao == 'disciplina':
-        if os.path.exists(ARQUIVO_DISCIPLINA):
-            if ARQUIVO_DISCIPLINA.endswith('.xlsx'):
-                return pd.read_excel(ARQUIVO_DISCIPLINA)
-            else:
-                st.warning('Formato de arquivo não suportado!')
-        else:
-            st.warning("Arquivo de dados das disciplinas não encontrado!")    
-    return pd.DataFrame()
+# Lista de arquivos
+NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx"]
 
-# Função para substituir o arquivo de alunos
-def substituir_arquivo_alunos(novo_arquivo, opcao):
-    if opcao == 'alunos':
-        file_extension = novo_arquivo.name.split('.')[-1]
-        if file_extension == 'xlsx':
-            df_novo = pd.read_excel(novo_arquivo)
-            df_novo.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
+def limpeza_alunos_disciplinas(df):
+    df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                                 'NOMECURSO': 'CURSO',
                                 'NOMEALUNO': 'ALUNO'}, inplace=True)
-            df_novo = df_novo[df_novo['NOMESTATUS'] != 'Cancelamento']
-            df_novo.to_excel(ARQUIVO_ALUNOS, index=False)
-            df_novo['RA'] = df_novo['RA'].apply(lambda x: str(x).zfill(7))
-            st.success("Dados de alunos substituídos com sucesso!")
-        else:
-            st.warning("Formato de arquivo não suportado para substituição!")
-    elif opcao == 'disciplinas':
-        file_extension = novo_arquivo.name.split('.')[-1]
-        if file_extension == 'xlsx':
-            df_novo = pd.read_excel(novo_arquivo)
-            df_novo.to_excel(ARQUIVO_DISCIPLINA, index=False)
-            st.success("Dados de alunos substituídos com sucesso!")
-            
-def dash(df):
-    if not df:
-        st.write("Data frame Vazio")
-        return pd.DataFrame() 
-    if not os.path.exists(df):
-        st.write(f"Erro: Arquivo '{df}' não encontrado.")
-        return pd.DataFrame()  
-    return pd.read_excel(df) 
+    df = df[df['NOMESTATUS'] != 'Cancelamento']
+    df['RA'] = df['RA'].apply(str).str.zfill(7)
+  
+     
+    return pd.DataFrame(df)
+
+# Função para buscar e ler os arquivos
+def carregar_arquivo_drive(nome_arquivo):
+    response = drive_service.files().list(
+        q=f"name = '{nome_arquivo}' and trashed = false",
+        spaces="drive",
+        fields="files(id, name, mimeType)",
+    ).execute()
+
+    files = response.get("files", [])
+    if not files:
+        st.warning(f"Arquivo '{nome_arquivo}' não encontrado.")
+        return None
+
+    file = files[0]
+    file_id = file["id"]
+    mime_type = file["mimeType"]
+    fh = io.BytesIO()
+
+    if mime_type == "application/vnd.google-apps.spreadsheet":
+        request = drive_service.files().export_media(
+            fileId=file_id,
+            mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    else:
+        request = drive_service.files().get_media(fileId=file_id)
+
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while not done:
+        _, done = downloader.next_chunk()
+
+    fh.seek(0)
+    return pd.read_excel(fh)
+
+# Carregamento inicial se ainda não existir
+if "dados" not in st.session_state:
+    st.session_state["dados"] = {}
+    for nome in NOME_ARQUIVOS:
+        df = carregar_arquivo_drive(nome)
+        if df is not None:
+            chave = nome.replace(".xlsx", "")
+            st.session_state["dados"][chave] = df
+    st.success("Arquivos carregados do Drive.")
 
 
-# Interface após login
-st.title("Gerenciamento de Dados de Alunos")
+# Interface para visualização e substituição
+st.title("Arquivos carregados")
 
-st.subheader("Qual opção deseja fazer o updownload ?")
-ARQUIVO = st.selectbox("Selecione uma opção", ['alunos' , 'disciplinas'])
+df_alunos = st.session_state["dados"]["alunosxdisciplinas"]
+df_teste = limpeza_alunos_disciplinas(df_alunos)
+st.session_state["dados"]["alunosxdisciplinas"] = df_teste
 
-# Opção para carregar e visualizar dados
-st.subheader("Importar e Substituir Dados de Alunos")
-uploaded_file = st.file_uploader("Escolha um arquivo Excel", type=["xlsx"])
-#
-if uploaded_file is not None:
-    df_novo = pd.read_excel(uploaded_file)
-    
-    st.write("Prévia do arquivo enviado:")
-    st.write(f"Total de linhas: {len(df_novo)}")
-    st.write(f"Colunas: {', '.join(df_novo.columns)}")
-    st.dataframe(df_novo.head())
+for chave, df in st.session_state["dados"].items():
+    st.subheader(f"{chave}")
 
-    if st.button(":: Substituir Dados"):
-        substituir_arquivo_alunos(uploaded_file, ARQUIVO)
+    # Aplica filtro de colunas se estiver definido
+    colunas = COLUNAS_VISIVEIS.get(chave)
+    if colunas:
+        df_exibido = df.loc[:, df.columns.intersection(colunas)]
+    else:
+        df_exibido = df
 
-# Exibir dados atuais
-st.subheader("Dados Atuais dos Alunos")
-if not ARQUIVO_ALUNOS:
-    st.write("Data Frame Vazio")
-elif not os.path.exists(ARQUIVO_ALUNOS):  
-    st.write(f" O arquivo '{ARQUIVO_ALUNOS}' não existe. Verifique o caminho ou envie o arquivo.")
-else:
-    dados_atual = dash(ARQUIVO_ALUNOS)
-    if not dados_atual.empty:
-        dados_atual['RA'] = dados_atual['RA'].apply(lambda x: str(x).zfill(7))
-        st.dataframe(dados_atual[['CODTURMA','CURSO','ALUNO', 'RA']])
+    st.dataframe(df_exibido)
 
-st.subheader("Dados Disciplinas")
-if not ARQUIVO_DISCIPLINA:
-    st.write("Data frame Vazio")
-elif not os.path.exists(ARQUIVO_DISCIPLINA):  
-    st.write(f"O arquivo '{ARQUIVO_DISCIPLINA}' não existe. Verifique o caminho ou envie o arquivo. ")
-else:
-    dados_disciplina = dash(ARQUIVO_DISCIPLINA)
-    if not dados_disciplina.empty:  # Verifica se o DataFrame não está vazio
-        st.dataframe(dados_disciplina[['CODTURMA','NOME','IDMOODLE']]) # teste 
-
+    uploaded_file = st.file_uploader(
+        f"Substituir {chave}.xlsx",
+        type=["xlsx"],
+        key=chave
+    )
+    if uploaded_file:
+        novo_df = pd.read_excel(uploaded_file)
+        st.session_state["dados"][chave] = novo_df
+        st.success(f"Arquivo {chave}.xlsx substituído com sucesso.")
+        
+        # Aplica o mesmo filtro após substituição
+        novo_exibido = novo_df.loc[:, novo_df.columns.intersection(colunas)] if colunas else novo_df
+        st.dataframe(novo_exibido)

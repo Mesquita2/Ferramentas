@@ -16,7 +16,8 @@ if not check_authentication():
 # Função para carregar os alunos do arquivo Excel
 def carregar_alunos():
     try:
-        df = pd.read_excel("alunos.xlsx", dtype={"RA": str})
+        df_base = st.session_state["dados"].get("alunosxdisciplinas")
+        df = df_base.copy()
         df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                            'NOMECURSO': 'CURSO',
                            'NOMEALUNO': 'ALUNO',
