@@ -38,7 +38,14 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, anuladas):
     
     df['ALUNO'] = df['Student First Name'].fillna('') + ' ' + df['Student Last Name'].fillna('')
     df['ALUNO'] = df['ALUNO'].str.strip()
-    df['NOTAS'] = np.minimum(((df['Earned Points'].fillna(0) + anuladas) * 1.25) / df['Possible Points'].replace(0, np.nan),1.0) * 10
+    
+    # Calculo da nota do simulado
+    earned_points = df['Earned Points'].fillna(0)
+    possible_points = df['Possible Points'].replace(0, np.nan)
+    pontos_com_anuladas = np.where(earned_points > 0, earned_points + anuladas, earned_points)
+    proporcao = (pontos_com_anuladas * 1.25) / possible_points
+    df['NOTAS'] = np.minimum(proporcao, 1.0).fillna(0) * 10
+    
 
     df.rename(columns={'Student ID': 'RA',
                         'NOMEALUNO': 'ALUNO'}, inplace=True)
