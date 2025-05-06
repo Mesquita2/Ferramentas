@@ -25,7 +25,7 @@ def carregar_dados(arquivo):
 
 # Função para limpar os dados
 @st.cache_data
-def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
+def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, anuladas):
     df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
     df_base = df_alunos.copy()
 
@@ -38,8 +38,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     
     df['ALUNO'] = df['Student First Name'].fillna('') + ' ' + df['Student Last Name'].fillna('')
     df['ALUNO'] = df['ALUNO'].str.strip()
-    df['Earned Points'].fillna(0) + anuladas
-    df['NOTAS'] = np.minimum((df['Earned Points'].fillna(0) * 1.25) / df['Possible Points'].replace(0, np.nan),1.0) * 10
+    df['NOTAS'] = np.minimum(((df['Earned Points'].fillna(0) + anuladas) * 1.25) / df['Possible Points'].replace(0, np.nan),1.0) * 10
 
     df.rename(columns={'Student ID': 'RA',
                         'NOMEALUNO': 'ALUNO'}, inplace=True)
@@ -106,7 +105,7 @@ if uploaded_file:
 
     
     # Limpar dados
-    df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
+    df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa, anuladas)
     st.subheader("Dados Após Limpeza")
     st.dataframe(df_limpo)
     
