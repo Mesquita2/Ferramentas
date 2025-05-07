@@ -76,7 +76,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, anuladas):
     if prova == "Prova":
         df_final = df_final.dropna(subset=['NOTAS']) 
     elif prova == "Recuperação":
-        df_final = df_final[(df_final['NOTAS'] != 0 or df_final['NOTAS'].notna())]
+        df_final = df_final[(df_final['NOTAS'] != 0) & (df_final['NOTAS'].notna())]
 
     return df_final
 
