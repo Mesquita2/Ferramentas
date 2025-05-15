@@ -56,6 +56,7 @@ drive_service = build("drive", "v3", credentials=credentials)
 NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx"]
 
 def limpeza_alunos_disciplinas(df):
+    df['NOMEALUNO'] = df['NOME_SOCIAL'].where(df['NOME_SOCIAL'].notna() & (df['NOME_SOCIAL'] != ''), df['nome'])
     df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                                 'NOMECURSO': 'CURSO',
                                 'NOMEALUNO': 'ALUNO'}, inplace=True)
