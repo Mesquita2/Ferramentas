@@ -61,6 +61,8 @@ def limpeza_alunos_disciplinas(df):
             df['NOME_SOCIAL'].notna() & (df['NOME_SOCIAL'] != ''),
             df['NOMEALUNO']
         )
+        df.drop(columns=['NOME_SOCIAL'], inplace=True) 
+
 
     df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                                 'NOMECURSO': 'CURSO',
