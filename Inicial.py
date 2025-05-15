@@ -58,9 +58,10 @@ NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx"]
 def limpeza_alunos_disciplinas(df):
     if 'NOME_SOCIAL' in df.columns:
         df['NOMEALUNO'] = df['NOME_SOCIAL'].where(
-        df['NOME_SOCIAL'].notna() & (df['NOME_SOCIAL'] != ''),
-        df['NOMEALUNO']
-    )
+            df['NOME_SOCIAL'].notna() & (df['NOME_SOCIAL'] != ''),
+            df['NOMEALUNO']
+        )
+
     df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                                 'NOMECURSO': 'CURSO',
                                 'NOMEALUNO': 'ALUNO'}, inplace=True)
