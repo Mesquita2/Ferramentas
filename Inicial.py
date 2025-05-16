@@ -106,7 +106,7 @@ def carregar_arquivo_drive(nome_arquivo):
 
     fh.seek(0)
     return pd.read_excel(fh)
-
+#
 # Carregamento inicial se ainda não existir
 if "dados" not in st.session_state:
     st.session_state["dados"] = {}
