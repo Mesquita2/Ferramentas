@@ -123,9 +123,7 @@ if uploaded_file:
     
     df_limpo['RA'] = df_limpo['RA'].astype(str)
     df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))# Remove espaços e substitui vírgula por ponto
-
-    # Converte para float (NaN se não conseguir)
-    df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce')
+    df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce') # Converte para float (NaN se não conseguir)
 
     if (df_limpo['NOTAS'] > 8).any():
         st.info("Existem alunos com nota maior que 8.")
