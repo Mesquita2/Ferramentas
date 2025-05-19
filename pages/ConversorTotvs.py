@@ -127,7 +127,7 @@ if uploaded_file:
     # Converte para float (NaN se não conseguir)
     df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce')
 
-    if (df_limpo['NOTAS'] >= 8).any():
+    if (df_limpo['NOTAS'] > 8).any():
         st.info("Existem alunos com nota maior ou igual a 8.")
 
     
