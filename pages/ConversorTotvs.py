@@ -128,7 +128,7 @@ if uploaded_file:
     df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce')
 
     if (df_limpo['NOTAS'] > 8).any():
-        st.info("Existem alunos com nota maior ou igual a 8.")
+        st.info("Existem alunos com nota maior que 8.")
 
     
     # Criar o arquivo .txt com separador ';'
