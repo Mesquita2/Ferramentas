@@ -142,6 +142,6 @@ if uploaded_file:
     st.download_button(
         label="⬇ Baixar Notas Tratadas (TXT)",
         data=output,
-        file_name=f"{disciplina}_{turma}_{prova}.txt",
+        file_name=f"{disciplina}_{turma}_{prova}_{etapa}.txt",
         mime="text/plain"
     )
