@@ -194,6 +194,10 @@ if uploaded_file:
     print(disciplina)
     df_limpo = df_limpo[(df_limpo['DISCIPLINA'] == disciplina) & (df_limpo['TURMADISC'] == turma)].copy()
     
+    remover_zeros = st.checkbox("Remover alunos com nota 0", value=False)
+    if remover_zeros:
+        df_limpo = df_limpo[df_limpo['NOTAS'] != 0]
+
     st.dataframe(df_limpo)
     
     disciplina = df_limpo['DISCIPLINA'].iloc[0]
