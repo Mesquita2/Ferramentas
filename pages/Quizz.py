@@ -213,10 +213,15 @@ if uploaded_file:
     df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
     output.seek(0) 
     
+    if remover_zeros:
+        nome_arquivo=f"{disciplina}_{turma}_{prova}_{etapa}_REMOTO.txt"
+    else: 
+        nome_arquivo=f"{disciplina}_{turma}_{prova}_{etapa}.txt",
+    
     # Botão para baixar o arquivo tratado como .txt
     st.download_button(
         label="⬇ Baixar Notas Tratadas (TXT)",
         data=output,
-        file_name=f"{disciplina}_{turma}_{prova}_{etapa}.txt",
+        file_name=nome_arquivo,
         mime="text/plain"
     )
