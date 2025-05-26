@@ -216,7 +216,7 @@ if uploaded_file:
     if remover_zeros:
         nome_arquivo=f"{disciplina}_{turma}_{prova}_{etapa}_REMOTO.txt"
     else: 
-        nome_arquivo=f"{disciplina}_{turma}_{prova}_{etapa}.txt",
+        nome_arquivo=f"{disciplina}_{turma}_{prova}_{etapa}.txt"
     
     # Botão para baixar o arquivo tratado como .txt
     st.download_button(
