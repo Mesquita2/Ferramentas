@@ -194,9 +194,15 @@ if uploaded_file:
     print(disciplina)
     df_limpo = df_limpo[(df_limpo['DISCIPLINA'] == disciplina) & (df_limpo['TURMADISC'] == turma)].copy()
     
+    df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce')
+
+    # Checkbox para remover notas 0
     remover_zeros = st.checkbox("Remover alunos com nota 0", value=False)
     if remover_zeros:
         df_limpo = df_limpo[df_limpo['NOTAS'] != 0]
+
+    # Só depois formatar como string com vírgula
+    df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ','))
 
     st.dataframe(df_limpo)
     
