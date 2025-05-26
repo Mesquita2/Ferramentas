@@ -197,7 +197,7 @@ if uploaded_file:
     remover_zeros = st.checkbox("Remover alunos com nota 0", value=False)
     if remover_zeros:
         df_limpo = df_limpo[df_limpo['NOTAS'] != 0]
-
+    
     st.dataframe(df_limpo)
     
     disciplina = df_limpo['DISCIPLINA'].iloc[0]
