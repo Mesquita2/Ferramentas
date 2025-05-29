@@ -1,8 +1,10 @@
+from datetime import date
 import pandas as pd
 import io
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 import streamlit as st
+
 
 # Função de transformação dos eventos
 def transformar_eventos(df):
@@ -46,10 +48,11 @@ def gerar_relatorio_palestra(df, palestra, imagem_cabecalho, imagem_rodape):
     section.footer_distance = Inches(0.2)
     run = paragraph.add_run()
     run.add_picture(imagem_rodape, width=Inches(7.5), height=Inches(1))
+    dataatual = date.today().strftime('%d/%m/%Y')
     
     # Título
     p = doc.add_paragraph()
-    run = p.add_run(f"\n\nLista de Presença - {palestra}")
+    run = p.add_run(f"\nLista de Presença - {palestra}\n Data:{dataatual}")
     run.font.name = 'Arial'
     run.font.size = Pt(14)
     run.font.color.rgb = RGBColor(0, 0, 0)
