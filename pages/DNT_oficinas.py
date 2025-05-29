@@ -54,8 +54,8 @@ def gerar_relatorio_palestra(df, palestra, imagem_cabecalho, imagem_rodape):
     run.font.size = Pt(14)
     run.font.color.rgb = RGBColor(0, 0, 0)
     
-    # Tabela
-    df = df[['Nome Completo', 'e-mail', 'Whatsapp']].copy()
+    # Tabela sem e-mail
+    df = df[['Nome Completo']].copy()
     df['ASSINATURA'] = '  '
     
     table = doc.add_table(rows=1, cols=len(df.columns))
@@ -74,6 +74,8 @@ def gerar_relatorio_palestra(df, palestra, imagem_cabecalho, imagem_rodape):
     buffer.seek(0)
     return buffer
 
+
+# Streamlit interface
 # Streamlit interface
 st.title("Gerar Relatório de Assinaturas por Palestra")
 
@@ -91,13 +93,15 @@ if uploaded_file is not None:
     
     palestras_unicas = df_organizado['Palestra'].unique().tolist()
     
-    for palestra in palestras_unicas:
-        df_palestra = df_organizado[df_organizado['Palestra'] == palestra]
-        relatorio = gerar_relatorio_palestra(df_palestra, palestra, imagem_cabecalho, imagem_rodape)
+    palestra_selecionada = st.selectbox("Selecione a palestra para gerar o relatório:", palestras_unicas)
+    
+    if palestra_selecionada:
+        df_palestra = df_organizado[df_organizado['Palestra'] == palestra_selecionada]
+        relatorio = gerar_relatorio_palestra(df_palestra, palestra_selecionada, imagem_cabecalho, imagem_rodape)
         
         st.download_button(
-            label=f"⬇ Baixar Relatório: {palestra}",
+            label=f"⬇ Baixar Relatório: {palestra_selecionada}",
             data=relatorio,
-            file_name=f"Relatorio_{palestra}.docx",
+            file_name=f"Relatorio_{palestra_selecionada}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
