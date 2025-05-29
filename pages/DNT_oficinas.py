@@ -58,6 +58,7 @@ def gerar_relatorio_palestra(df, palestra, imagem_cabecalho, imagem_rodape):
     df = df[['Nome Completo']].copy()
     df['ASSINATURA'] = '  '
     
+    df['Nome Completo'] = df['Nome Completo'].str.title()
     df = df.sort_values('Nome Completo', key=lambda col: col.str.normalize('NFKD'))
     
     table = doc.add_table(rows=1, cols=len(df.columns))
