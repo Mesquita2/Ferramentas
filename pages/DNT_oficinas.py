@@ -52,7 +52,7 @@ def gerar_relatorio_palestra(df, palestra, imagem_cabecalho, imagem_rodape):
     
     # Título
     p = doc.add_paragraph()
-    run = p.add_run(f"\nLista de Presença - {palestra}\n Data:{dataatual}")
+    run = p.add_run(f"Lista de Presença - {palestra}\nData:{dataatual}")
     run.font.name = 'Arial'
     run.font.size = Pt(14)
     run.font.color.rgb = RGBColor(0, 0, 0)
