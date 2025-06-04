@@ -37,7 +37,8 @@ def limpar_rec(df):
         df["RA"] = df["RA"].astype(str).str.zfill(7)
         df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
         
-        df.rename(columns={'NOME': 'ALUNO',
+        df.rename(columns={'VALOR': 'DISCIPLINA',
+                            'NOME': 'ALUNO',
                             'RA': 'RA'}, inplace=True)
         
         df = pd.merge(df, df_base[['DISCIPLINA', 'RA',  'TURMADISC']],
