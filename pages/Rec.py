@@ -26,8 +26,8 @@ if not check_authentication():
 def limpar_rec(df):
     if df is not None:
         df_base = st.session_state["dados"].get(ARQUIVOBASE)
-        df['VALOR'] = (
-            df['VALOR']
+        df['DISCIPLINA'] = (
+            df['DISCIPLINA']
              #retirar o codigo em () do nome da disciplina
             .str.replace(r'\s*\(.*?\)', '', regex=True) 
             .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
@@ -37,8 +37,7 @@ def limpar_rec(df):
         df["RA"] = df["RA"].astype(str).str.zfill(7)
         df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
         
-        df.rename(columns={'VALOR': 'DISCIPLINA',
-                            'NOME': 'ALUNO',
+        df.rename(columns={'NOME': 'ALUNO',
                             'RA': 'RA'}, inplace=True)
         
         df = pd.merge(df, df_base[['DISCIPLINA', 'RA',  'TURMADISC']],
