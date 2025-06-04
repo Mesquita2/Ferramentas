@@ -168,7 +168,7 @@ st.subheader("Dados dos Cadastrados na REC")
 df_cadastro = st.session_state["dados"].get(ARQUIVOREC)
 df = df_cadastro.copy()
 if df_cadastro is not None: 
-    st.dataframe(df_cadastro[['VALOR', 'NOME']])
+    st.dataframe(df_cadastro[['DISCIPLINA', 'NOME']])
 
 
 def gerar_excel(df_rec, disciplina, turma):
