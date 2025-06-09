@@ -40,7 +40,7 @@ st.markdown(
 )
 
 COLUNAS_VISIVEIS = {
-    "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "RA"],
+    "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "RA", "NOME_SOCIAL"],
     "disciplina": ["CODTURMA", "NOME", "IDMOODLE"],
     "rec": ["DISCIPLINA", "NOME"]
 }
