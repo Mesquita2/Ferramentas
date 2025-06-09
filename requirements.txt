@@ -50,7 +50,7 @@ python-dotenv==1.1.0
 pytz==2025.1
 qrcode==8.0
 referencing==0.36.2
-requests==2.32.3
+requests==2.32.4
 requests-oauthlib==2.0.0
 rpds-py==0.23.1
 rsa==4.9
