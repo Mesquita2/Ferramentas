@@ -4,6 +4,7 @@ from auth import check_authentication
 import pandas as pd
 import numpy as np
 
+
 # Configuração da página
 st.set_page_config(page_title="Limpeza Simulado e REC Simulado",
                    page_icon="", # Criar icon Icev 
@@ -25,10 +26,37 @@ def carregar_dados(arquivo):
     except Exception as e:
         st.error(f"Erro ao carregar o arquivo: {e}")
         return pd.DataFrame()
+    
+import pandas as pd
+
+def calcula_qtd_questoes(df):
+    
+    df['Questoes'] = 0
+
+    
+    credito_to_questoes = {4: 16, 2: 8}
+    
+    credito_to_questoes_dir = {4: 12, 2: 6}
+    
+    df.loc[df['CURSO'] == 'Bacharelado em Direito', 'Questoes'] = \
+        df['NUMCREDITOSCOB'].map(credito_to_questoes_dir).fillna(0).astype(int)
+
+    df.loc[df['CURSO'] != 'Bacharelado em Direito', 'Questoes'] = \
+        df['NUMCREDITOSCOB'].map(credito_to_questoes).fillna(0).astype(int)
+
+
+    resultado = df.groupby(['ALUNO', 'RA'])['Questoes'].sum().reset_index()
+    resultado = resultado.drop_duplicates(subset=['ALUNO', 'RA'])
+
+    #O retorno é os alunos e a quantidade de questoes que devem ter no simulado. 
+    #Lembrar que exite regras e apenas chamar apos retirar as disciplinas que nao vao ser ultilizadas. 
+    return resultado
+
 
 # Função para limpar os dados
 @st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas):
+    
     df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
     df_base = df_alunos.copy()
     
@@ -38,6 +66,36 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anula
     #Funcao para saber quantidades de possiveis pontos que se baseam em carga horaria
     # ENG ou DIR ou ADM
     
+    # Comparar df_base com o df que vou mandar para calcula_qtd_questoes.
+    # Comparar o df_base['Points Earned'] como o df['Questoes'].
+    # O df deve conter o calculo baseado nas disciplinas que estao matriculados entao veremos se bate com o que ta no simulado.
+    # Fazer todos que estao diferentes ira para um df diferente que sera revisado antes de colocar a nota.
+    df_questoes = calcula_qtd_questoes(df_base)
+    # Ajuste para merge, garantindo que o RA do DF original esteja no formato certo
+    df['RA'] = df['RA'].astype(str).str.zfill(7)
+
+    # Agrupar df_original para obter os Possible Points totais por aluno
+    df_simulado_pontos_possiveis = df.groupby('RA')['Possible Points'].sum().reset_index()
+    df_simulado_pontos_possiveis.rename(columns={'Possible Points': 'PontosSimulado'}, inplace=True)
+
+    # Realiza o merge entre as questões esperadas e os pontos possíveis do simulado
+    df_validacao = pd.merge(df_questoes, df_simulado_pontos_possiveis, on='RA', how='left')
+
+    # Calcula a diferença entre as questões esperadas e as que o aluno fez no simulado
+    df_validacao['DiferencaQuestoes'] = df_validacao['Questoes'] - df_validacao['PontosSimulado'].fillna(0)
+
+    # Filtra alunos com discrepâncias
+    df_discrepancias = df_validacao[df_validacao['DiferencaQuestoes'] != 0]
+
+    # Exibe o DataFrame de discrepâncias para revisão, se houver
+    if not df_discrepancias.empty:
+        st.subheader("⚠️ Alunos com Discrepâncias entre Questões Esperadas e Pontos do Simulado ⚠️")
+        st.write("Atenção: A quantidade de questões esperadas para estes alunos difere dos 'Possible Points' no arquivo do simulado. Isso pode indicar que disciplinas não consideradas ou pontos extras/faltantes no simulado precisam ser revisados manualmente.")
+        # Exibe apenas as colunas relevantes para a revisão
+        st.dataframe(df_discrepancias[['NOMEALUNO', 'RA', 'Questoes', 'PontosSimulado', 'DiferencaQuestoes']])
+        st.warning("Recomenda-se uma verificação manual para estes casos antes de finalizar as notas.")
+    
+        
     # Ajuste para merge
     df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
     df['Student ID'] = df['Student ID'].fillna(0)
