@@ -71,6 +71,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anula
     # O df deve conter o calculo baseado nas disciplinas que estao matriculados entao veremos se bate com o que ta no simulado.
     # Fazer todos que estao diferentes ira para um df diferente que sera revisado antes de colocar a nota.
     df_questoes = calcula_qtd_questoes(df_base)
+    df.rename(columns={'Student ID': 'RA',}, inplace=True)
     # Ajuste para merge, garantindo que o RA do DF original esteja no formato certo
     df['RA'] = df['RA'].astype(str).str.zfill(7)
 
@@ -89,17 +90,17 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anula
 
     # Exibe o DataFrame de discrepâncias para revisão, se houver
     if not df_discrepancias.empty:
-        st.subheader("⚠️ Alunos com Discrepâncias entre Questões Esperadas e Pontos do Simulado ⚠️")
+        st.subheader(" Alunos com Discrepâncias entre Questões Esperadas e Pontos do Simulado ")
         st.write("Atenção: A quantidade de questões esperadas para estes alunos difere dos 'Possible Points' no arquivo do simulado. Isso pode indicar que disciplinas não consideradas ou pontos extras/faltantes no simulado precisam ser revisados manualmente.")
         # Exibe apenas as colunas relevantes para a revisão
-        st.dataframe(df_discrepancias[['NOMEALUNO', 'RA', 'Questoes', 'PontosSimulado', 'DiferencaQuestoes']])
+        st.dataframe(df_discrepancias[['ALUNO', 'RA', 'Questoes', 'PontosSimulado', 'DiferencaQuestoes']])
         st.warning("Recomenda-se uma verificação manual para estes casos antes de finalizar as notas.")
     
         
     # Ajuste para merge
     df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
-    df['Student ID'] = df['Student ID'].fillna(0)
-    df['Student ID'] = df['Student ID'].astype(int).astype(str).str.zfill(7)
+    df['RA'] = df['RA'].fillna(0)
+    df['RA'] = df['RA'].astype(int).astype(str).str.zfill(7)
     
     df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                             'NOMECURSO': 'CURSO',
@@ -109,21 +110,21 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anula
     df['ALUNO'] = df['ALUNO'].str.strip()
     
     # Calcular pontuação extra por anulação de questões
-    anuladas_total = pd.Series(0, index=df['Student ID'].astype(str).str.zfill(7).unique())
+    anuladas_total = pd.Series(0, index=df['RA'].astype(str).str.zfill(7).unique())
 
     for q in questoes_anuladas:
         col_nome = f"#{q} Points Earned"
         if col_nome in df.columns:
             questao = df[col_nome].fillna(0)
             ganho_extra = (questao == 0).astype(int)
-            ids = df['Student ID'].astype(str).str.zfill(7)
+            ids = df['RA'].astype(str).str.zfill(7)
             bonus = pd.Series(ganho_extra.values, index=ids)
             bonus = bonus.groupby(bonus.index).sum() 
             anuladas_total = anuladas_total.add(bonus, fill_value=0)
 
     # Calculo da nota do simulado
     df['Earned Points Original'] = df['Earned Points'].fillna(0)
-    df['Bonus Anuladas'] = df['Student ID'].astype(str).str.zfill(7).map(anuladas_total).fillna(0)
+    df['Bonus Anuladas'] = df['RA'].astype(str).str.zfill(7).map(anuladas_total).fillna(0)
     df['Earned Points Final'] = df['Earned Points Original'] + df['Bonus Anuladas']
 
     possible_points = df['Possible Points'].replace(0, np.nan)
