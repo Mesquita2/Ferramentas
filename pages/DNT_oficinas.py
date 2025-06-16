@@ -111,3 +111,5 @@ if uploaded_file is not None:
             file_name=f"Relatorio_{palestra_selecionada}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
+        st.write("Relatorio dos inscritos na palestra gerado com sucesso!")
+        st.dataframe(df_palestra)
