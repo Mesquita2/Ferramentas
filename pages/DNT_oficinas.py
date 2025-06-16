@@ -112,4 +112,4 @@ if uploaded_file is not None:
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
         st.write("Relatorio dos inscritos na palestra gerado com sucesso!")
-        st.dataframe(df_palestra)
+        st.dataframe(df_palestra[['Nome Completo']])
