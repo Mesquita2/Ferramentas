@@ -105,9 +105,14 @@ if uploaded_file is not None:
     )
     
     if palestras_selecionadas:
-        df_palestras = df_organizado[df_organizado['Palestra'].isin(palestras_selecionadas)].copy()
-        df_palestras.drop_duplicates(subset=['Nome Completo', 'Palestra'], inplace=True)
-        
+        lista_dfs = []
+        for palestra in palestras_selecionadas:
+            df_temp = df_organizado[df_organizado['Palestra'] == palestra].copy()
+            df_temp['Nome Completo'] = df_temp['Nome Completo'].str.upper()
+            df_temp.drop_duplicates(subset=['Nome Completo', 'Palestra'], inplace=True)
+            lista_dfs.append(df_temp)
+
+        df_palestras = pd.concat(lista_dfs, ignore_index=True)
         # Geração do relatório (agora com várias palestras juntas)
         relatorio = gerar_relatorio_palestra(df_palestras, palestras_selecionadas, imagem_cabecalho, imagem_rodape)
         
@@ -119,4 +124,4 @@ if uploaded_file is not None:
         )
         
         st.success("Relatório das palestras gerado com sucesso!")
-        st.dataframe(df_palestras[['Nome Completo', 'e-mail', 'Palestra']].sort_values('Nome Completo'))
+        st.dataframe(df_palestras[['Palestra', 'Nome Completo', 'e-mail']].sort_values('Nome Completo'))
