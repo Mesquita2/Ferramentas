@@ -106,7 +106,7 @@ if uploaded_file is not None:
     
     if palestras_selecionadas:
         df_palestras = df_organizado[df_organizado['Palestra'].isin(palestras_selecionadas)].copy()
-        df_palestras.drop_duplicates(subset=['Nome Completo'], inplace=True)
+        df_palestras.drop_duplicates(subset=['Nome Completo', 'Palestra'], inplace=True)
         
         # Geração do relatório (agora com várias palestras juntas)
         relatorio = gerar_relatorio_palestra(df_palestras, palestras_selecionadas, imagem_cabecalho, imagem_rodape)
