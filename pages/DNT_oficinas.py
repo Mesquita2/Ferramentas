@@ -124,4 +124,5 @@ if uploaded_file is not None:
         )
         
         st.success("Relatório das palestras gerado com sucesso!")
+        df_palestras['Nome Completo'] = df_palestras['Nome Completo'].str.title()
         st.dataframe(df_palestras[['Palestra', 'Nome Completo', 'e-mail']].sort_values('Nome Completo'))
