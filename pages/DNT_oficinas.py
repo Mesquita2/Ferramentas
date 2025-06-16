@@ -97,20 +97,26 @@ if uploaded_file is not None:
     st.write("Dados Organizados:")
     st.dataframe(df_organizado)
     
-    palestras_unicas = df_organizado['Palestra'].unique().tolist()
+    palestras_unicas = df_organizado['Palestra'].dropna().unique().tolist()
     
-    palestra_selecionada = st.selectbox("Selecione a palestra para gerar o relatório:", palestras_unicas)
+    palestras_selecionadas = st.multiselect(
+        "Selecione as palestras para gerar o relatório:",
+        options=palestras_unicas
+    )
     
-    if palestra_selecionada:
-        df_palestra = df_organizado[df_organizado['Palestra'] == palestra_selecionada]
-        df_palestra.drop_duplicates(subset=['Nome Completo'], inplace=True)
-        relatorio = gerar_relatorio_palestra(df_palestra, palestra_selecionada, imagem_cabecalho, imagem_rodape)
+    if palestras_selecionadas:
+        df_palestras = df_organizado[df_organizado['Palestra'].isin(palestras_selecionadas)].copy()
+        df_palestras.drop_duplicates(subset=['Nome Completo'], inplace=True)
+        
+        # Geração do relatório (agora com várias palestras juntas)
+        relatorio = gerar_relatorio_palestra(df_palestras, palestras_selecionadas, imagem_cabecalho, imagem_rodape)
         
         st.download_button(
-            label=f"⬇ Baixar Relatório: {palestra_selecionada}",
+            label=f"⬇ Baixar Relatório das palestras selecionadas",
             data=relatorio,
-            file_name=f"Relatorio_{palestra_selecionada}.docx",
+            file_name="Relatorio_Palestras.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
-        st.write("Relatorio dos inscritos na palestra gerado com sucesso!")
-        st.dataframe(df_palestra[['Nome Completo']])
+        
+        st.success("Relatório das palestras gerado com sucesso!")
+        st.dataframe(df_palestras[['Nome Completo', 'e-mail', 'Palestra']].sort_values('Nome Completo'))
