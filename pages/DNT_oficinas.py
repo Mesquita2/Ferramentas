@@ -103,6 +103,7 @@ if uploaded_file is not None:
     
     if palestra_selecionada:
         df_palestra = df_organizado[df_organizado['Palestra'] == palestra_selecionada]
+        df_palestra.drop_duplicates(subset=['Nome Completo'], inplace=True)
         relatorio = gerar_relatorio_palestra(df_palestra, palestra_selecionada, imagem_cabecalho, imagem_rodape)
         
         st.download_button(
