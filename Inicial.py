@@ -68,7 +68,8 @@ def limpeza_alunos_disciplinas(df):
                                 'NOMECURSO': 'CURSO',
                                 'NOMEALUNO': 'ALUNO'}, inplace=True)
     df = df[df['NOMESTATUS'] != 'Cancelamento']
-    df['RA'] = df['RA'].apply(str).str.zfill(7)
+    df = df.assign(RA=df['RA'].apply(str).str.zfill(7))
+
   
      
     return pd.DataFrame(df)

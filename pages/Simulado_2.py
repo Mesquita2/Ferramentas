@@ -4,234 +4,298 @@ from auth import check_authentication
 import pandas as pd
 import numpy as np
 
-
-# Configuração da página
-st.set_page_config(page_title="Limpeza Simulado e REC Simulado",
-                   page_icon="", # Criar icon Icev 
-                   layout="wide")
+st.set_page_config(page_title="Limpeza Simulado e REC Simulado", layout="wide")
 
 if not check_authentication():
     st.stop()
 
-df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
+# Carregar os dados dos alunos
+df_alunos = st.session_state["dados"].get("dntoficina")
 df_base = df_alunos.copy()
 
-# Recebe dados do Zip
-# Função para carregar o arquivo
+# Renomear colunas
+df_base.rename(columns={
+    'NOMEDISCIPLINA': 'DISCIPLINA',
+    'NOMECURSO': 'CURSO',
+    'NOMEALUNO': 'ALUNO'
+}, inplace=True)
+
 @st.cache_data
 def carregar_dados(arquivo):
     try:
-        df = pd.read_excel(arquivo)
-        return df
+        return pd.read_excel(arquivo)
     except Exception as e:
         st.error(f"Erro ao carregar o arquivo: {e}")
         return pd.DataFrame()
-    
-import pandas as pd
 
 def calcula_qtd_questoes(df):
-    
+    df = df.copy()
     df['Questoes'] = 0
 
-    
-    credito_to_questoes = {4: 16, 2: 8}
-    
+    credito_to_questoes_adm = {4: 16, 2: 8}
     credito_to_questoes_dir = {4: 12, 2: 6}
-    
-    df.loc[df['CURSO'] == 'Bacharelado em Direito', 'Questoes'] = \
-        df['NUMCREDITOSCOB'].map(credito_to_questoes_dir).fillna(0).astype(int)
 
-    df.loc[df['CURSO'] != 'Bacharelado em Direito', 'Questoes'] = \
-        df['NUMCREDITOSCOB'].map(credito_to_questoes).fillna(0).astype(int)
+    # ADMINISTRAÇÃO
+    mask_adm = df['CURSO'] == 'Administração de Empresas'
+    df.loc[mask_adm, 'Questoes'] = df.loc[mask_adm, 'NUMCREDITOSCOB'].map(credito_to_questoes_adm).fillna(0).astype(int)
+
+    # DIREITO
+    mask_dir = df['CURSO'] == 'Direito'
+    df.loc[mask_dir, 'Questoes'] = df.loc[mask_dir, 'NUMCREDITOSCOB'].map(credito_to_questoes_dir).fillna(0).astype(int)
+
+    # ENGENHARIA DE SOFTWARE - apenas atribuir 30 ou 60 por aluno, não somar por disciplina
+    mask_eng = df['CURSO'] == 'Engenharia de Software'
+    df.loc[mask_eng, 'TURMADISC'] = df.loc[mask_eng, 'TURMADISC'].astype(str).str.upper().str.strip()
+
+    # Para cada aluno de Engenharia, atribuir 30 se tiver disciplina 036C, senão 60
+    alunos_eng = df.loc[mask_eng, ['ALUNO', 'RA', 'TURMADISC']].drop_duplicates()
+    st.write(alunos_eng)
+    alunos_eng['Tem_036C'] = alunos_eng['TURMADISC'].apply(lambda x: x.strip().upper() == '036C')
+
+    # Agrupar por ALUNO e RA e ver se algum deles tem '036C'
+    questoes_por_aluno = (
+        alunos_eng.groupby(['ALUNO', 'RA'])['Tem_036C']
+        .any()
+        .reset_index()
+    )
+
+    # Atribuir 30 se tiver 036C, senão 60
+    questoes_por_aluno['Questoes'] = questoes_por_aluno['Tem_036C'].apply(lambda x: 30 if x else 60)
+    questoes_por_aluno.drop(columns='Tem_036C', inplace=True)
+    # Agora, para os alunos de Engenharia, setar o valor 0 na base original para evitar somar por disciplina
+    df.loc[mask_eng, 'Questoes'] = 0
+
+    # Juntar os valores fixos por aluno (Engenharia) na base
+    # Como queremos o resultado por aluno, vamos juntar depois
+    # Primeiro somamos para ADM e DIR (que já está em df['Questoes'])
+
+    # Somar por aluno as questões de ADM e DIR
+    df_adm_dir = df.loc[~mask_eng].groupby(['ALUNO', 'RA'])['Questoes'].sum().reset_index()
+
+    # Agora combinar ADM+DIR com Engenharia (que é fixo)
+    df_final = pd.concat([df_adm_dir, questoes_por_aluno], ignore_index=True)
+
+    # Agrupar novamente por aluno, pois pode ter aluno só em Engenharia ou só em ADM/DIR
+    df_final = df_final.groupby(['ALUNO', 'RA'], as_index=False)['Questoes'].sum()
+    df_final['RA'] = df_final['RA'].astype(str).str.zfill(7)
+
+    return df_final
 
 
-    resultado = df.groupby(['ALUNO', 'RA'])['Questoes'].sum().reset_index()
-    resultado = resultado.drop_duplicates(subset=['ALUNO', 'RA'])
-
-    #O retorno é os alunos e a quantidade de questoes que devem ter no simulado. 
-    #Lembrar que exite regras e apenas chamar apos retirar as disciplinas que nao vao ser ultilizadas. 
-    return resultado
-
-
-# Função para limpar os dados
-@st.cache_data
-def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas):
-    
-    df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
-    df_base = df_alunos.copy()
-    
-    df_base = df_alunos.copy()
-    df_base = df_base[~df_base['DISCIPLINA'].isin(disciplinas_excluidas)]
-    
-    #Funcao para saber quantidades de possiveis pontos que se baseam em carga horaria
-    # ENG ou DIR ou ADM
-    
-    # Comparar df_base com o df que vou mandar para calcula_qtd_questoes.
-    # Comparar o df_base['Points Earned'] como o df['Questoes'].
-    # O df deve conter o calculo baseado nas disciplinas que estao matriculados entao veremos se bate com o que ta no simulado.
-    # Fazer todos que estao diferentes ira para um df diferente que sera revisado antes de colocar a nota.
-    df_questoes = calcula_qtd_questoes(df_base)
-    df.rename(columns={'Student ID': 'RA',}, inplace=True)
-    # Ajuste para merge, garantindo que o RA do DF original esteja no formato certo
-    df['RA'] = df['RA'].astype(str).str.zfill(7)
-
-    # Agrupar df_original para obter os Possible Points totais por aluno
-    df_simulado_pontos_possiveis = df.groupby('RA')['Possible Points'].sum().reset_index()
-    df_simulado_pontos_possiveis.rename(columns={'Possible Points': 'PontosSimulado'}, inplace=True)
-
-    # Realiza o merge entre as questões esperadas e os pontos possíveis do simulado
-    df_validacao = pd.merge(df_questoes, df_simulado_pontos_possiveis, on='RA', how='left')
-
-    # Calcula a diferença entre as questões esperadas e as que o aluno fez no simulado
-    df_validacao['DiferencaQuestoes'] = df_validacao['Questoes'] - df_validacao['PontosSimulado'].fillna(0)
-
-    # Filtra alunos com discrepâncias
-    df_discrepancias = df_validacao[df_validacao['DiferencaQuestoes'] != 0]
-
-    # Exibe o DataFrame de discrepâncias para revisão, se houver
-    if not df_discrepancias.empty:
-        st.subheader(" Alunos com Discrepâncias entre Questões Esperadas e Pontos do Simulado ")
-        st.write("Atenção: A quantidade de questões esperadas para estes alunos difere dos 'Possible Points' no arquivo do simulado. Isso pode indicar que disciplinas não consideradas ou pontos extras/faltantes no simulado precisam ser revisados manualmente.")
-        # Exibe apenas as colunas relevantes para a revisão
-        st.dataframe(df_discrepancias[['ALUNO', 'RA', 'Questoes', 'PontosSimulado', 'DiferencaQuestoes']])
-        st.warning("Recomenda-se uma verificação manual para estes casos antes de finalizar as notas.")
-    
-        
-    # Ajuste para merge
-    df_base['RA'] = df_base['RA'].apply(lambda x: str(x).zfill(7))
-    df['RA'] = df['RA'].fillna(0)
-    df['RA'] = df['RA'].astype(int).astype(str).str.zfill(7)
-    
-    df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
-                            'NOMECURSO': 'CURSO',
-                            'NOMEALUNO': 'ALUNO'}, inplace=True)
-    
+def ajustes_dataframe(df):
+    df['Student ID'] = df['Student ID'].astype(str).str.zfill(7)
     df['ALUNO'] = df['Student First Name'].fillna('') + ' ' + df['Student Last Name'].fillna('')
     df['ALUNO'] = df['ALUNO'].str.strip()
-    
-    # Calcular pontuação extra por anulação de questões
-    anuladas_total = pd.Series(0, index=df['RA'].astype(str).str.zfill(7).unique())
+
+    # Filtrar apenas linhas válidas
+    df = df[(df['Student ID'] != '0') & (df['ALUNO'] != '')]
+    df['Student ID'] = df['Student ID'].astype(str).str.zfill(7)
+    df['ALUNO'] = df['Student First Name'].fillna('') + ' ' + df['Student Last Name'].fillna('')
+    df['ALUNO'] = df['ALUNO'].str.strip()
+    df = df[(df['Student ID'] != '0') & (df['ALUNO'] != '')]
+    df.rename(columns={'Student ID': 'RA', 'ALUNO': 'NOMEALUNO'}, inplace=True)
+
+
+    # Renomear sem afetar outras colunas
+    df.rename(columns={'Student ID': 'RA', 'ALUNO': 'NOMEALUNO'}, inplace=True)
+
+    return df
+
+
+def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas, turma_selecionada):
+    df_base_local = df_alunos.copy()
+    df_base_local.rename(columns={
+        'NOMEDISCIPLINA': 'DISCIPLINA',
+        'NOMECURSO': 'CURSO',
+        'NOMEALUNO': 'ALUNO'
+    }, inplace=True)
+
+    # Aplicar exclusão de disciplinas
+    df_base_local = df_base_local[~df_base_local['DISCIPLINA'].isin(disciplinas_excluidas)]
+
+    # Ajustar formato do RA para padronizar e filtrar só alunos do simulado
+    df_base_local['RA'] = df_base_local['RA'].astype(str).str.zfill(7)
+    r_as_simulado = df['RA'].astype(str).str.zfill(7).unique()
+    df_base_local = df_base_local[df_base_local['RA'].isin(r_as_simulado)]
+
+    # Calcular questões só para alunos do simulado
+    df_questoes = calcula_qtd_questoes(df_base_local)
+
+    df['RA'] = df['RA'].astype(str).str.zfill(7)
+    df_simulado_pontos = df.groupby('RA')['Possible Points'].sum().reset_index()
+    df_simulado_pontos.rename(columns={'Possible Points': 'PontosSimulado'}, inplace=True)
+
+    # Garantir RA formatado antes do merge
+    df_questoes['RA'] = df_questoes['RA'].astype(str).str.zfill(7)
+    df_simulado_pontos['RA'] = df_simulado_pontos['RA'].astype(str).str.zfill(7)
+
+    df_validacao = pd.merge(df_questoes, df_simulado_pontos, on='RA', how='left')
+    df_validacao['DiferencaQuestoes'] = df_validacao['Questoes'] - df_validacao['PontosSimulado'].fillna(0)
+
+    df_discrepancias = df_validacao[df_validacao['DiferencaQuestoes'] != 0]
+
+    if not df_discrepancias.empty:
+        st.subheader("Alunos com Discrepâncias entre Questões Esperadas e Pontos do Simulado")
+        st.warning("Ajuste manual necessário.")
+        st.dataframe(df_discrepancias[['ALUNO', 'RA', 'Questoes', 'PontosSimulado', 'DiferencaQuestoes']])
+
+        st.subheader("Correção Manual de Pontos no Simulado")
+        with st.form("form_correcoes"):
+            novas_pontuacoes = {}
+
+            for _, row in df_discrepancias.iterrows():
+                ra = row['RA']
+                aluno = row['ALUNO']
+                pontos_atual = row['PontosSimulado'] if pd.notna(row['PontosSimulado']) else 0
+                esperado = row['Questoes']
+
+                try:
+                    pontos_atual_float = float(pontos_atual)
+                except:
+                    pontos_atual_float = 0.0
+
+                esperado_float = float(esperado) if pd.notnull(esperado) else 0.0
+                valor_inicial = min(pontos_atual_float, esperado_float)
+
+                novo_valor = st.number_input(
+                    f"{aluno} (RA: {ra}) - Pontos atuais: {pontos_atual} | Esperado: {esperado}",
+                    min_value=0.0,
+                    max_value=esperado_float,
+                    value=valor_inicial,
+                    step=0.1,
+                    key=f"correcao_{ra}"
+                )
+
+                novas_pontuacoes[ra] = novo_valor
+
+            submitted = st.form_submit_button("Aplicar Correções")
+            if submitted:
+                for ra, novo_ponto in novas_pontuacoes.items():
+                    df.loc[df['RA'] == ra, 'Possible Points'] = novo_ponto
+                st.success("Correções aplicadas. Recalcule as notas.")
+
+    df['Earned Points Original'] = df['Earned Points'].fillna(0)
+    ids = df['RA'].astype(str).str.zfill(7)
+    bonus_total = pd.Series(0, index=ids.unique())
 
     for q in questoes_anuladas:
-        col_nome = f"#{q} Points Earned"
-        if col_nome in df.columns:
-            questao = df[col_nome].fillna(0)
-            ganho_extra = (questao == 0).astype(int)
-            ids = df['RA'].astype(str).str.zfill(7)
-            bonus = pd.Series(ganho_extra.values, index=ids)
-            bonus = bonus.groupby(bonus.index).sum() 
-            anuladas_total = anuladas_total.add(bonus, fill_value=0)
+        coluna = f"#{q} Points Earned"
+        if coluna in df.columns:
+            ganhos = (df[coluna].fillna(0) == 0).astype(int)
+            bonus = pd.Series(ganhos.values, index=ids).groupby(level=0).sum()
+            bonus_total = bonus_total.add(bonus, fill_value=0)
 
-    # Calculo da nota do simulado
-    df['Earned Points Original'] = df['Earned Points'].fillna(0)
-    df['Bonus Anuladas'] = df['RA'].astype(str).str.zfill(7).map(anuladas_total).fillna(0)
+    df['Bonus Anuladas'] = ids.map(bonus_total).fillna(0)
     df['Earned Points Final'] = df['Earned Points Original'] + df['Bonus Anuladas']
+    df['NOTAS'] = np.minimum((df['Earned Points Final'] * 1.25) / df['Possible Points'].replace(0, np.nan), 1).fillna(0) * 10
 
-    possible_points = df['Possible Points'].replace(0, np.nan)
-    proporcao = (df['Earned Points Final'] * 1.25) / possible_points
-    df['NOTAS'] = np.minimum(proporcao, 1.0).fillna(0) * 10
-    
-    st.subheader("Dados Originais")
+    st.subheader("Dados Originais com Notas")
     st.dataframe(df)
 
-    # Configurando e ajustando dataframe 
-    df.rename(columns={'Student ID': 'RA',
-                       'NOMEALUNO': 'ALUNO'}, inplace=True)
-    df = pd.merge(df_base, df[['RA',  'NOTAS']],
-                  on=['RA'],
-                  how='left') 
-    df = df.copy()
-    
-    # Adicionar as novas colunas
-    df['CODETAPA'] = codetapa
-    df['CODPROVA'] = codprova
-    df['TIPOETAPA'] = tipoetapa
-    df['PROVA'] = prova
-    df['ETAPA'] = etapa
+    df_base_local['RA'] = df_base_local['RA'].astype(str).str.zfill(7)
+    df['RA'] = df['RA'].astype(str).str.zfill(7)
 
-    # Nova ordem das colunas
+    df_final = pd.merge(df_base_local, df[['RA', 'NOTAS']], on='RA', how='left')
+    df_final['CODETAPA'] = codetapa
+    df_final['CODPROVA'] = codprova
+    df_final['TIPOETAPA'] = tipoetapa
+    df_final['PROVA'] = prova
+    df_final['ETAPA'] = etapa
+
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
-    df = df[colunas]
+    df_final = df_final[colunas]
 
-    # Condicional para a limpeza das notas
-    df_final = df.copy()
     if prova == "Prova":
-        df_final = df_final.dropna(subset=['NOTAS']) 
-    elif prova == "Recuperação":
+        # RAs que já receberam nota
+        ras_com_nota = set(df_final['RA'])
+        # Alunos da(s) TURMADISC selecionada(s)
+        # Verificar colunas existentes para evitar erro
+        colunas_desejadas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO']
+        colunas_existentes = [col for col in colunas_desejadas if col in df_base_local.columns]
+
+        # Debug opcional: mostrar colunas disponíveis
+        st.write("Colunas disponíveis para alunos_da_turma:", colunas_existentes)
+
+        # Filtrar alunos da turma com as colunas disponíveis
+        alunos_da_turma = df_base_local[
+            df_base_local['TURMADISC'].isin(turma_selecionada)
+        ][colunas_existentes].drop_duplicates()
+
+        # RAs que estão na turma mas não têm nota
+        alunos_sem_nota = alunos_da_turma[~alunos_da_turma['RA'].isin(ras_com_nota)].copy()
+        alunos_sem_nota['NOTAS'] = 0
+        alunos_sem_nota['ETAPA'] = etapa
+        alunos_sem_nota['PROVA'] = prova
+        alunos_sem_nota['TIPOETAPA'] = tipoetapa
+        alunos_sem_nota['CODETAPA'] = codetapa
+        alunos_sem_nota['CODPROVA'] = codprova
+
+        # Concatenar com os que têm nota
+        df_final = pd.concat([df_final, alunos_sem_nota], ignore_index=True)
+
+    else:
+        # Para REC, manter comportamento atual
         df_final = df_final[(df_final['NOTAS'] != 0) & (df_final['NOTAS'].notna())]
 
     return df_final
 
-# Interface do Streamlit
+
+# Interface Streamlit
 st.title("Tratamento de Notas Simulado e REC Simulado")
 
-#Limpeza Disciplinas que nao fazem parte
 cursos_disponiveis = sorted(df_base['CURSO'].dropna().unique())
-curso_selecionado = st.selectbox(
-    "Selecione o curso para filtrar as disciplinas:",
-    options=cursos_disponiveis
-)
-disciplinas_disponiveis = sorted(
-    df_base[df_base['CURSO'] == curso_selecionado]['DISCIPLINA'].dropna().unique()
-)
-disciplinas_selecionadas = st.multiselect(
-    "Selecione as Disciplinas que nao sao aplicadas no Simulado : ",
-    options= disciplinas_disponiveis,
-    default=[]
-)
 
-# Upload do arquivo Excel
-uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
-
-# Carregar e limpar os dados
-if uploaded_file:
-    df_original = carregar_dados(uploaded_file)
-    st.subheader("Dados Originais")
-    st.dataframe(df_original)
-    df_original['Anuladas_Individuais'] = 0
-    df_original['ALUNO'] = df_original['Student First Name'].fillna('') + ' ' + df_original['Student Last Name'].fillna('')
-    df_original['ALUNO'] = df_original['ALUNO'].str.strip()
-    df_original['Student ID'] = df_original['Student ID'].fillna(0)
-    df_original = df_original[df_original['Student ID'] != 0]
-    
-    # Definir as variáveis de configuração para o filtro
-    etapa = "P3"
-    prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação'])
-    tipoetapa = 'N'  # Tipo de etapa
-    codetapa = 3  # Código da etapa
-    codprova = 1  # Código da prova
+curso_selecionado = st.selectbox("Selecione o curso para filtrar as disciplinas:", index=None, options=cursos_disponiveis)
 
 
-    questoes_anuladas_input = st.text_input("Informe os números das questões anuladas (separados por vírgula):", value="")
-    questoes_anuladas = [int(q.strip()) for q in questoes_anuladas_input.split(",") if q.strip().isdigit()]
+if curso_selecionado:
+    turmas_disponiveis = sorted(df_base[df_base['CURSO'] == curso_selecionado]['TURMADISC'].dropna().unique())
+    turma_selecionada = st.multiselect("Selecione a Turma:", options=turmas_disponiveis)
 
-    # Limitar as opções de Etapa com base na escolha da Prova
-    if prova == "Prova":
-        codprova = 1  # Prova = 1
-    elif prova == "Recuperação":
-        codprova = 2  # Recuperação = 2
-        
-    if st.button("Calcular Notas com Anulações"):
-        df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_selecionadas)
-
-        st.subheader("Dados Após Limpeza")
-        st.dataframe(df_limpo)
-
-        df_limpo['RA'] = df_limpo['RA'].astype(str)
-        df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))
-        df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ',') if isinstance(x, (int, float)) else x)
-
-        # Criar o arquivo .txt com separador ';'
-        output = io.BytesIO()
-        df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
-        output.seek(0)
-
-        classe = df_limpo['TURMADISC'].iloc[0] if not df_limpo.empty else "sem_classe"
-
-        # Botão para baixar o arquivo tratado como .txt
-        st.download_button(
-            label="⬇ Baixar Notas Tratadas (TXT)",
-            data=output,
-            file_name=f"{classe}_{prova}.txt",
-            mime="text/plain"
+    if turma_selecionada:
+        disciplinas_disponiveis = sorted(
+            df_base[
+                (df_base['CURSO'] == curso_selecionado) &
+                (df_base['TURMADISC'].isin(turma_selecionada))
+            ]['DISCIPLINA'].dropna().unique()
         )
+
+        disciplinas_excluidas = st.multiselect("Disciplinas que NÃO são aplicadas no Simulado:", options=disciplinas_disponiveis, default=[])
+        uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
+
+        if uploaded_file:
+            df_original = carregar_dados(uploaded_file)
+            st.subheader("Dados Originais")
+            st.dataframe(df_original)
+            df_ajustado_zipgrade = ajustes_dataframe(df_original)
+
+            etapa = "P3"
+            prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação'])
+            tipoetapa = 'N'
+            codetapa = 3
+            codprova = 1 if prova == "Prova" else 2
+
+            questoes_anuladas_input = st.text_input("Informe questões anuladas (separadas por vírgula):", value="")
+            questoes_anuladas = [int(q.strip()) for q in questoes_anuladas_input.split(",") if q.strip().isdigit()]
+
+            if st.button("Calcular Notas com Anulações"):
+                df_limpo = limpar_dados(df_ajustado_zipgrade, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas, turma_selecionada)
+
+                st.subheader("Notas Finais")
+                st.dataframe(df_limpo)
+
+                df_limpo['RA'] = df_limpo['RA'].astype(str).str.zfill(7)
+                df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ','))
+
+                output = io.BytesIO()
+                df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
+                output.seek(0)
+
+                classe = df_limpo['TURMADISC'].iloc[0] if not df_limpo.empty else "sem_classe"
+
+                st.download_button(
+                    label="⬇ Baixar Notas Tratadas (TXT)",
+                    data=output,
+                    file_name=f"{classe}_{prova}.txt",
+                    mime="text/plain"
+                )

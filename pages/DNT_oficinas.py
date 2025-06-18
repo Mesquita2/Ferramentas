@@ -4,7 +4,10 @@ import io
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 import streamlit as st
+from auth import check_authentication
 
+if not check_authentication():
+    st.stop()
 
 # Função de transformação dos eventos
 def transformar_eventos(df):
@@ -109,7 +112,6 @@ if uploaded_file is not None:
         for palestra in palestras_selecionadas:
             df_temp = df_organizado[df_organizado['Palestra'] == palestra].copy()
             df_temp['Nome Completo'] = df_temp['Nome Completo'].str.upper()
-            df_temp.drop_duplicates(subset=['Nome Completo', 'Palestra'], inplace=True)
             lista_dfs.append(df_temp)
 
         df_palestras = pd.concat(lista_dfs, ignore_index=True)
