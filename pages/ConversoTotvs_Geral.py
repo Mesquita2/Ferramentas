@@ -11,6 +11,9 @@ st.set_page_config(page_title="Limpeza de Notas",
 if not check_authentication():
     st.stop()
 
+st.write("Em Manutenção...")
+st.stop()
+
 # Função para carregar o arquivo
 @st.cache_data
 def carregar_dados(arquivo):
@@ -126,20 +129,9 @@ if uploaded_file:
     
     # Limpar dados
     df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
-    st.subheader("Dados Após Limpeza")    
-    st.dataframe(df_limpo)
     
     
-    df_limpo['RA'] = df_limpo['RA'].astype(str)
-    df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))# Remove espaços e substitui vírgula por ponto
-    df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce') # Converte para float (NaN se não conseguir)
-    df_limpo['NOTAS'] = df_limpo['NOTAS'].fillna(0)  # Substitui NaN por 0
-
-    if (df_limpo['NOTAS'] > 8).any():
-        st.info("Existem alunos com nota maior que 8.")
-
     
-    # Criar o arquivo .txt com separador ';'
     output = io.BytesIO()  
     df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ',') if isinstance(x, (int, float)) else x)
     df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
