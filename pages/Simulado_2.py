@@ -10,7 +10,7 @@ if not check_authentication():
     st.stop()
 
 # Carregar os dados dos alunos
-df_alunos = st.session_state["dados"].get("dntoficina")
+df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
 df_base = df_alunos.copy()
 
 # Renomear colunas
@@ -47,21 +47,21 @@ def calcula_qtd_questoes(df):
     mask_eng = df['CURSO'] == 'Engenharia de Software'
     df.loc[mask_eng, 'TURMADISC'] = df.loc[mask_eng, 'TURMADISC'].astype(str).str.upper().str.strip()
 
-    # Para cada aluno de Engenharia, atribuir 30 se tiver disciplina 036C, senão 60
+    # Para cada aluno de Engenharia, atribuir 30 se tiver disciplina 037C, senão 60
     alunos_eng = df.loc[mask_eng, ['ALUNO', 'RA', 'TURMADISC']].drop_duplicates()
     st.write(alunos_eng)
-    alunos_eng['Tem_036C'] = alunos_eng['TURMADISC'].apply(lambda x: x.strip().upper() == '036C')
+    alunos_eng['Tem_037C'] = alunos_eng['TURMADISC'].apply(lambda x: x.strip().upper() == '037C')
 
-    # Agrupar por ALUNO e RA e ver se algum deles tem '036C'
+    # Agrupar por ALUNO e RA e ver se algum deles tem '037C'
     questoes_por_aluno = (
-        alunos_eng.groupby(['ALUNO', 'RA'])['Tem_036C']
+        alunos_eng.groupby(['ALUNO', 'RA'])['Tem_037C']
         .any()
         .reset_index()
     )
 
-    # Atribuir 30 se tiver 036C, senão 60
-    questoes_por_aluno['Questoes'] = questoes_por_aluno['Tem_036C'].apply(lambda x: 30 if x else 60)
-    questoes_por_aluno.drop(columns='Tem_036C', inplace=True)
+    # Atribuir 30 se tiver 037C, senão 60
+    questoes_por_aluno['Questoes'] = questoes_por_aluno['Tem_037C'].apply(lambda x: 30 if x else 60)
+    questoes_por_aluno.drop(columns='Tem_037C', inplace=True)
     # Agora, para os alunos de Engenharia, setar o valor 0 na base original para evitar somar por disciplina
     df.loc[mask_eng, 'Questoes'] = 0
 
@@ -83,12 +83,12 @@ def calcula_qtd_questoes(df):
 
 
 def ajustes_dataframe(df):
-    df['Student ID'] = df['Student ID'].astype(str).str.zfill(7)
+    df['Student ID'] = df['Student ID'].astype(str).str.zfill(7).copy()
     df['ALUNO'] = df['Student First Name'].fillna('') + ' ' + df['Student Last Name'].fillna('')
     df['ALUNO'] = df['ALUNO'].str.strip()
 
     # Filtrar apenas linhas válidas
-    df = df[(df['Student ID'] != '0') & (df['ALUNO'] != '')]
+    df = df[(df['Student ID'] != '0') & (df['ALUNO'] != '')].copy()
     df['Student ID'] = df['Student ID'].astype(str).str.zfill(7)
     df['ALUNO'] = df['Student First Name'].fillna('') + ' ' + df['Student Last Name'].fillna('')
     df['ALUNO'] = df['ALUNO'].str.strip()
@@ -205,38 +205,6 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anula
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
     df_final = df_final[colunas]
 
-    if prova == "Prova":
-        # RAs que já receberam nota
-        ras_com_nota = set(df_final['RA'])
-        # Alunos da(s) TURMADISC selecionada(s)
-        # Verificar colunas existentes para evitar erro
-        colunas_desejadas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO']
-        colunas_existentes = [col for col in colunas_desejadas if col in df_base_local.columns]
-
-        # Debug opcional: mostrar colunas disponíveis
-        st.write("Colunas disponíveis para alunos_da_turma:", colunas_existentes)
-
-        # Filtrar alunos da turma com as colunas disponíveis
-        alunos_da_turma = df_base_local[
-            df_base_local['TURMADISC'].isin(turma_selecionada)
-        ][colunas_existentes].drop_duplicates()
-
-        # RAs que estão na turma mas não têm nota
-        alunos_sem_nota = alunos_da_turma[~alunos_da_turma['RA'].isin(ras_com_nota)].copy()
-        alunos_sem_nota['NOTAS'] = 0
-        alunos_sem_nota['ETAPA'] = etapa
-        alunos_sem_nota['PROVA'] = prova
-        alunos_sem_nota['TIPOETAPA'] = tipoetapa
-        alunos_sem_nota['CODETAPA'] = codetapa
-        alunos_sem_nota['CODPROVA'] = codprova
-
-        # Concatenar com os que têm nota
-        df_final = pd.concat([df_final, alunos_sem_nota], ignore_index=True)
-
-    else:
-        # Para REC, manter comportamento atual
-        df_final = df_final[(df_final['NOTAS'] != 0) & (df_final['NOTAS'].notna())]
-
     return df_final
 
 
@@ -280,12 +248,14 @@ if curso_selecionado:
 
             if st.button("Calcular Notas com Anulações"):
                 df_limpo = limpar_dados(df_ajustado_zipgrade, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas, turma_selecionada)
+                
+                df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce').round(2)
+                df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ','))
 
                 st.subheader("Notas Finais")
                 st.dataframe(df_limpo)
 
                 df_limpo['RA'] = df_limpo['RA'].astype(str).str.zfill(7)
-                df_limpo['NOTAS'] = df_limpo['NOTAS'].apply(lambda x: f"{x:.2f}".replace('.', ','))
 
                 output = io.BytesIO()
                 df_limpo.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
