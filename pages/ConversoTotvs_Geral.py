@@ -44,7 +44,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     # Detectar a disciplina no arquivo enviado
     disciplina_arquivo = df['DISCIPLINA'].iloc[0]
 
-    # 🔥 Filtrar o df_base para manter apenas a disciplina do arquivo
+    # Filtrar o df_base para manter apenas a disciplina do arquivo
     df_base = df_base[df_base['DISCIPLINA'] == disciplina_arquivo]
 
     # Detectar automaticamente a coluna de notas
