@@ -13,6 +13,9 @@ if not check_authentication():
 df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
 df_base = df_alunos.copy()
 
+padrao_remover = r'(?:Projeto de Extensão|Seminários|Liga dos Campeões|Estágio|TCC|Trabalho de Conclusão de Curso)'
+df_base = df_base[~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False)].reset_index(drop=True)
+
 # Renomear colunas
 df_base.rename(columns={
     'NOMEDISCIPLINA': 'DISCIPLINA',
@@ -32,7 +35,7 @@ def calcula_qtd_questoes(df):
     df = df.copy()
     df['Questoes'] = 0
 
-    credito_to_questoes_adm = {4: 16, 2: 8}
+    credito_to_questoes_adm = {4: 12, 2: 6}
     credito_to_questoes_dir = {4: 12, 2: 6}
 
     # ADMINISTRAÇÃO

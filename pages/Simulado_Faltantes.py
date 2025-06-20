@@ -11,6 +11,9 @@ if not check_authentication():
 # Pega o DataFrame geral dos alunos
 df_alunos = st.session_state["dados"].get("alunosxdisciplinas").copy()
 
+padrao_remover = r'(Projeto de Extensão|Seminários|Liga dos Campeões|TCC|Estágio|Trabalho de Conclusão de Curso)'
+df_alunos = df_alunos[~df_alunos['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False)].reset_index(drop=True)
+
 # Renomear colunas para o padrão usado nas demais páginas
 df_alunos.rename(columns={
     'NOMEDISCIPLINA': 'DISCIPLINA',
