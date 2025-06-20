@@ -9,7 +9,7 @@ if not check_authentication():
     
 
 # Pega o DataFrame geral dos alunos
-df_alunos = st.session_state["dados"].get("dntoficina").copy()
+df_alunos = st.session_state["dados"].get("alunosxdisciplinas").copy()
 
 # Renomear colunas para o padrão usado nas demais páginas
 df_alunos.rename(columns={
