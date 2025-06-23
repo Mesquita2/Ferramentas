@@ -48,10 +48,23 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
         st.warning("Coluna 'NOTAS' não encontrada no arquivo.")
         return pd.DataFrame()
 
-    # Merge com base de alunos
+    # Corrige possíveis vírgulas como separadores decimais
+    df['NOTAS'] = df['NOTAS'].astype(str).str.replace(',', '.', regex=False)
+
+    # Converte para float e trata NaNs
+    df['NOTAS'] = pd.to_numeric(df['NOTAS'], errors='coerce').fillna(0)
+
+    # Garante que RA e DISCIPLINA estejam no mesmo formato
+    df_base['RA'] = df_base['RA'].astype(str).str.zfill(7).str.strip()
+    df['RA'] = df['RA'].astype(str).str.zfill(7).str.strip()
+    df_base['DISCIPLINA'] = df_base['DISCIPLINA'].astype(str).str.strip()
+    df['DISCIPLINA'] = df['DISCIPLINA'].astype(str).str.strip()
+
+    # Merge após tratar os dados
     df = pd.merge(df_base, df[['DISCIPLINA', 'RA', 'NOTAS']],
-                  on=['DISCIPLINA', 'RA'],
-                  how='left')
+                on=['DISCIPLINA', 'RA'],
+                how='left')
+
 
     # Adiciona metadados e trata notas
     df['CODETAPA'] = codetapa
