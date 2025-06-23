@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import io
@@ -21,67 +22,56 @@ def carregar_dados(arquivo):
         st.error(f"Erro ao carregar o arquivo: {e}")
         return pd.DataFrame()
 
+# Função para limpar os dados
 @st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df_aluno = st.session_state["dados"].get("alunosxdisciplinas")
     df_base = df_aluno.copy()
+    
+    
 
     df_base['RA'] = df_base['RA'].astype(str).str.zfill(7)
     df['RA'] = df['RA'].astype(str).str.zfill(7)
-
+    
     # Renomear colunas
     df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                             'NOMECURSO': 'CURSO',
                             'NOMEALUNO': 'ALUNO'}, inplace=True)
+    
     df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                        'NOMECURSO': 'CURSO',
                        'NOMEALUNO': 'ALUNO'}, inplace=True)
 
-    # Detectar a disciplina no arquivo enviado
-    disciplina_arquivo = df['DISCIPLINA'].iloc[0]
-
-    # Filtrar o df_base para manter apenas a disciplina do arquivo
-    df_base = df_base[df_base['DISCIPLINA'] == disciplina_arquivo]
-
-    # Verificar se a coluna NOTAS existe
-    if 'NOTAS' not in df.columns:
-        st.warning("Coluna 'NOTAS' não encontrada no arquivo.")
-        return pd.DataFrame()
-
-    # Corrige possíveis vírgulas como separadores decimais
-    df['NOTAS'] = df['NOTAS'].astype(str).str.replace(',', '.', regex=False)
-
-    # Converte para float e trata NaNs
-    df['NOTAS'] = pd.to_numeric(df['NOTAS'], errors='coerce').fillna(0)
-
-    # Garante que RA e DISCIPLINA estejam no mesmo formato
-    df_base['RA'] = df_base['RA'].astype(str).str.zfill(7).str.strip()
-    df['RA'] = df['RA'].astype(str).str.zfill(7).str.strip()
-    df_base['DISCIPLINA'] = df_base['DISCIPLINA'].astype(str).str.strip()
-    df['DISCIPLINA'] = df['DISCIPLINA'].astype(str).str.strip()
-
-    # Merge após tratar os dados
-    df = pd.merge(df, df_base[['DISCIPLINA', 'RA', 'NOTAS']],
-                on=['DISCIPLINA', 'RA'],
-                how='left')
-
-
-    # Adiciona metadados e trata notas
+    
+    df = pd.merge(df_base, df[['DISCIPLINA', 'RA',  'NOTAS']],
+                  on=['DISCIPLINA', 'RA'],
+                  how='left')  
+    
+    df = df.copy()
+    
+    # Adicionar as novas colunas
     df['CODETAPA'] = codetapa
     df['CODPROVA'] = codprova
     df['TIPOETAPA'] = tipoetapa
     df['PROVA'] = prova
     df['ETAPA'] = etapa
     df['RA novo'] = df['RA'].astype(int)
-    df['NOTAS'] = pd.to_numeric(df['NOTAS'], errors='coerce').fillna(0)
+    
+    # Nova ordem das colunas
+    colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
+    df = df[colunas]
 
-    # Reorganiza colunas
-    colunas_finais = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO',
-                      'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
-    df = df[colunas_finais]
+    # Condicional para a limpeza das notas
+    df_teste = df
+    if prova == "Prova":
+        df_teste = df_teste.dropna(subset=['NOTAS']).copy()
+    elif prova == "Recuperação":
+        df_teste = df_teste.dropna(subset=['NOTAS'])
+    elif prova == "Quizz":
+        df_teste = df_teste.dropna(subset=['NOTAS'])
 
-    return df
 
+    return df_teste
 
 # Interface do Streamlit
 st.title("Limpeza e Tratamento de Notas")
@@ -90,7 +80,7 @@ st.title("Limpeza e Tratamento de Notas")
 uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
 
 # Definir as variáveis de configuração para o filtro
-etapa = st.selectbox('Selecione a etapa', ['P1', 'P2', 'P3'])
+etapa = st.selectbox('Selecione a etapa', ['P1', 'P2'])
 prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação', 'Quizz'])
 tipoetapa = 'N'  # Tipo de etapa
 codetapa = 2  # Código da etapa
@@ -115,12 +105,6 @@ elif etapa == 'P1' and prova == 'Quizz':
 elif etapa == 'P2' and prova == 'Quizz':
     codetapa = 2
     codprova = 3 
-elif etapa == 'P3' and prova == 'Prova':
-    codetapa = 3
-    codprova = 1
-elif etapa == 'P3' and prova == 'Recuperação':
-    codetapa = 3
-    codprova = 2
 
 # Carregar e limpar os dados
 if uploaded_file:
@@ -140,7 +124,6 @@ if uploaded_file:
     df_limpo['RA'] = df_limpo['RA'].astype(str)
     df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))# Remove espaços e substitui vírgula por ponto
     df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce') # Converte para float (NaN se não conseguir)
-    df_limpo['NOTAS'] = df_limpo['NOTAS'].fillna(0)  # Substitui NaN por 0
 
     if (df_limpo['NOTAS'] > 8).any():
         st.info("Existem alunos com nota maior que 8.")
