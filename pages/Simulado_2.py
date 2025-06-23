@@ -35,52 +35,48 @@ def calcula_qtd_questoes(df):
     df = df.copy()
     df['Questoes'] = 0
 
-    credito_to_questoes_adm = {4: 12, 2: 6}
-    credito_to_questoes_dir = {4: 12, 2: 6}
+    # Mapas de crédito para questões
+    credito_to_questoes = {4: 12, 2: 6}
 
     # ADMINISTRAÇÃO
     mask_adm = df['CURSO'] == 'Administração de Empresas'
-    df.loc[mask_adm, 'Questoes'] = df.loc[mask_adm, 'NUMCREDITOSCOB'].map(credito_to_questoes_adm).fillna(0).astype(int)
+    df.loc[mask_adm, 'Questoes'] = df.loc[mask_adm, 'NUMCREDITOSCOB'].map(credito_to_questoes).fillna(0).astype(int)
 
     # DIREITO
     mask_dir = df['CURSO'] == 'Direito'
-    df.loc[mask_dir, 'Questoes'] = df.loc[mask_dir, 'NUMCREDITOSCOB'].map(credito_to_questoes_dir).fillna(0).astype(int)
+    df.loc[mask_dir, 'Questoes'] = df.loc[mask_dir, 'NUMCREDITOSCOB'].map(credito_to_questoes).fillna(0).astype(int)
 
-    # ENGENHARIA DE SOFTWARE - apenas atribuir 30 ou 60 por aluno, não somar por disciplina
+    # ENGENHARIA DE SOFTWARE
     mask_eng = df['CURSO'] == 'Engenharia de Software'
-    df.loc[mask_eng, 'TURMADISC'] = df.loc[mask_eng, 'TURMADISC'].astype(str).str.upper().str.strip()
+    df_eng = df[mask_eng].copy()
 
-    # Para cada aluno de Engenharia, atribuir 30 se tiver disciplina 037C, senão 60
-    alunos_eng = df.loc[mask_eng, ['ALUNO', 'RA', 'TURMADISC']].drop_duplicates()
-    st.write(alunos_eng)
-    alunos_eng['Tem_037C'] = alunos_eng['TURMADISC'].apply(lambda x: '037C' in x.strip().upper())
+    # Tratar TURMADISC: remover NaNs e padronizar
+    df_eng['TURMADISC'] = df_eng['TURMADISC'].fillna('').astype(str).str.upper().str.strip()
 
-    # Agrupar por ALUNO e RA e ver se algum deles tem '037C'
-    questoes_por_aluno = (
-        alunos_eng.groupby(['ALUNO', 'RA'])['Tem_037C']
+    # Verificar se cada aluno de engenharia tem '037C'
+    df_eng['Tem_037C'] = df_eng['TURMADISC'].apply(lambda x: '037C' in x)
+
+    # Agrupar por aluno para ver se tem 037C em qualquer disciplina
+    questoes_eng = (
+        df_eng.groupby(['ALUNO', 'RA'])['Tem_037C']
         .any()
         .reset_index()
     )
+    questoes_eng['Questoes'] = questoes_eng['Tem_037C'].apply(lambda x: 30 if x else 60)
+    questoes_eng.drop(columns='Tem_037C', inplace=True)
 
-    # Atribuir 30 se tiver 037C, senão 60
-    questoes_por_aluno['Questoes'] = questoes_por_aluno['Tem_037C'].apply(lambda x: 30 if x else 60)
-    questoes_por_aluno.drop(columns='Tem_037C', inplace=True)
-
-    # Juntar os valores fixos por aluno (Engenharia) na base
-    # Como queremos o resultado por aluno, vamos juntar depois
-    # Primeiro somamos para ADM e DIR (que já está em df['Questoes'])
-
-    # Somar por aluno as questões de ADM e DIR
+    # ADM/DIR - somar por aluno
     df_adm_dir = df.loc[~mask_eng].groupby(['ALUNO', 'RA'])['Questoes'].sum().reset_index()
 
-    # Agora combinar ADM+DIR com Engenharia (que é fixo)
-    df_final = pd.concat([df_adm_dir, questoes_por_aluno], ignore_index=True)
+    # Juntar tudo
+    df_final = pd.concat([df_adm_dir, questoes_eng], ignore_index=True)
 
-    # Agrupar novamente por aluno, pois pode ter aluno só em Engenharia ou só em ADM/DIR
+    # Agrupar final (pode ter aluno que está em ADM + ENG)
     df_final = df_final.groupby(['ALUNO', 'RA'], as_index=False)['Questoes'].sum()
     df_final['RA'] = df_final['RA'].astype(str).str.zfill(7)
 
     return df_final
+
 
 def ajustes_dataframe(df):
     df['Student ID'] = df['Student ID'].astype(str).str.zfill(7).copy()
