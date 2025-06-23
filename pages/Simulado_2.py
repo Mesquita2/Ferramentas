@@ -65,8 +65,6 @@ def calcula_qtd_questoes(df):
     # Atribuir 30 se tiver 037C, senão 60
     questoes_por_aluno['Questoes'] = questoes_por_aluno['Tem_037C'].apply(lambda x: 30 if x else 60)
     questoes_por_aluno.drop(columns='Tem_037C', inplace=True)
-    # Agora, para os alunos de Engenharia, setar o valor 0 na base original para evitar somar por disciplina
-    df.loc[mask_eng, 'Questoes'] = 0
 
     # Juntar os valores fixos por aluno (Engenharia) na base
     # Como queremos o resultado por aluno, vamos juntar depois
