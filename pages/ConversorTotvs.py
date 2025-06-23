@@ -21,7 +21,6 @@ def carregar_dados(arquivo):
         st.error(f"Erro ao carregar o arquivo: {e}")
         return pd.DataFrame()
 
-# Função para limpar os dados
 @st.cache_data
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df_aluno = st.session_state["dados"].get("alunosxdisciplinas")
@@ -43,7 +42,17 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
 
     # Filtrar o df_base para manter apenas a disciplina do arquivo
     df_base = df_base[df_base['DISCIPLINA'] == disciplina_arquivo]
-    
+
+    # Verificar se a coluna NOTAS existe
+    if 'NOTAS' not in df.columns:
+        st.warning("Coluna 'NOTAS' não encontrada no arquivo.")
+        return pd.DataFrame()
+
+    # Merge com base de alunos
+    df = pd.merge(df_base, df[['DISCIPLINA', 'RA', 'NOTAS']],
+                  on=['DISCIPLINA', 'RA'],
+                  how='left')
+
     # Adiciona metadados e trata notas
     df['CODETAPA'] = codetapa
     df['CODPROVA'] = codprova
@@ -59,6 +68,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df = df[colunas_finais]
 
     return df
+
 
 # Interface do Streamlit
 st.title("Limpeza e Tratamento de Notas")
@@ -112,6 +122,7 @@ if uploaded_file:
     df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
     st.subheader("Dados Após Limpeza")    
     st.dataframe(df_limpo)
+    
     
     df_limpo['RA'] = df_limpo['RA'].astype(str)
     df_limpo['RA'] = df_limpo['RA'].apply(lambda x: str(x).zfill(7))# Remove espaços e substitui vírgula por ponto
