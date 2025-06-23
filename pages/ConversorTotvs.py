@@ -43,23 +43,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
 
     # Filtrar o df_base para manter apenas a disciplina do arquivo
     df_base = df_base[df_base['DISCIPLINA'] == disciplina_arquivo]
-
-    # Detectar automaticamente a coluna de notas
-    nome_esperado = f"NOTAS"
-    colunas_compatíveis = [col for col in df.columns if nome_esperado in col.upper()]
-
-    if not colunas_compatíveis:
-        st.warning(f"Coluna correspondente a '{nome_esperado}' não encontrada.")
-        return pd.DataFrame()
-
-    coluna_nota = colunas_compatíveis[0]
-    df.rename(columns={coluna_nota: 'NOTAS'}, inplace=True)
-
-    # Merge com base de alunos
-    df = pd.merge(df_base, df[['DISCIPLINA', 'RA', 'NOTAS']],
-                  on=['DISCIPLINA', 'RA'],
-                  how='left')
-
+    
     # Adiciona metadados e trata notas
     df['CODETAPA'] = codetapa
     df['CODPROVA'] = codprova
