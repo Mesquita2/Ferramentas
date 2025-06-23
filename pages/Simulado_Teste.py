@@ -239,38 +239,25 @@ if curso_selecionado:
             st.dataframe(df_original)
             df_ajustado_zipgrade = ajustes_dataframe(df_original)
             
-            # 1. Identificar colunas de resposta dos alunos
+            # 1. Identificar colunas de resposta
             colunas_respostas = [col for col in df_ajustado_zipgrade.columns if col.startswith("#") and "Student Response" in col]
 
-            # 2. Garantir RA está no formato correto
+            # 2. Garantir RA no formato certo
             df_ajustado_zipgrade['RA'] = df_ajustado_zipgrade['RA'].astype(str).str.zfill(7)
 
-            # 3. Contar respostas por RA
-            df_ajustado_zipgrade['Respondidas'] = df_ajustado_zipgrade[colunas_respostas].notna().sum(axis=1)
+            # 3. Contar quantas questões não foram respondidas (são NaN)
+            df_ajustado_zipgrade['Nao_Respondidas'] = df_ajustado_zipgrade[colunas_respostas].isna().sum(axis=1)
 
-            # 4. Calcular questões esperadas
-            df_qtd_questoes = calcula_qtd_questoes(df_base[df_base['RA'].isin(df_ajustado_zipgrade['RA'])])
-            df_qtd_questoes = df_qtd_questoes.rename(columns={'Questoes': 'Esperadas'})
+            # 4. Visualizar alunos com questões não respondidas
+            df_nulos = df_ajustado_zipgrade[df_ajustado_zipgrade['Nao_Respondidas'] > 0][['RA', 'Nao_Respondidas']].copy()
 
-            # 5. Juntar por RA
-            df_resumo = pd.merge(
-                df_ajustado_zipgrade[['RA', 'Respondidas']].drop_duplicates(),
-                df_qtd_questoes,
-                on='RA',
-                how='left'
-            )
-
-            # 6. Comparar e mostrar
-            df_resumo['Respondidas'] = df_resumo['Respondidas'].fillna(0).astype(int)
-            df_resumo['Esperadas'] = df_resumo['Esperadas'].fillna(0).astype(int)
-            df_resumo['Faltaram'] = df_resumo['Esperadas'] - df_resumo['Respondidas']
-
-            df_faltando = df_resumo[df_resumo['Faltaram'] > 0]
-
-            if not df_faltando.empty:
-                st.subheader("❗ Alunos que não responderam todas as questões")
-                st.dataframe(df_faltando)
-                st.write("Total de questões esperadas por aluno:")          
+            if not df_nulos.empty:
+                st.subheader("❌ Alunos com questões não respondidas (NaN)")
+                st.warning(f"{len(df_nulos)} alunos deixaram questões em branco.")
+                st.dataframe(df_nulos.sort_values("Nao_Respondidas", ascending=False))
+            else:
+                st.success("✅ Nenhum aluno deixou questões em branco.")
+    
 
             etapa = "P3"
             prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação'])
