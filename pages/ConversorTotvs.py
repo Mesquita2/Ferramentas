@@ -61,7 +61,7 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
     df['DISCIPLINA'] = df['DISCIPLINA'].astype(str).str.strip()
 
     # Merge após tratar os dados
-    df = pd.merge(df_base, df[['DISCIPLINA', 'RA', 'NOTAS']],
+    df = pd.merge(df, df_base[['DISCIPLINA', 'RA', 'NOTAS']],
                 on=['DISCIPLINA', 'RA'],
                 how='left')
 
