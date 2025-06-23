@@ -177,6 +177,18 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anula
                 st.success("Correções aplicadas. Recalcule as notas.")
 
     df['Earned Points Original'] = df['Earned Points'].fillna(0)
+    # Ajustar Possible Points para os alunos selecionados
+    if alunos_ajustar:
+        df['Possible Points Ajustado'] = df.apply(
+            lambda row: row['Possible Points'] - alunos_ajustar.get(row['RA'], 0),
+            axis=1
+        )
+    else:
+        df['Possible Points Ajustado'] = df['Possible Points']
+
+    # Evitar divisão por zero
+    df['Possible Points Ajustado'] = df['Possible Points Ajustado'].replace(0, np.nan)
+
     ids = df['RA'].astype(str).str.zfill(7)
     bonus_total = pd.Series(0, index=ids.unique())
 
@@ -189,7 +201,8 @@ def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anula
 
     df['Bonus Anuladas'] = ids.map(bonus_total).fillna(0)
     df['Earned Points Final'] = df['Earned Points Original'] + df['Bonus Anuladas']
-    df['NOTAS'] = np.minimum((df['Earned Points Final'] * 1.25) / df['Possible Points'].replace(0, np.nan), 1).fillna(0) * 10
+    df['NOTAS'] = np.minimum((df['Earned Points Final'] * 1.25) / df['Possible Points Ajustado'], 1).fillna(0) * 10
+
 
     st.subheader("Dados Originais com Notas")
     st.dataframe(df)
@@ -257,6 +270,14 @@ if curso_selecionado:
 
             # 5. Filtrar alunos que deixaram questões em branco
             df_nulos = df_ajustado_zipgrade[df_ajustado_zipgrade['Nao_Respondidas'] > 0][['RA', 'NOMEALUNO', 'Nao_Respondidas']].copy()
+            
+            # 7. Permitir seleção dos alunos para desconsiderar os NaNs
+            alunos_com_nulos = df_nulos['NOMEALUNO'].tolist()
+            selecionados = st.multiselect("Selecionar alunos para desconsiderar questões em branco (ajustar Possible Points):", options=alunos_com_nulos)
+
+            # 8. Criar mapeamento para consulta rápida
+            alunos_ajustar = df_nulos[df_nulos['NOMEALUNO'].isin(selecionados)].set_index('RA')['Nao_Respondidas'].to_dict()
+
 
             # 6. Exibir resultado
             if not df_nulos.empty:
@@ -266,7 +287,6 @@ if curso_selecionado:
             else:
                 st.success("✅ Nenhum aluno deixou questões em branco.")
 
-    
 
             etapa = "P3"
             prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação'])
