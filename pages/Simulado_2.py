@@ -84,7 +84,6 @@ def calcula_qtd_questoes(df):
 
     return df_final
 
-
 def ajustes_dataframe(df):
     df['Student ID'] = df['Student ID'].astype(str).str.zfill(7).copy()
     df['ALUNO'] = df['Student First Name'].fillna('') + ' ' + df['Student Last Name'].fillna('')
@@ -107,6 +106,8 @@ def ajustes_dataframe(df):
 
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas, turma_selecionada):
     df_base_local = df_alunos.copy()
+    padrao_remover = r'(?:Projeto de Extensão|Seminários|Liga dos Campeões|Estágio|TCC|Trabalho de Conclusão de Curso)'
+    df_base_local = df_base[~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False)].reset_index(drop=True)
     df_base_local.rename(columns={
         'NOMEDISCIPLINA': 'DISCIPLINA',
         'NOMECURSO': 'CURSO',
