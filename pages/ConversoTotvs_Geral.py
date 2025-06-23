@@ -11,8 +11,6 @@ st.set_page_config(page_title="Limpeza de Notas",
 if not check_authentication():
     st.stop()
 
-st.write("Em Manutenção...")
-st.stop()
 
 # Função para carregar o arquivo
 @st.cache_data
