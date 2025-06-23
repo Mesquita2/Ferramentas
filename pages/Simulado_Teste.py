@@ -245,25 +245,27 @@ if curso_selecionado:
             # 2. Garantir RA no formato certo
             df_ajustado_zipgrade['RA'] = df_ajustado_zipgrade['RA'].astype(str).str.zfill(7)
 
+            # 3. Montar nome do aluno, se ainda não existir
             if 'NOMEALUNO' not in df_ajustado_zipgrade.columns:
                 df_ajustado_zipgrade['NOMEALUNO'] = (
                     df_ajustado_zipgrade['Student First Name'].fillna('') + ' ' +
                     df_ajustado_zipgrade['Student Last Name'].fillna('')
                 ).str.strip()
 
-
-            # 3. Contar quantas questões não foram respondidas (são NaN)
+            # 4. Contar quantas questões não foram respondidas (NaN)
             df_ajustado_zipgrade['Nao_Respondidas'] = df_ajustado_zipgrade[colunas_respostas].isna().sum(axis=1)
 
-            # 4. Visualizar alunos com questões não respondidas
-            df_nulos = df_ajustado_zipgrade[df_ajustado_zipgrade['Nao_Respondidas'] > 0][['RA', 'Nao_Respondidas']].copy()
+            # 5. Filtrar alunos que deixaram questões em branco
+            df_nulos = df_ajustado_zipgrade[df_ajustado_zipgrade['Nao_Respondidas'] > 0][['RA', 'NOMEALUNO', 'Nao_Respondidas']].copy()
 
+            # 6. Exibir resultado
             if not df_nulos.empty:
                 st.subheader("❌ Alunos com questões não respondidas (NaN)")
                 st.warning(f"{len(df_nulos)} alunos deixaram questões em branco.")
                 st.dataframe(df_nulos.sort_values("Nao_Respondidas", ascending=False))
             else:
                 st.success("✅ Nenhum aluno deixou questões em branco.")
+
     
 
             etapa = "P3"
