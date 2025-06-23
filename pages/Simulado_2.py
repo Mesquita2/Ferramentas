@@ -53,7 +53,7 @@ def calcula_qtd_questoes(df):
     # Para cada aluno de Engenharia, atribuir 30 se tiver disciplina 037C, senão 60
     alunos_eng = df.loc[mask_eng, ['ALUNO', 'RA', 'TURMADISC']].drop_duplicates()
     st.write(alunos_eng)
-    alunos_eng['Tem_037C'] = alunos_eng['TURMADISC'].apply(lambda x: x.strip().upper() == '037C')
+    alunos_eng['Tem_037C'] = alunos_eng['TURMADISC'].apply(lambda x: '037C' in x.strip().upper())
 
     # Agrupar por ALUNO e RA e ver se algum deles tem '037C'
     questoes_por_aluno = (
