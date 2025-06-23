@@ -245,6 +245,13 @@ if curso_selecionado:
             # 2. Garantir RA no formato certo
             df_ajustado_zipgrade['RA'] = df_ajustado_zipgrade['RA'].astype(str).str.zfill(7)
 
+            if 'NOMEALUNO' not in df_ajustado_zipgrade.columns:
+                df_ajustado_zipgrade['NOMEALUNO'] = (
+                    df_ajustado_zipgrade['Student First Name'].fillna('') + ' ' +
+                    df_ajustado_zipgrade['Student Last Name'].fillna('')
+                ).str.strip()
+
+
             # 3. Contar quantas questões não foram respondidas (são NaN)
             df_ajustado_zipgrade['Nao_Respondidas'] = df_ajustado_zipgrade[colunas_respostas].isna().sum(axis=1)
 
