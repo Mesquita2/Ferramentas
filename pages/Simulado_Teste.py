@@ -39,15 +39,15 @@ def calcula_qtd_questoes(df):
     credito_to_questoes_dir = {4: 12, 2: 6}
 
     # ADMINISTRAÇÃO
-    mask_adm = df['CURSO'] == 'Administração de Empresas'
+    mask_adm = df['CURSO'] == 'Bacharelado em Administração de Empresas'
     df.loc[mask_adm, 'Questoes'] = df.loc[mask_adm, 'NUMCREDITOSCOB'].map(credito_to_questoes_adm).fillna(0).astype(int)
 
     # DIREITO
-    mask_dir = df['CURSO'] == 'Direito'
+    mask_dir = df['CURSO'] == 'Bacharelado em Direito'
     df.loc[mask_dir, 'Questoes'] = df.loc[mask_dir, 'NUMCREDITOSCOB'].map(credito_to_questoes_dir).fillna(0).astype(int)
 
     # ENGENHARIA DE SOFTWARE - apenas atribuir 30 ou 60 por aluno, não somar por disciplina
-    mask_eng = df['CURSO'] == 'Engenharia de Software'
+    mask_eng = df['CURSO'] == 'Bacharelado em Engenharia de Software'
     df.loc[mask_eng, 'TURMADISC'] = df.loc[mask_eng, 'TURMADISC'].astype(str).str.upper().str.strip()
 
     # Para cada aluno de Engenharia, atribuir 30 se tiver disciplina 037C, senão 60
