@@ -10,13 +10,14 @@ if not check_authentication():
 
 # Pega o DataFrame geral dos alunos
 df_alunos = st.session_state["dados"].get("alunosxdisciplinas").copy()
+df_base = df_alunos.copy()
+
 
 padrao_remover = r'(Projeto de Extensão|Seminários|Liga dos Campeões|TCC|Estágio|Trabalho de Conclusão de Curso)'
-df_base = df_alunos[
-    ~df_alunos['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False) &
-    df_alunos['TURMADISC'].astype(str).str.len().le(4)
+df_base = df_base[
+    ~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False) &
+    df_base['TURMADISC'].astype(str).str.len().le(4)
 ].reset_index(drop=True)
-
 
 # Renomear colunas para o padrão usado nas demais páginas
 df_alunos.rename(columns={
