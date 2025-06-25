@@ -14,7 +14,10 @@ df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
 df_base = df_alunos.copy()
 
 padrao_remover = r'(?:Projeto de Extensão|Seminários|Liga dos Campeões|Estágio|TCC|Trabalho de Conclusão de Curso)'
-df_base = df_base[~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False)].reset_index(drop=True)
+df_base = df_base[
+    ~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False) &
+    df_base['TURMADISC'].astype(str).str.len().le(4)
+].reset_index(drop=True)
 
 # Renomear colunas
 df_base.rename(columns={
@@ -284,11 +287,11 @@ if curso_selecionado:
 
             # 6. Exibir resultado
             if not df_nulos.empty:
-                st.subheader("❌ Alunos com questões não respondidas (NaN)")
+                st.subheader(" Alunos com questões não respondidas (NaN)")
                 st.warning(f"{len(df_nulos)} alunos deixaram questões em branco.")
                 st.dataframe(df_nulos.sort_values("Nao_Respondidas", ascending=False))
             else:
-                st.success("✅ Nenhum aluno deixou questões em branco.")
+                st.success("Nenhum aluno deixou questões em branco.")
 
 
             etapa = "P3"
