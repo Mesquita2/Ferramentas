@@ -110,7 +110,10 @@ def ajustes_dataframe(df):
 def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas, turma_selecionada):
     df_base_local = df_alunos.copy()
     padrao_remover = r'(?:Projeto de Extensão|Seminários|Liga dos Campeões|Estágio|TCC|Trabalho de Conclusão de Curso)'
-    df_base_local = df_base[~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False)].reset_index(drop=True)
+    df_base_local = df_base[
+        ~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False) &
+        df_base['TURMADISC'].astype(str).str.len().le(4)
+    ].reset_index(drop=True)
 
     df_base_local.rename(columns={
         'NOMEDISCIPLINA': 'DISCIPLINA',
