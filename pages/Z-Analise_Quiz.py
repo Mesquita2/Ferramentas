@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 from auth import check_authentication
-import mysql.connector
+#import mysql.connector
 
 st.write("Em manutenção")
 st.stop()
