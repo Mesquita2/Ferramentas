@@ -30,6 +30,7 @@ kiwisolver==1.4.8
 lxml==5.3.2
 MarkupSafe==3.0.2
 matplotlib==3.10.1
+mysql-connector-python==9.3.0
 narwhals==1.31.0
 numpy==2.2.4
 oauthlib==3.2.2
@@ -38,7 +39,7 @@ packaging==24.2
 pandas==2.2.3
 pillow==11.1.0
 proto-plus==1.26.1
-protobuf==5.29.3
+protobuf==5.29.5
 pyarrow==19.0.1
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
@@ -63,6 +64,6 @@ tornado==6.5
 typing_extensions==4.12.2
 tzdata==2025.1
 uritemplate==4.1.1
-urllib3==2.3.0
+urllib3==2.5.0
 watchdog==6.0.0
 XlsxWriter==3.2.2

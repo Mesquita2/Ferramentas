@@ -197,7 +197,7 @@ disciplina = st.selectbox("Escolha a disciplina", disciplinas)
 turmas_filtradas = df_rec[df_rec["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
 turma = st.selectbox("Escolha a turma", turmas_filtradas)
 
-prova = st.selectbox("Escolha se é REC_P1 ou REC_P2", ["REC_P1", "REC_P2"])
+prova = st.selectbox("Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2, REC_FINAL"])
 
 df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
 st.write(f"**Alunos da Disciplina: {disciplina} | Turma: {turma}**")
