@@ -3,7 +3,6 @@ import pandas as pd
 import io
 from auth import check_authentication
 
-
 # Configuração da página
 st.set_page_config(page_title="Analise de Quiz",
                    page_icon="", 
