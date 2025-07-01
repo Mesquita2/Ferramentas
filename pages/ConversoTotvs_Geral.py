@@ -106,17 +106,17 @@ elif etapa == 'P2' and prova == "Recuperação":
     codetapa = 2  # P2 = 2
     codprova = 2  # Recuperação = 2
 elif etapa == 'P1' and prova == 'Quizz': 
-    codetapa = 1
-    codprova = 3
+    codetapa = 1  # P1 = 1
+    codprova = 3  # Quizz = 3
 elif etapa == 'P2' and prova == 'Quizz':
-    codetapa = 2
-    codprova = 3 
+    codetapa = 2  # P2 = 2
+    codprova = 3  # Quizz = 3
 elif etapa == 'P3' and prova == 'Prova':
-    codetapa = 3
-    codprova = 1
+    codetapa = 3  # P3 = 3
+    codprova = 1  # Prova = 1
 elif etapa == 'P3' and prova == 'Recuperação':
-    codetapa = 3
-    codprova = 2
+    codetapa = 3  # P3 = 3
+    codprova = 2  # Recuperação = 2
 
 # Carregar e limpar os dados
 if uploaded_file:
