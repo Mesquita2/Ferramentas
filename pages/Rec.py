@@ -33,6 +33,13 @@ def limpar_rec(df):
             .str.strip()
         )
         
+        df_filtrado = df[df['NOME'] == 'GUILHERME MÁXIMUS MOTA LOPES']
+
+        st.write(df_filtrado.columns)
+        # Mostra os dados
+        st.write("**Dados da REC para RA 1414293:**")
+        st.dataframe(df_filtrado[['DISCIPLINA', 'CODTURMA', 'NOME', 'RA']])
+
         
         df["RA"] = df["RA"].astype(str).str.zfill(7)
         df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
@@ -48,12 +55,7 @@ def limpar_rec(df):
         
         df = df[df['CODSTATUS'] != 'C']
         
-        df_filtrado = df[df['NOME'] == 'GUILHERME MÁXIMUS MOTA LOPES']
-
-        st.write(df_filtrado.columns)
-        # Mostra os dados
-        st.write("**Dados da REC para RA 1414293:**")
-        st.dataframe(df_filtrado[['DISCIPLINA', 'CODTURMA', 'NOME', 'RA']])
+        
         
         df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
         st.success("Dados de alunos substituídos com sucesso!")
