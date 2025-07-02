@@ -53,7 +53,7 @@ credentials = service_account.Credentials.from_service_account_info(
 drive_service = build("drive", "v3", credentials=credentials)
 
 # Lista de arquivos
-NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx", "testes.xlsx", "rec_simulado.xlsx"]
+NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx", "testes.xlsx", "rec_simulado.xlsx","recP1_analise.xlsx", "recP2_analise.xlsx"]
 
 def limpeza_alunos_disciplinas(df):
     if 'NOME_SOCIAL' in df.columns:
