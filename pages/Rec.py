@@ -60,8 +60,7 @@ def limpar_rec(df_rec):
 
         if not nao_encontrados.empty:
             st.warning(f"{len(nao_encontrados)} alunos não estão em 'Período em Curso' e foram removidos:")
-            st.write(nao_encontrados.columns)
-            st.dataframe(nao_encontrados[['RA', 'ALUNO', 'DISCIPLINA']])
+            st.dataframe(nao_encontrados[['RA', 'NOME', 'DISCIPLINA']])
 
 
         if df_merged.empty:
