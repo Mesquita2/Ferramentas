@@ -169,6 +169,7 @@ def gerar_excel(df_rec, disciplinas, turmas):
     return output
 
 
+
 st.title("Gerador de Planilha de Notas para REC")
 
 df_rec = limpar_rec(df)
