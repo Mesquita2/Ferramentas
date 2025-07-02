@@ -59,11 +59,6 @@ def gerar_excel_com_filtros(df_rec, disciplinas, turmas):
     return output
 
 def gerar_relatorio_assinatura(df, disciplinas, turmas):
-    from docx import Document
-    from docx.shared import Pt, Inches, RGBColor
-    from datetime import date
-    import io
-
     data_hoje = date.today().strftime("%d/%m/%Y")
     df = df[(df["DISCIPLINA"].isin(disciplinas)) & (df["TURMADISC"].isin(turmas))].copy()
     df = df.sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
@@ -95,8 +90,6 @@ def gerar_relatorio_assinatura(df, disciplinas, turmas):
             linha = tabela.add_row().cells
             linha[0].text = row["ALUNO"]
             linha[1].text = " "
-
-        doc.add_page_break()
 
     output = io.BytesIO()
     doc.save(output)
