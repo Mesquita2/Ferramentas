@@ -28,11 +28,11 @@ def limpar_rec(df):
         df_base = st.session_state["dados"].get(ARQUIVOBASE)
         df['DISCIPLINA'] = (
             df['DISCIPLINA']
-             #retirar o codigo em () do nome da disciplina
-            .str.replace(r'\s*\(.*?\)', '', regex=True) 
+            .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)  # remove apenas o último parêntese
             .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
             .str.strip()
         )
+
         
         df["RA"] = df["RA"].astype(str).str.zfill(7)
         df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
