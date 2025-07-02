@@ -177,7 +177,7 @@ df_filtrado = df[df['RA'] == '1414293']
 st.write(df_filtrado.columns)
 # Mostra os dados
 st.write("**Dados da REC para RA 1414293:**")
-st.dataframe(df_filtrado[['DISCIPLINA', 'CODTURMA', 'ALUNO', 'RA']])
+st.dataframe(df_filtrado[['DISCIPLINA', 'CODTURMA', 'NOME', 'RA']])
 
 df_rec = limpar_rec(df)
 if df_rec.empty:
