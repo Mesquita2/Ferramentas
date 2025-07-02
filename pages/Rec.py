@@ -34,7 +34,6 @@ def limpar_rec(df):
         )
         df_base['DISCIPLINA'] = (
             df_base['DISCIPLINA']
-            .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)  # remove apenas o último parêntese
             .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
             .str.strip()
         )
