@@ -172,7 +172,7 @@ def gerar_excel(df_rec, disciplinas, turmas):
 st.title("Gerador de Planilha de Notas para REC")
 
 # Filtra df_rec pelo RA 1414293 (lembrando de normalizar como string de 7 dígitos)
-df_filtrado = df[df['RA'] == '1414293']
+df_filtrado = df[df['RA_ALUNO'] == '1414293']
 
 st.write(df_filtrado.columns)
 # Mostra os dados
