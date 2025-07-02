@@ -183,7 +183,11 @@ turmas_selecionadas = st.multiselect("Escolha as turmas", turmas_disponiveis)
 
 prova = st.selectbox("Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2", "REC_FINAL"])
 
-df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplinas_selecionadas) & (df_rec["TURMADISC"] == turmas_selecionadas)]
+df_filtrado = df_rec[
+    (df_rec["DISCIPLINA"].isin(disciplinas_selecionadas)) &
+    (df_rec["TURMADISC"].isin(turmas_selecionadas))
+]
+
 st.write(f"**Alunos da Disciplina: {disciplinas_selecionadas} | Turma: {turmas_selecionadas}**")
 total = df_filtrado['ALUNO'].count()
 st.write(f"**Quatidade de REC solicitadas: {total}**")
