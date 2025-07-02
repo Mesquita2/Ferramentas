@@ -82,69 +82,54 @@ def adicionar_imagem_no_rodape(doc, imagem_rodape):
     run.add_picture(imagem_rodape, width=Inches(7.5), height=Inches(1))  # Ajuste o tamanho conforme necessário
 
 
-def gerar_relatorio(df, disciplina, turma):
-      
+def gerar_relatorio(df, disciplinas, turmas):
     dataatual = date.today().strftime('%d/%m/%Y')
-    
-    df = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
-    df = df.sort_values(by="ALUNO", ascending = True)
+    df = df[df["DISCIPLINA"].isin(disciplinas) & df["TURMADISC"].isin(turmas)]
+    df = df.sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
+
     doc = Document()
-    
     adicionar_imagem_no_cabecalho(doc, imagem_cabecalho)
     adicionar_imagem_no_rodape(doc, imagem_rodape)
-    
-    #Ajustar margens da página para estreitas
+
     section = doc.sections[0]
     section.left_margin = Inches(0.5) 
     section.right_margin = Inches(0.5)
     section.top_margin = Inches(0.5)  
     section.bottom_margin = Inches(0.5) 
-    
-    
-    # Adicionando título "Disciplina" com personalização
-    p = doc.add_paragraph()
-    run = p.add_run("\n\n")
-    run = p.add_run(f"Disciplina: {disciplina}")
-    run.font.name = 'Arial'           # Definindo a fonte para Arial
-    run.font.size = Pt(14)            # Tamanho da fonte para 14 pt
-    run.font.color.rgb = RGBColor(0, 0, 0)  # Cor preta (RGB: 0,0,0)
-    
-    # Adicionando título "Turma" com personalização
-    p = doc.add_paragraph()
-    run = p.add_run(f"Turma: {turma}")
-    run.font.name = 'Arial'
-    run.font.size = Pt(12)            
-    run.font.color.rgb = RGBColor(0, 0, 0)
-    
-    p = doc.add_paragraph()
-    run = p.add_run(f"Data: {dataatual}")
-    run.font.name = 'Arial'
-    run.font.size = Pt(12)            
-    run.font.color.rgb = RGBColor(0, 0, 0)
-    
-    
-    
-    colunas = ['ALUNO']
-    df = df[colunas]
-    df['ASSINATURA'] = '  '
-    # Adiciona a tabela
-    table = doc.add_table(rows=1, cols=len(df.columns))
-    table.style = 'Table Grid'
 
+    for (disciplina, turma), df_grupo in df.groupby(['DISCIPLINA', 'TURMADISC']):
+        # Título
+        p = doc.add_paragraph()
+        p.add_run("\n\n")
+        run = p.add_run(f"Disciplina: {disciplina}")
+        run.font.name = 'Arial'
+        run.font.size = Pt(14)
+        run.font.color.rgb = RGBColor(0, 0, 0)
 
-    # Cabeçalho da tabela
-    hdr_cells = table.rows[0].cells
-    for i, col_name in enumerate(df.columns):
-        hdr_cells[i].text = col_name
+        p = doc.add_paragraph()
+        run = p.add_run(f"Turma: {turma}")
+        run.font.name = 'Arial'
+        run.font.size = Pt(12)
 
-    # Dados
-    for _, row in df.iterrows():
-        row_cells = table.add_row().cells
-        for i, item in enumerate(row):
-            row_cells[i].text = str(item)
+        p = doc.add_paragraph()
+        run = p.add_run(f"Data: {dataatual}")
+        run.font.name = 'Arial'
+        run.font.size = Pt(12)
 
+        # Tabela
+        df_grupo = df_grupo[['ALUNO']].copy()
+        df_grupo['ASSINATURA'] = ''
+        table = doc.add_table(rows=1, cols=len(df_grupo.columns))
+        table.style = 'Table Grid'
+        hdr_cells = table.rows[0].cells
+        for i, col_name in enumerate(df_grupo.columns):
+            hdr_cells[i].text = col_name
 
-    # Salva em memória
+        for _, row in df_grupo.iterrows():
+            row_cells = table.add_row().cells
+            for i, item in enumerate(row):
+                row_cells[i].text = str(item)
+
     buffer = io.BytesIO()
     doc.save(buffer)
     buffer.seek(0)
@@ -170,20 +155,19 @@ if df_cadastro is not None:
     st.dataframe(df_cadastro[['DISCIPLINA', 'NOME']])
 
 
-def gerar_excel(df_rec, disciplina, turma):
-    df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
-    df_filtrado['RA'] = df_filtrado['RA'].astype(str)
-    df_filtrado['NOTAS'] = 0 
+def gerar_excel(df_rec, disciplinas, turmas):
+    df_filtrado = df_rec[df_rec["DISCIPLINA"].isin(disciplinas) & df_rec["TURMADISC"].isin(turmas)].copy()
+    df_filtrado['RA'] = df_filtrado['RA'].astype(str).str.zfill(7)
+    df_filtrado['NOTAS'] = 0
     colunas = ['TURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'NOTAS']
-    df_filtrado = df_filtrado[colunas]
-    
-    df_filtrado = df_filtrado.sort_values(by ="ALUNO", ascending= True)
+    df_filtrado = df_filtrado[colunas].sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
     
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df_filtrado.to_excel(writer, index=False, sheet_name="Notas")
     output.seek(0)
     return output
+
 
 st.title("Gerador de Planilha de Notas para REC")
 
@@ -192,37 +176,38 @@ if df_rec.empty:
     st.stop()
     
 disciplinas = df_rec["DISCIPLINA"].unique().tolist()
-disciplina = st.selectbox("Escolha a disciplina", disciplinas)
+disciplinas_selecionadas = st.multiselect("Escolha as disciplinas", disciplinas)
 
-turmas_filtradas = df_rec[df_rec["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
-turma = st.selectbox("Escolha a turma", turmas_filtradas)
+turmas_disponiveis = df_rec[df_rec["DISCIPLINA"].isin(disciplinas_selecionadas)]["TURMADISC"].unique().tolist()
+turmas_selecionadas = st.multiselect("Escolha as turmas", turmas_disponiveis)
 
-prova = st.selectbox("Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2, REC_FINAL"])
+prova = st.selectbox("Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2", "REC_FINAL"])
 
-df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplina) & (df_rec["TURMADISC"] == turma)]
-st.write(f"**Alunos da Disciplina: {disciplina} | Turma: {turma}**")
+df_filtrado = df_rec[(df_rec["DISCIPLINA"] == disciplinas_selecionadas) & (df_rec["TURMADISC"] == turmas_selecionadas)]
+st.write(f"**Alunos da Disciplina: {disciplinas_selecionadas} | Turma: {turmas_selecionadas}**")
 total = df_filtrado['ALUNO'].count()
 st.write(f"**Quatidade de REC solicitadas: {total}**")
 df_filtrado = df_filtrado.sort_values(by ="ALUNO", ascending= True)
 st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
 
-if disciplina and turma:
-    excel_file = gerar_excel(df_rec, disciplina, turma)
+
+if disciplinas_selecionadas and turmas_selecionadas:
+    excel_file = gerar_excel(df_rec, disciplinas_selecionadas, turmas_selecionadas)
     st.download_button(
-        label="⬇ Gerar e Baixar Planilha Excel",
+        label="⬇ Gerar e Baixar Planilha Excel (Multi)",
         data=excel_file,
-        file_name=f"{disciplina}_{turma}_{prova}.xlsx",
+        file_name=f"Planilha_REC_{prova}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
         
 st.title("Criar Relatorio de Assinatura")
-if disciplina and turma:
-    relatorio = gerar_relatorio(df_rec, disciplina, turma)
+if disciplinas_selecionadas and turmas_selecionadas:
+    relatorio = gerar_relatorio(df_rec, disciplinas_selecionadas, turmas_selecionadas)
     st.download_button(
-        label="Gerar e Baixar Relatorio de Assinaturas",
-        data= relatorio,
-        file_name=f"{disciplina}_{turma}_{prova}.docx",
+        label="📄 Gerar e Baixar Relatório de Assinaturas",
+        data=relatorio,
+        file_name=f"Relatorio_Assinatura_REC_{prova}.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )    
+    )
     
