@@ -174,6 +174,7 @@ st.title("Gerador de Planilha de Notas para REC")
 # Filtra df_rec pelo RA 1414293 (lembrando de normalizar como string de 7 dígitos)
 df_filtrado = df[df['RA'] == '1414293']
 
+st.write(df_filtrado.columns)
 # Mostra os dados
 st.write("**Dados da REC para RA 1414293:**")
 st.dataframe(df_filtrado[['DISCIPLINA', 'TURMADISC', 'ALUNO', 'RA']])
