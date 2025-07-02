@@ -194,6 +194,8 @@ if disciplinas_selecionadas:
         st.write(f"**Alunos da(s) Disciplina(s): {disciplinas_selecionadas} | Turma(s): {turmas_selecionadas}**")
         total = df_filtrado['ALUNO'].count()
         st.write(f"**Quantidade de REC solicitadas: {total}**")
+        qtd_aluno = df_filtrado['ALUNO'].drop_duplicates().count()
+        st.write(f"**Quanridade de alunos:**{qtd_aluno}")
         df_filtrado = df_filtrado.sort_values(by="ALUNO", ascending=True)
         st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
