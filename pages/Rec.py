@@ -42,7 +42,13 @@ def limpar_rec(df):
         
         df = pd.merge(df, df_base[['DISCIPLINA', 'RA',  'TURMADISC', 'ALUNO']],
                   on=['DISCIPLINA', 'RA'],
-                  how='left')        
+                  how='left')  
+        
+        na_apos_merge = df[df['TURMADISC'].isna() | df['ALUNO'].isna()]
+        if not na_apos_merge.empty:
+            st.write("⚠️ Registros que não encontraram correspondência no merge:")
+            st.dataframe(na_apos_merge[['RA', 'DISCIPLINA']])
+            
 
         df = df.drop_duplicates(subset=['ALUNO', 'DISCIPLINA', 'TURMADISC', 'RA'])
         
@@ -174,13 +180,7 @@ st.title("Gerador de Planilha de Notas para REC")
 df_rec = limpar_rec(df)
 if df_rec.empty:
     st.stop()
-    
-df_filtrado = df_rec[df_rec['NOME'] == 'GUILHERME MÁXIMUS MOTA LOPES']
-st.write(df_filtrado.columns)
-st.write("**Dados da REC para RA 1414293:**")
-st.dataframe(df_filtrado[['DISCIPLINA', 'TURMADISC', 'NOME', 'RA']])    
         
-    
 disciplinas = df_rec["DISCIPLINA"].unique().tolist()
 disciplinas_selecionadas = st.multiselect("1. Escolha as disciplinas", disciplinas)
 
