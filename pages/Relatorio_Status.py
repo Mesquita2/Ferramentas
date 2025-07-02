@@ -58,6 +58,52 @@ def gerar_excel_com_filtros(df_rec, disciplinas, turmas):
     output.seek(0)
     return output
 
+def gerar_relatorio_assinatura(df, disciplinas, turmas):
+    from docx import Document
+    from docx.shared import Pt, Inches, RGBColor
+    from datetime import date
+    import io
+
+    data_hoje = date.today().strftime("%d/%m/%Y")
+    df = df[(df["DISCIPLINA"].isin(disciplinas)) & (df["TURMADISC"].isin(turmas))].copy()
+    df = df.sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
+
+    doc = Document()
+
+    # Definições de margem
+    section = doc.sections[0]
+    section.left_margin = Inches(0.5)
+    section.right_margin = Inches(0.5)
+    section.top_margin = Inches(0.5)
+    section.bottom_margin = Inches(0.5)
+
+    for (disciplina, turma), grupo in df.groupby(["DISCIPLINA", "TURMADISC"]):
+        doc.add_paragraph(f"Disciplina: {disciplina}", style='Heading 2')
+        doc.add_paragraph(f"Turma: {turma}")
+        doc.add_paragraph(f"Data: {data_hoje}")
+        doc.add_paragraph(" ")
+
+        tabela = doc.add_table(rows=1, cols=2)
+        tabela.style = "Table Grid"
+        tabela.autofit = True
+
+        hdr_cells = tabela.rows[0].cells
+        hdr_cells[0].text = 'Aluno'
+        hdr_cells[1].text = 'Assinatura'
+
+        for _, row in grupo.iterrows():
+            linha = tabela.add_row().cells
+            linha[0].text = row["ALUNO"]
+            linha[1].text = " "
+
+        doc.add_page_break()
+
+    output = io.BytesIO()
+    doc.save(output)
+    output.seek(0)
+    return output
+
+
 # Interface Streamlit
 st.title("Limpeza e tratamento de notas de REC")
 
@@ -105,3 +151,13 @@ if disciplinas_selecionadas:
         st.write(f"**Quantidade de REC solicitadas: {df_filtrado['ALUNO'].count()}**")
         st.write(f"**Quantidade de alunos distintos: {df_filtrado['ALUNO'].nunique()}**")
         st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
+        
+                # Botão para gerar o relatório de assinaturas
+        relatorio_docx = gerar_relatorio_assinatura(df_rec, disciplinas_selecionadas, turmas_selecionadas)
+        st.download_button(
+            label="📄 Gerar Relatório para Impressão",
+            data=relatorio_docx,
+            file_name="Relatorio_Assinaturas_REC.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+
