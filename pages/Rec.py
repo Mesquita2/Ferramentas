@@ -26,16 +26,18 @@ if not check_authentication():
 def limpar_rec(df):
     if df is not None:
         df_base = st.session_state["dados"].get(ARQUIVOBASE).copy()
-        padronizar_disciplina = lambda x: (
-            str(x)
-            .replace(r'\s*\([^()]*\)\s*$', '', regex=True)  # remove só o último ()
-            .replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
-            .strip()
+        df['DISCIPLINA'] = (
+            df['DISCIPLINA']
+            .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)  # remove apenas o último parêntese
+            .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
+            .str.strip()
         )
-
-        df['DISCIPLINA'] = df['DISCIPLINA'].apply(padronizar_disciplina)
-        df_base['DISCIPLINA'] = df_base['DISCIPLINA'].apply(padronizar_disciplina)
-
+        df_base['DISCIPLINA'] = (
+            df_base['DISCIPLINA']
+            .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)  # remove apenas o último parêntese
+            .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
+            .str.strip()
+        )
         
         df["RA"] = df["RA"].astype(str).str.zfill(7)
         df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
