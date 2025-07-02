@@ -22,37 +22,55 @@ st.set_page_config(page_title="Limpeza Dados da REC",
 if not check_authentication():
     st.stop()
 
-# Função para substituir o arquivo de alunos
-def limpar_rec(df):
-    if df is not None:
+def limpar_rec(df_rec):
+    if df_rec is not None:
         df_base = st.session_state["dados"].get(ARQUIVOBASE).copy()
-        df['DISCIPLINA'] = (
-            df['DISCIPLINA']
-            .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)  # remove apenas o último parêntese
-            .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
+
+        df_rec['DISCIPLINA'] = (
+            df_rec['DISCIPLINA']
+            .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)
+            .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True)
             .str.strip()
         )
-        
-        df["RA"] = df["RA"].astype(str).str.zfill(7)
+
+        df_rec["RA"] = df_rec["RA"].astype(str).str.zfill(7)
         df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
+
+        df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
+                                'NOMEALUNO': 'ALUNO'}, inplace=True)
+
+        # Filtrar somente alunos com "Período em Curso"
+        df_base = df_base[df_base['NOMESTATUS'] == 'Período em Curso']
+
+        # Merge para trazer TURMADISC e validar se está em curso
+        df_merged = pd.merge(
+            df_rec,
+            df_base[['RA', 'DISCIPLINA', 'TURMADISC', 'ALUNO']],
+            on=['RA', 'DISCIPLINA'],
+            how='inner'  # só mantém quem está nas duas bases
+        )
+
+        df_merged = df_merged.drop_duplicates(subset=['RA', 'DISCIPLINA', 'TURMADISC'])
+        df_merged = df_merged[df_merged['RA'].notna()]
         
-        df.rename(columns={'VALOR': 'DISCIPLINA',
-                            'RA': 'RA'}, inplace=True)
-        
-        df = pd.merge(df, df_base[['DISCIPLINA', 'RA',  'TURMADISC', 'ALUNO']],
-                  on=['DISCIPLINA', 'RA'],
-                  how='left') 
+        nao_encontrados = df_rec.merge(df_merged[['RA', 'DISCIPLINA']], 
+                                    on=['RA', 'DISCIPLINA'], 
+                                    how='left', indicator=True)
+        nao_encontrados = nao_encontrados[nao_encontrados['_merge'] == 'left_only']
+
+        if not nao_encontrados.empty:
+            st.warning(f"{len(nao_encontrados)} alunos não estão em 'Período em Curso' e foram removidos:")
+            st.dataframe(nao_encontrados[['RA', 'DISCIPLINA']])
 
 
-        df = df.drop_duplicates(subset=['ALUNO', 'DISCIPLINA', 'TURMADISC', 'RA'])
-        
-        df = df[df['CODSTATUS'] != 'C']
-        
-        df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
-        st.success("Dados de alunos substituídos com sucesso!")
-        return df
+        if df_merged.empty:
+            st.warning("Nenhum aluno inscrito está com status 'Período em Curso'.")
+        else:
+            st.success("Alunos em 'Período em Curso' carregados com sucesso!")
+        return df_merged
     else:
-        st.warning("Não existe arquivo REC, Voltar a pagina Inicial!")
+        st.warning("Arquivo REC não encontrado.")
+        return pd.DataFrame()
         
 def adicionar_imagem_no_cabecalho(doc, imagem_cabecalho):
     # Acessando o cabeçalho da primeira seção do documento
