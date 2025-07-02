@@ -178,9 +178,9 @@ if df_rec.empty:
 df_filtrado = df[df['NOME'] == 'GUILHERME MÁXIMUS MOTA LOPES']
 st.write(df_filtrado.columns)
 st.write("**Dados da REC para RA 1414293:**")
-st.dataframe(df_filtrado[['DISCIPLINA', 'CODTURMA', 'NOME', 'RA']])    
+st.dataframe(df_filtrado[['DISCIPLINA', 'TURMADISC', 'NOME', 'RA']])    
+        
     
-
 disciplinas = df_rec["DISCIPLINA"].unique().tolist()
 disciplinas_selecionadas = st.multiselect("1. Escolha as disciplinas", disciplinas)
 
