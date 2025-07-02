@@ -176,14 +176,14 @@ if df_rec.empty:
     st.stop()
 
 disciplinas = df_rec["DISCIPLINA"].unique().tolist()
-disciplinas_selecionadas = st.multiselect("1 Escolha as disciplinas", disciplinas)
+disciplinas_selecionadas = st.multiselect("1. Escolha as disciplinas", disciplinas)
 
 if disciplinas_selecionadas:
     turmas_disponiveis = df_rec[df_rec["DISCIPLINA"].isin(disciplinas_selecionadas)]["TURMADISC"].unique().tolist()
-    turmas_selecionadas = st.multiselect("2 Escolha as turmas", turmas_disponiveis)
+    turmas_selecionadas = st.multiselect("2. Escolha as turmas", turmas_disponiveis)
 
     if turmas_selecionadas:
-        prova = st.selectbox("3 Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2", "REC_FINAL"])
+        prova = st.selectbox("3. Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2", "REC_FINAL"])
 
         # Filtra os dados para visualização
         df_filtrado = df_rec[
