@@ -174,44 +174,44 @@ st.title("Gerador de Planilha de Notas para REC")
 df_rec = limpar_rec(df)
 if df_rec.empty:
     st.stop()
-    
+
 disciplinas = df_rec["DISCIPLINA"].unique().tolist()
-disciplinas_selecionadas = st.multiselect("Escolha as disciplinas", disciplinas)
+disciplinas_selecionadas = st.multiselect("1️⃣ Escolha as disciplinas", disciplinas)
 
-turmas_disponiveis = df_rec[df_rec["DISCIPLINA"].isin(disciplinas_selecionadas)]["TURMADISC"].unique().tolist()
-turmas_selecionadas = st.multiselect("Escolha as turmas", turmas_disponiveis)
+if disciplinas_selecionadas:
+    turmas_disponiveis = df_rec[df_rec["DISCIPLINA"].isin(disciplinas_selecionadas)]["TURMADISC"].unique().tolist()
+    turmas_selecionadas = st.multiselect("2️⃣ Escolha as turmas", turmas_disponiveis)
 
-prova = st.selectbox("Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2", "REC_FINAL"])
+    if turmas_selecionadas:
+        prova = st.selectbox("3️⃣ Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2", "REC_FINAL"])
 
-df_filtrado = df_rec[
-    (df_rec["DISCIPLINA"].isin(disciplinas_selecionadas)) &
-    (df_rec["TURMADISC"].isin(turmas_selecionadas))
-]
+        # Filtra os dados para visualização
+        df_filtrado = df_rec[
+            (df_rec["DISCIPLINA"].isin(disciplinas_selecionadas)) &
+            (df_rec["TURMADISC"].isin(turmas_selecionadas))
+        ]
 
-st.write(f"**Alunos da Disciplina: {disciplinas_selecionadas} | Turma: {turmas_selecionadas}**")
-total = df_filtrado['ALUNO'].count()
-st.write(f"**Quatidade de REC solicitadas: {total}**")
-df_filtrado = df_filtrado.sort_values(by ="ALUNO", ascending= True)
-st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
+        st.write(f"**Alunos da(s) Disciplina(s): {disciplinas_selecionadas} | Turma(s): {turmas_selecionadas}**")
+        total = df_filtrado['ALUNO'].count()
+        st.write(f"**Quantidade de REC solicitadas: {total}**")
+        df_filtrado = df_filtrado.sort_values(by="ALUNO", ascending=True)
+        st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
+        # Botão para gerar planilha Excel
+        excel_file = gerar_excel(df_rec, disciplinas_selecionadas, turmas_selecionadas)
+        st.download_button(
+            label="⬇ Gerar e Baixar Planilha Excel (Multi)",
+            data=excel_file,
+            file_name=f"Planilha_REC_{prova}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
+        st.title("Criar Relatório de Assinatura")
+        relatorio = gerar_relatorio(df_rec, disciplinas_selecionadas, turmas_selecionadas)
+        st.download_button(
+            label="📄 Gerar e Baixar Relatório de Assinaturas",
+            data=relatorio,
+            file_name=f"Relatorio_Assinatura_REC_{prova}.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
 
-if disciplinas_selecionadas and turmas_selecionadas:
-    excel_file = gerar_excel(df_rec, disciplinas_selecionadas, turmas_selecionadas)
-    st.download_button(
-        label="⬇ Gerar e Baixar Planilha Excel (Multi)",
-        data=excel_file,
-        file_name=f"Planilha_REC_{prova}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-        
-st.title("Criar Relatorio de Assinatura")
-if disciplinas_selecionadas and turmas_selecionadas:
-    relatorio = gerar_relatorio(df_rec, disciplinas_selecionadas, turmas_selecionadas)
-    st.download_button(
-        label="* Gerar e Baixar Relatório de Assinaturas",
-        data=relatorio,
-        file_name=f"Relatorio_Assinatura_REC_{prova}.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-    
