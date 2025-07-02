@@ -22,6 +22,43 @@ st.set_page_config(page_title="Limpeza Dados da REC",
 if not check_authentication():
     st.stop()
 
+def gerar_relatorio_nao_encontrados(df):
+    if df.empty:
+        return None
+
+    doc = Document()
+    
+    # Título
+    doc.add_heading('Alunos Removidos - Fora do Período em Curso', level=1)
+
+    # Subtítulo com quantidade
+    doc.add_paragraph(f"Total de alunos removidos: {len(df)}\n")
+
+    # Tabela
+    tabela = doc.add_table(rows=1, cols=3)
+    tabela.style = 'Table Grid'
+
+    # Cabeçalho
+    hdr_cells = tabela.rows[0].cells
+    hdr_cells[0].text = 'RA'
+    hdr_cells[1].text = 'Nome'
+    hdr_cells[2].text = 'Disciplina'
+
+    # Dados
+    for _, row in df.iterrows():
+        row_cells = tabela.add_row().cells
+        row_cells[0].text = str(row['RA'])
+        row_cells[1].text = str(row['NOME'])
+        row_cells[2].text = str(row['DISCIPLINA'])
+
+    # Salvar em memória
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+
+    return buffer
+
+
 def limpar_rec(df_rec):
     if df_rec is not None:
         df_base = st.session_state["dados"].get(ARQUIVOBASE).copy()
@@ -61,7 +98,16 @@ def limpar_rec(df_rec):
         if not nao_encontrados.empty:
             st.warning(f"{len(nao_encontrados)} alunos não estão em 'Período em Curso' e foram removidos:")
             st.dataframe(nao_encontrados[['RA', 'NOME', 'DISCIPLINA']])
+            
+        buffer = gerar_relatorio_nao_encontrados(nao_encontrados)
 
+        if buffer:
+            st.download_button(
+                label="📄 Baixar Relatório Word",
+                data=buffer,
+                file_name="alunos_removidos.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
 
         if df_merged.empty:
             st.warning("Nenhum aluno inscrito está com status 'Período em Curso'.")
