@@ -43,6 +43,8 @@ def limpar_rec(df):
                   on=['DISCIPLINA', 'RA'],
                   how='left')  
         
+        
+        
         # Verifica quais registros ficaram com NaN após o merge (problema de correspondência)
         na_apos_merge = df[df['TURMADISC'].isna() | df['ALUNO'].isna()].copy()
 
@@ -63,14 +65,9 @@ def limpar_rec(df):
                 suffixes=('_rec', '_base')
             )
 
-    st.info("🧪 Comparação de DISCIPLINA (REC x BASE) por RA (onde houve falha):")
-    st.dataframe(comparacao[['RA', 'DISCIPLINA_rec', 'DISCIPLI_]()]()
+            st.info("🧪 Comparação de DISCIPLINA (REC x BASE) por RA (onde houve falha):")
+            st.dataframe(comparacao[['RA', 'DISCIPLINA_rec', 'DISCIPLINA_base', 'TURMADISC', 'ALUNO']])
 
-        
-        na_apos_merge = df[df['TURMADISC'].isna() | df['ALUNO'].isna()]
-        if not na_apos_merge.empty:
-            st.write("⚠️ Registros que não encontraram correspondência no merge:")
-            st.dataframe(na_apos_merge[['RA', 'DISCIPLINA']])
             
 
         df = df.drop_duplicates(subset=['ALUNO', 'DISCIPLINA', 'TURMADISC', 'RA'])
