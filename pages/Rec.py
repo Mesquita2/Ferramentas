@@ -33,13 +33,6 @@ def limpar_rec(df):
             .str.strip()
         )
         
-        df_filtrado = df[df['NOME'] == 'GUILHERME MÁXIMUS MOTA LOPES']
-
-        st.write(df_filtrado.columns)
-        # Mostra os dados
-        st.write("**Dados da REC para RA 1414293:**")
-        st.dataframe(df_filtrado[['DISCIPLINA', 'CODTURMA', 'NOME', 'RA']])
-
         
         df["RA"] = df["RA"].astype(str).str.zfill(7)
         df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
@@ -54,8 +47,6 @@ def limpar_rec(df):
         df = df.drop_duplicates(subset=['ALUNO', 'DISCIPLINA', 'TURMADISC', 'RA'])
         
         df = df[df['CODSTATUS'] != 'C']
-        
-        
         
         df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
         st.success("Dados de alunos substituídos com sucesso!")
@@ -183,6 +174,11 @@ st.title("Gerador de Planilha de Notas para REC")
 df_rec = limpar_rec(df)
 if df_rec.empty:
     st.stop()
+    
+df_filtrado = df[df['NOME'] == 'GUILHERME MÁXIMUS MOTA LOPES']
+st.write(df_filtrado.columns)
+st.write("**Dados da REC para RA 1414293:**")
+st.dataframe(df_filtrado[['DISCIPLINA', 'CODTURMA', 'NOME', 'RA']])    
     
 
 disciplinas = df_rec["DISCIPLINA"].unique().tolist()
