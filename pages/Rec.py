@@ -175,7 +175,7 @@ df_rec = limpar_rec(df)
 if df_rec.empty:
     st.stop()
     
-df_filtrado = df[df['NOME'] == 'GUILHERME MÁXIMUS MOTA LOPES']
+df_filtrado = df_rec[df_rec['NOME'] == 'GUILHERME MÁXIMUS MOTA LOPES']
 st.write(df_filtrado.columns)
 st.write("**Dados da REC para RA 1414293:**")
 st.dataframe(df_filtrado[['DISCIPLINA', 'TURMADISC', 'NOME', 'RA']])    
