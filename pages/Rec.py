@@ -25,7 +25,7 @@ if not check_authentication():
 # Função para substituir o arquivo de alunos
 def limpar_rec(df):
     if df is not None:
-        df_base = st.session_state["dados"].get(ARQUIVOBASE)
+        df_base = st.session_state["dados"].get(ARQUIVOBASE).copy()
         df['DISCIPLINA'] = (
             df['DISCIPLINA']
             .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)  # remove apenas o último parêntese
@@ -149,7 +149,7 @@ def dash(df):
 st.title("Limpeza e tratamento de notas de REC")
         
 st.subheader("Dados dos Cadastrados na REC")
-df_cadastro = st.session_state["dados"].get(ARQUIVOREC)
+df_cadastro = st.session_state["dados"].get(ARQUIVOREC).copy()
 df = df_cadastro.copy()
 if df_cadastro is not None: 
     st.dataframe(df_cadastro[['DISCIPLINA', 'NOME']])
