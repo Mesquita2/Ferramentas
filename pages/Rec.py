@@ -209,7 +209,7 @@ st.title("Criar Relatorio de Assinatura")
 if disciplinas_selecionadas and turmas_selecionadas:
     relatorio = gerar_relatorio(df_rec, disciplinas_selecionadas, turmas_selecionadas)
     st.download_button(
-        label="📄 Gerar e Baixar Relatório de Assinaturas",
+        label="* Gerar e Baixar Relatório de Assinaturas",
         data=relatorio,
         file_name=f"Relatorio_Assinatura_REC_{prova}.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
