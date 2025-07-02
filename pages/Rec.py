@@ -32,11 +32,6 @@ def limpar_rec(df):
             .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
             .str.strip()
         )
-        df_base['DISCIPLINA'] = (
-            df_base['DISCIPLINA']
-            .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True) 
-            .str.strip()
-        )
         
         df["RA"] = df["RA"].astype(str).str.zfill(7)
         df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
@@ -47,6 +42,30 @@ def limpar_rec(df):
         df = pd.merge(df, df_base[['DISCIPLINA', 'RA',  'TURMADISC', 'ALUNO']],
                   on=['DISCIPLINA', 'RA'],
                   how='left')  
+        
+        # Verifica quais registros ficaram com NaN após o merge (problema de correspondência)
+        na_apos_merge = df[df['TURMADISC'].isna() | df['ALUNO'].isna()].copy()
+
+        if not na_apos_merge.empty:
+            st.warning("⚠️ Alguns registros da REC não foram encontrados na base de alunos:")
+            st.dataframe(na_apos_merge[['RA', 'DISCIPLINA']])
+
+            # Ver comparação lado a lado com df_base
+            df_base_check = st.session_state["dados"].get(ARQUIVOBASE).copy()
+            df_base_check['RA'] = df_base_check['RA'].astype(str).str.zfill(7)
+
+            # Junta pelo RA apenas para comparar as disciplinas lado a lado
+            comparacao = pd.merge(
+                na_apos_merge[['RA', 'DISCIPLINA']],
+                df_base_check[['RA', 'DISCIPLINA', 'TURMADISC', 'ALUNO']],
+                on='RA',
+                how='left',
+                suffixes=('_rec', '_base')
+            )
+
+    st.info("🧪 Comparação de DISCIPLINA (REC x BASE) por RA (onde houve falha):")
+    st.dataframe(comparacao[['RA', 'DISCIPLINA_rec', 'DISCIPLI_]()]()
+
         
         na_apos_merge = df[df['TURMADISC'].isna() | df['ALUNO'].isna()]
         if not na_apos_merge.empty:
