@@ -171,17 +171,17 @@ def gerar_excel(df_rec, disciplinas, turmas):
 
 st.title("Gerador de Planilha de Notas para REC")
 
-df_rec = limpar_rec(df)
-if df_rec.empty:
-    st.stop()
-    
 # Filtra df_rec pelo RA 1414293 (lembrando de normalizar como string de 7 dígitos)
-df_filtrado = df_rec[df_rec['RA'] == '1414293']
+df_filtrado = df[df['RA'] == '1414293']
 
 # Mostra os dados
 st.write("**Dados da REC para RA 1414293:**")
 st.dataframe(df_filtrado[['DISCIPLINA', 'TURMADISC', 'ALUNO', 'RA']])
 
+df_rec = limpar_rec(df)
+if df_rec.empty:
+    st.stop()
+    
 
 disciplinas = df_rec["DISCIPLINA"].unique().tolist()
 disciplinas_selecionadas = st.multiselect("1. Escolha as disciplinas", disciplinas)
