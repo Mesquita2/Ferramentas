@@ -158,9 +158,8 @@ if disciplinas_selecionadas:
         
         relatorio_excel = gerar_excel_com_filtros(df_rec, disciplinas_selecionadas, turmas_selecionadas)
         st.download_button(
-
             label="Gerar Relatório de Notas",
-            data=relatorio_docx,
+            data=relatorio_excel,
             file_name=f"Relatorio_Notas_{curso}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
