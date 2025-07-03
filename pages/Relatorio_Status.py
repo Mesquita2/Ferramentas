@@ -150,7 +150,7 @@ if disciplinas_selecionadas:
                 # Botão para gerar o relatório de assinaturas
         relatorio_docx = gerar_relatorio_assinatura(df_rec, disciplinas_selecionadas, turmas_selecionadas)
         st.download_button(
-            label="📄 Gerar Relatório para Impressão",
+            label="Gerar Relatório para Impressão",
             data=relatorio_docx,
             file_name="Relatorio_Assinaturas_REC.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
