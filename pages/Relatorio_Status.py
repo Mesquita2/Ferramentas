@@ -145,6 +145,8 @@ if disciplinas_selecionadas:
         st.write(f"**Quantidade de alunos distintos: {df_filtrado['ALUNO'].nunique()}**")
         st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
         
+        curso = df_filtrado['NOMECURSO'].iloc[0]
+        
                 # Botão para gerar o relatório de assinaturas
         relatorio_docx = gerar_relatorio_assinatura(df_rec, disciplinas_selecionadas, turmas_selecionadas)
         st.download_button(
@@ -153,4 +155,15 @@ if disciplinas_selecionadas:
             file_name="Relatorio_Assinaturas_REC.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
+        
+        relatorio_excel = gerar_excel_com_filtros(df_rec, disciplinas_selecionadas, turmas_selecionadas)
+        st.download_button(
+
+            label="Gerar Relatório de Notas",
+            data=relatorio_docx,
+            file_name=f"Relatorio_Notas_{curso}.excel",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        
+        
 
