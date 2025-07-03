@@ -81,7 +81,7 @@ st.title("Limpeza e Tratamento de Notas")
 uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
 
 # Definir as variáveis de configuração para o filtro
-etapa = st.selectbox('Selecione a etapa', ['P1', 'P2', 'P3'])
+etapa = st.selectbox('Selecione a etapa', ['P1', 'P2', 'P3', 'PROVAFINAL'])
 prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação', 'Quizz'])
 tipoetapa = 'N'  # Tipo de etapa
 codetapa = 2  # Código da etapa
@@ -109,6 +109,9 @@ elif etapa == 'P2' and prova == 'Quizz':
 elif etapa == 'P3' and prova == "Prova":
     codetapa = 3
     codprova = 1
+elif etapa == 'PROVAFINAL' and prova == "Recuperação":
+    codetapa = 5
+    codprova = 1 
 
 # Carregar e limpar os dados
 if uploaded_file:
