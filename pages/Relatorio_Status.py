@@ -144,8 +144,8 @@ if disciplinas_selecionadas:
         st.write(f"**Quantidade de REC solicitadas: {df_filtrado['ALUNO'].count()}**")
         st.write(f"**Quantidade de alunos distintos: {df_filtrado['ALUNO'].nunique()}**")
         st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
-        st.write(df_filtrado.columns)
-        curso = df_filtrado['NOMECURSO'].iloc[0]
+
+        curso = df_filtrado['CURSO'].iloc[0]
         
                 # Botão para gerar o relatório de assinaturas
         relatorio_docx = gerar_relatorio_assinatura(df_rec, disciplinas_selecionadas, turmas_selecionadas)
