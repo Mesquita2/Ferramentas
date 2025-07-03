@@ -161,7 +161,7 @@ if disciplinas_selecionadas:
 
             label="Gerar Relatório de Notas",
             data=relatorio_docx,
-            file_name=f"Relatorio_Notas_{curso}.excel",
+            file_name=f"Relatorio_Notas_{curso}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
         
