@@ -68,6 +68,7 @@ def limpeza_alunos_disciplinas(df):
                                 'NOMECURSO': 'CURSO',
                                 'NOMEALUNO': 'ALUNO'}, inplace=True)
     df = df[df['NOMESTATUS'] != 'Cancelamento']
+    df = df[df['NOMESTATUS'] != 'Aproveitamento de Estudo']
     df = df.assign(RA=df['RA'].apply(str).str.zfill(7))
      
     return pd.DataFrame(df)
@@ -149,3 +150,4 @@ for chave, df in st.session_state["dados"].items():
         # Aplica o mesmo filtro após substituição
         novo_exibido = novo_df.loc[:, novo_df.columns.intersection(colunas)] if colunas else novo_df
         st.dataframe(novo_exibido)
+         

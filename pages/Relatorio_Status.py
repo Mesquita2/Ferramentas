@@ -152,7 +152,7 @@ if disciplinas_selecionadas:
         st.download_button(
             label="Gerar Relatório para Impressão",
             data=relatorio_docx,
-            file_name="Relatorio_Assinaturas_REC.docx",
+            file_name=f"Relatorio_Assinaturas_{curso}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
         
