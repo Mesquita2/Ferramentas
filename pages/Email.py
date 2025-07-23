@@ -10,6 +10,8 @@ import base64
 import pickle
 import os
 
+st.stop()
+
 # Garante que st.session_state["dados"] está inicializado (ajuste conforme seu contexto)
 if "dados" not in st.session_state:
     st.session_state["dados"] = {"alunosxdisciplinas": pd.DataFrame()}  # substitua pelo seu dataframe real
