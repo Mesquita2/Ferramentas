@@ -52,33 +52,6 @@ credentials = service_account.Credentials.from_service_account_info(
 )
 drive_service = build("drive", "v3", credentials=credentials)
 
-from google_auth_oauthlib.flow import InstalledAppFlow
-import pickle
-import streamlit as st
-import os
-
-SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-
-client_config = {
-    "installed": {
-        "client_id": st.secrets["gmail_oauth"]["client_id"],
-        "client_secret": st.secrets["gmail_oauth"]["client_secret"],
-        "auth_uri": st.secrets["gmail_oauth"]["auth_uri"],
-        "token_uri": st.secrets["gmail_oauth"]["token_uri"],
-        "redirect_uris": st.secrets["gmail_oauth"]["redirect_uris"],
-    }
-}
-
-def main():
-    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-    creds = flow.run_console()
-    with open("token_gmail.pkl", "wb") as token_file:
-        pickle.dump(creds, token_file)
-    print("Token salvo em token_gmail.pkl")
-
-if __name__ == "__main__":
-    main()
-
 # Lista de arquivos
 NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx", "testes.xlsx", "rec_simulado.xlsx","recP1_analise.xlsx", "recP2_analise.xlsx"]
 
