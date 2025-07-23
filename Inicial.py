@@ -71,7 +71,7 @@ client_config = {
 
 def main():
     flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-    creds = flow.run_local_server(port=8080)
+    creds = flow.run_console()
     with open("token_gmail.pkl", "wb") as token_file:
         pickle.dump(creds, token_file)
     print("Token salvo em token_gmail.pkl")
