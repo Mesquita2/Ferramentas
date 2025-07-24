@@ -11,6 +11,14 @@ import os
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
+import base64
+
+token_b64 = st.secrets["gmail_token"]["token_b64"]
+
+with open("token_gmail.pkl", "wb") as token_file:
+    token_file.write(base64.b64decode(token_b64))
+
+
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 TOKEN_PATH = "token_gmail.pkl"
 
