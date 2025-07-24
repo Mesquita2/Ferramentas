@@ -16,35 +16,32 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 TOKEN_PATH = "token_gmail.pkl"
 
 # --- Helpers de autenticação ---
+from google.oauth2 import service_account
+
 def carregar_credenciais():
-    creds = None
-    if os.path.exists(TOKEN_PATH):
-        with open(TOKEN_PATH, "rb") as token_file:
-            creds = pickle.load(token_file)
+    info = {
+        "type": "service_account",
+        "project_id": st.secrets["gmail_service"]["project_id"],
+        "private_key_id": st.secrets["gmail_service"]["private_key_id"],
+        "private_key": st.secrets["gmail_service"]["private_key"].replace("\\n", "\n"),
+        "client_email": st.secrets["gmail_service"]["client_email"],
+        "client_id": st.secrets["gmail_service"]["client_id"],
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": st.secrets["gmail_service"]["client_x509_cert_url"]
+    }
 
-    # Se expirou mas tem refresh_token, renova sem pedir login
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
+    SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
+    # Esse é o e-mail de um usuário real autorizado a enviar (o G Suite precisa liberar delegação)
+    delegated_user = st.secrets["gmail_service"]["delegated_user"]
 
-    # Se ainda não tem credenciais válidas, faz login manual
-    if not creds or not creds.valid:
-        flow = InstalledAppFlow.from_client_config(
-            {
-                "installed": {
-                    "client_id": st.secrets["gmail_oauth"]["client_id"],
-                    "client_secret": st.secrets["gmail_oauth"]["client_secret"],
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": ["http://localhost:8080/"]
-                }
-            },
-            scopes=SCOPES
-        )
-        creds = flow.run_local_server(port=8080, access_type='offline', prompt='consent')
-        with open(TOKEN_PATH, "wb") as token_file:
-            pickle.dump(creds, token_file)
+    creds = service_account.Credentials.from_service_account_info(
+        info, scopes=SCOPES
+    ).with_subject(delegated_user)
 
     return creds
+
 
 @st.cache_resource(show_spinner=False)
 def criar_servico_gmail():
