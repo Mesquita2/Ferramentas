@@ -4,7 +4,6 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-from google_auth_oauthlib.flow import InstalledAppFlow  
 import base64
 import pickle
 import os
@@ -15,33 +14,29 @@ from google.auth.transport.requests import Request
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 TOKEN_PATH = "token_gmail.pkl"
 
-# --- Helpers de autenticação ---
-from google.oauth2 import service_account
+import streamlit as st
+import pickle
+import os
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
+
+TOKEN_PATH = "token_gmail.pkl"
+SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
 def carregar_credenciais():
-    info = {
-        "type": "service_account",
-        "project_id": st.secrets["gmail_service"]["project_id"],
-        "private_key_id": st.secrets["gmail_service"]["private_key_id"],
-        "private_key": st.secrets["gmail_service"]["private_key"].replace("\\n", "\n"),
-        "client_email": st.secrets["gmail_service"]["client_email"],
-        "client_id": st.secrets["gmail_service"]["client_id"],
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": st.secrets["gmail_service"]["client_x509_cert_url"]
-    }
+    creds = None
+    if os.path.exists(TOKEN_PATH):
+        with open(TOKEN_PATH, "rb") as token_file:
+            creds = pickle.load(token_file)
 
-    SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
-    # Esse é o e-mail de um usuário real autorizado a enviar (o G Suite precisa liberar delegação)
-    delegated_user = st.secrets["gmail_service"]["delegated_user"]
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
 
-    creds = service_account.Credentials.from_service_account_info(
-        info, scopes=SCOPES
-    ).with_subject(delegated_user)
+    if not creds or not creds.valid:
+        st.error("Token inválido ou expirado. Gere o token localmente e faça upload.")
+        st.stop()
 
     return creds
-
 
 @st.cache_resource(show_spinner=False)
 def criar_servico_gmail():
@@ -101,7 +96,7 @@ def enviar_email_gmail_api(remetente, destinatarios, assunto, mensagem, arquivo=
     service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
 # --- Interface Streamlit ---
-st.title("Envio de Provas por E-mail (Gmail API)")
+st.title(" Envio de Provas por E-mail (Gmail API)")
 
 remetente = st.secrets["email_sis"]["sistema"]
 
