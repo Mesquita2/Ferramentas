@@ -4,32 +4,28 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
 import base64
 import pickle
 import os
 
-st.stop()
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
 
-# Garante que st.session_state["dados"] está inicializado (ajuste conforme seu contexto)
-if "dados" not in st.session_state:
-    st.session_state["dados"] = {"alunosxdisciplinas": pd.DataFrame()}  # substitua pelo seu dataframe real
+SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+TOKEN_PATH = "token_gmail.pkl"
 
-df_alunos = st.session_state["dados"].get("alunosxdisciplinas")
-df_base = df_alunos.copy()
-
-# Autenticação Gmail com OAuth
-@st.cache_resource(show_spinner=False)
-def autenticar_gmail_streamlit():
-    SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-    token_path = "token_gmail.pkl"
-
+# --- Helpers de autenticação ---
+def carregar_credenciais():
     creds = None
-    if os.path.exists(token_path):
-        with open(token_path, "rb") as token_file:
+    if os.path.exists(TOKEN_PATH):
+        with open(TOKEN_PATH, "rb") as token_file:
             creds = pickle.load(token_file)
 
+    # Se expirou mas tem refresh_token, renova sem pedir login
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+
+    # Se ainda não tem credenciais válidas, faz login manual
     if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_config(
             {
@@ -38,123 +34,108 @@ def autenticar_gmail_streamlit():
                     "client_secret": st.secrets["gmail_oauth"]["client_secret"],
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": ["http://localhost:8081/"]
+                    "redirect_uris": ["http://localhost:8080/"]
                 }
             },
             scopes=SCOPES
         )
-        creds = flow.run_local_server(port=8081)
-        with open(token_path, "wb") as token_file:
+        creds = flow.run_local_server(port=8080, access_type='offline', prompt='consent')
+        with open(TOKEN_PATH, "wb") as token_file:
             pickle.dump(creds, token_file)
 
-    service = build("gmail", "v1", credentials=creds)
-    return service
+    return creds
 
-# Enviar e-mail
-def enviar_email_gmail_api(remetente, destinatarios, assunto, mensagem, arquivo=None):
-    service = autenticar_gmail_streamlit()
+@st.cache_resource(show_spinner=False)
+def criar_servico_gmail():
+    creds = carregar_credenciais()
+    return build("gmail", "v1", credentials=creds)
 
-    msg = MIMEMultipart()
-    msg["From"] = remetente
-    msg["To"] = ", ".join(destinatarios)
-    msg["Subject"] = assunto
-    msg.attach(MIMEText(mensagem, "plain"))
+# --- Fim helpers ---
 
-    if arquivo is not None:
-        arquivo.seek(0)  # volta para início do arquivo
-        part = MIMEApplication(arquivo.read(), Name=arquivo.name)
-        part["Content-Disposition"] = f'attachment; filename="{arquivo.name}"'
-        msg.attach(part)
+# Inicializa o DataFrame de alunos, se não estiver carregado
+if "dados" not in st.session_state:
+    st.session_state["dados"] = {"alunosxdisciplinas": pd.DataFrame()}
 
-    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-    message = {"raw": raw}
+df_alunos = st.session_state["dados"].get("alunosxdisciplinas", pd.DataFrame())
+df_base = df_alunos.copy()
 
-    service.users().messages().send(userId="me", body=message).execute()
-
-# Funções auxiliares
+# Funções de saudação, semestre e assunto (igual ao seu código)
 def saudacao():
-    hora = datetime.now().hour
-    if 5 <= hora < 12:
-        return "Bom dia"
-    elif 12 <= hora < 18:
-        return "Boa tarde"
-    return "Boa noite"
+    h = datetime.now().hour
+    return "Bom dia" if h<12 else "Boa tarde" if h<18 else "Boa noite"
 
-def semestres(data_aplicar):
-    ano = str(data_aplicar.year)
-    mes = data_aplicar.month
-    return f"{ano}.01" if 1 <= mes <= 6 else f"{ano}.02"
+def semestres(dt):
+    return f"{dt.year}.01" if dt.month<=6 else f"{dt.year}.02"
 
 def create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar, turma):
-    assunto = f'Prova iCEV {disciplina} - Tipo {tipo} - {quantidade} cópias, Turma: {turma}'
-    cumprimento = saudacao()
-    ano = semestres(data_aplicar)
-    mensagem = (
-        f"{cumprimento}.\n\n"
+    assunto = f'Prova iCEV {disciplina} - {tipo} - {quantidade} cópias, Turma: {turma}'
+    msg = (
+        f"{saudacao()}.\n\n"
         "Solicitamos a impressão de:\n\n"
         f"Tipo: {tipo_prova}\n"
-        f"Curso/Turma: {curso} {ano} {turma}\n"
+        f"Curso/Turma: {curso} {semestres(data_aplicar)} {turma}\n"
         f"Disciplina: {disciplina}\n"
         f"Quantidade: {quantidade} cópias\n\n"
         f"Data: {data_aplicar.strftime('%d/%m/%Y')}"
     )
-    return assunto, mensagem
+    return assunto, msg
 
 def destinatarios(curso):
-    emails = st.secrets["emails"]
-    email_cord = st.secrets["email_cord"]
+    base = list(st.secrets["emails"].values())
+    cord = st.secrets["email_cord"]
+    m = {"Engenharia de Software": cord.get("eng"),
+         "Direito": cord.get("dir"),
+         "Administração de Empresas": cord.get("adm")}
+    e = m.get(curso.strip())
+    return base + ([e] if e else [])
 
-    lista_emails = list(emails.values())
+def enviar_email_gmail_api(remetente, destinatarios, assunto, mensagem, arquivo=None):
+    service = criar_servico_gmail()
+    msg = MIMEMultipart()
+    msg["From"], msg["To"], msg["Subject"] = remetente, ", ".join(destinatarios), assunto
+    msg.attach(MIMEText(mensagem, "plain"))
+    if arquivo:
+        arquivo.seek(0)
+        part = MIMEApplication(arquivo.read(), Name=arquivo.name)
+        part["Content-Disposition"] = f'attachment; filename="{arquivo.name}"'
+        msg.attach(part)
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
-    if curso == "Engenharia de Software":
-        lista_emails.append(email_cord["eng"])
-    elif curso == "Direito":
-        lista_emails.append(email_cord["dir"])
-    elif curso == "Administração de Empresas":
-        lista_emails.append(email_cord["adm"])
-
-    return lista_emails
-
-# Interface Streamlit
-st.title("Envio de E-mail Automático com Anexo")
+# --- Interface Streamlit ---
+st.title("📧 Envio de Provas por E-mail (Gmail API)")
 
 remetente = st.secrets["email_sis"]["sistema"]
 
-curso = st.selectbox("Escolha o Curso", df_base['CURSO'].unique().tolist())
+cursos = sorted(df_base['CURSO'].dropna().unique())
+curso = st.selectbox("Curso", cursos)
 
-disciplinas = sorted(df_base[df_base["CURSO"] == curso]["DISCIPLINA"].unique().tolist())
-disciplina = st.selectbox("Escolha a disciplina", disciplinas)
+disciplinas = sorted(df_base[df_base["CURSO"]==curso]["DISCIPLINA"].dropna().unique())
+disciplina = st.selectbox("Disciplina", disciplinas)
 
-turmas_filtradas = df_base[df_base["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
-turma = st.selectbox("Escolha a turma", turmas_filtradas)
+turmas = sorted(df_base[(df_base["DISCIPLINA"]==disciplina)]["TURMADISC"].dropna().unique())
+turma = st.selectbox("Turma", turmas)
 
-df_filtrado = df_base[(df_base["DISCIPLINA"] == disciplina) & (df_base["TURMADISC"] == turma)]
-quantidade = df_filtrado['ALUNO'].count() + 5
-st.write("Quantidade estimada de cópias:", quantidade)
+quantidade = df_base[(df_base["DISCIPLINA"]==disciplina)&(df_base["TURMADISC"]==turma)]['ALUNO'].count() + 5
+st.markdown(f"**Quantidade de cópias:** {quantidade}")
 
-data_aplicar = st.date_input("Selecione a data", format="DD/MM/YYYY")
-st.write("Data selecionada:", data_aplicar.strftime("%d/%m/%Y"))
-
-tipo = st.selectbox("Escolha o tipo da prova", ["Prova", "Recuperação"])
-tipo_prova = st.selectbox("Escolha o tipo da prova", ["1", "2"])
+data_aplicar = st.date_input("Data da prova")
+tipo = st.selectbox("Tipo", ["Prova","Recuperação"])
+tipo_prova = st.selectbox("Nº Prova", ["1","2"])
 
 assunto, mensagem = create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar, turma)
-destinatarios_list = destinatarios(curso)
+dest_list = destinatarios(curso)
 
-arquivo = st.file_uploader("Anexar arquivo", type=None)
-
-if st.button("Enviar E-mail"):
+arquivo = st.file_uploader("Anexo (opcional)")
+if st.button("Enviar"):
     try:
-        st.subheader("Prévia do E-mail:")
-        st.write("**Remetente:**", remetente)
-        st.write("**Destinatário(s):**", destinatarios_list)
-        st.write("**Assunto:**", assunto)
-        st.write("**Mensagem:**")
+        st.subheader("Prévia:")
+        st.write("De:", remetente)
+        st.write("Para:", dest_list)
+        st.write("Assunto:", assunto)
         st.code(mensagem, language="markdown")
-        if arquivo is not None:
-            st.write("**Anexo:**", arquivo.name)
-
-        enviar_email_gmail_api(remetente, destinatarios_list, assunto, mensagem, arquivo)
-        st.success("E-mail enviado com sucesso!")
+        if arquivo: st.write("Anexo:", arquivo.name)
+        enviar_email_gmail_api(remetente, dest_list, assunto, mensagem, arquivo)
+        st.success("E-mail enviado!")
     except Exception as e:
-        st.error(f"Erro ao enviar e-mail: {e}")
+        st.error(f"Erro: {e}")
