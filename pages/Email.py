@@ -14,15 +14,6 @@ from google.auth.transport.requests import Request
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 TOKEN_PATH = "token_gmail.pkl"
 
-import streamlit as st
-import pickle
-import os
-from googleapiclient.discovery import build
-from google.auth.transport.requests import Request
-
-TOKEN_PATH = "token_gmail.pkl"
-SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-
 def carregar_credenciais():
     creds = None
     if os.path.exists(TOKEN_PATH):
@@ -32,9 +23,17 @@ def carregar_credenciais():
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
 
+    # Se token inválido ou não existe, pede upload
     if not creds or not creds.valid:
-        st.error("Token inválido ou expirado. Gere o token localmente e faça upload.")
-        st.stop()
+        st.warning("Token inválido ou expirado. Faça upload do arquivo token_gmail.pkl gerado localmente.")
+        uploaded_token = st.file_uploader("Upload do token_gmail.pkl", type=["pkl"])
+        if uploaded_token is not None:
+            with open(TOKEN_PATH, "wb") as f:
+                f.write(uploaded_token.getbuffer())
+            st.success("Token salvo. Por favor, recarregue a página para continuar.")
+            st.stop()
+        else:
+            st.stop()
 
     return creds
 
@@ -43,16 +42,13 @@ def criar_servico_gmail():
     creds = carregar_credenciais()
     return build("gmail", "v1", credentials=creds)
 
-# --- Fim helpers ---
-
-# Inicializa o DataFrame de alunos, se não estiver carregado
+# --- Início do seu código ---
 if "dados" not in st.session_state:
     st.session_state["dados"] = {"alunosxdisciplinas": pd.DataFrame()}
 
 df_alunos = st.session_state["dados"].get("alunosxdisciplinas", pd.DataFrame())
 df_base = df_alunos.copy()
 
-# Funções de saudação, semestre e assunto (igual ao seu código)
 def saudacao():
     h = datetime.now().hour
     return "Bom dia" if h<12 else "Boa tarde" if h<18 else "Boa noite"
@@ -96,7 +92,7 @@ def enviar_email_gmail_api(remetente, destinatarios, assunto, mensagem, arquivo=
     service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
 # --- Interface Streamlit ---
-st.title(" Envio de Provas por E-mail (Gmail API)")
+st.title("Envio de Provas por E-mail (Gmail API)")
 
 remetente = st.secrets["email_sis"]["sistema"]
 
