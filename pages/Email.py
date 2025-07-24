@@ -103,7 +103,7 @@ def enviar_email_gmail_api(remetente, destinatarios, assunto, mensagem, arquivo=
     service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
 # --- Interface Streamlit ---
-st.title("📧 Envio de Provas por E-mail (Gmail API)")
+st.title("Envio de Provas por E-mail (Gmail API)")
 
 remetente = st.secrets["email_sis"]["sistema"]
 
