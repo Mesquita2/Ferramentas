@@ -11,14 +11,17 @@ import pickle
 import os
 import io 
 from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
 import pickle
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 import base64
+from auth import check_authentication
 
 token_b64 = st.secrets["gmail_token"]["token_b64"]
 pasta_raiz = st.secrets["drive_pasta"]["drive_provas"]
+
+if not check_authentication():
+    st.stop()
 
 with open("token_gmail.pkl", "wb") as token_file:
     token_file.write(base64.b64decode(token_b64))
