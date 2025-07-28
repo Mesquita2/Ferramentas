@@ -20,7 +20,6 @@ from auth import check_authentication
 
 
 token_b64 = st.secrets["gmail_token"]["token_b64"]
-pasta_raiz = st.secrets["drive_pasta"]["drive_provas"]
 
 if not check_authentication():
     st.stop()
@@ -207,48 +206,85 @@ st.title("Envio de Provas por E-mail (Gmail API)")
 
 remetente = st.secrets["email_sis"]["sistema"]
 
+# CURSO
 cursos = sorted(df_base['CURSO'].dropna().unique())
-curso = st.selectbox("Curso", cursos)
-if curso: 
-    disciplinas = sorted(df_base[df_base["CURSO"]==curso]["DISCIPLINA"].dropna().unique())
-    disciplina = st.selectbox("Disciplina", disciplinas)
-if disciplina:
-    turmas = sorted(df_base[(df_base["DISCIPLINA"]==disciplina)]["TURMADISC"].dropna().unique())
-    turma = st.selectbox("Turma", turmas)
+curso = st.selectbox("Curso", ["Selecione..."] + list(cursos))
 
-quantidade = df_base[(df_base["DISCIPLINA"]==disciplina)&(df_base["TURMADISC"]==turma)]['ALUNO'].count() + 5
-st.markdown(f"**Quantidade de cópias:** {quantidade}")
+if curso != "Selecione...":
+    disciplinas = sorted(df_base[df_base["CURSO"] == curso]["DISCIPLINA"].dropna().unique())
+    disciplina = st.selectbox("Disciplina", ["Selecione..."] + list(disciplinas))
 
-data_aplicar = st.date_input("Data da prova")
-tipo = st.selectbox("Tipo", ["Prova","Recuperação"])
-tipo_prova = st.selectbox("Nº Prova", ["1","2"])
+    if disciplina != "Selecione...":
+        turmas = sorted(df_base[df_base["DISCIPLINA"] == disciplina]["TURMADISC"].dropna().unique())
+        turmas_selecionadas = st.multiselect("Turmas", turmas)
 
-assunto, mensagem = create_assunto(curso, disciplina, quantidade, tipo, tipo_prova, data_aplicar, turma)
-dest_list = destinatarios(curso)
-
-arquivo = st.file_uploader("Anexo (opcional)")
-if st.button("Enviar"):
-    try:
-        st.subheader("Prévia:")
-        st.write("De:", remetente)
-        st.write("Para:", dest_list)
-        st.write("Assunto:", assunto)
-        st.code(mensagem, language="markdown")
-
-        if arquivo:
-            st.write("Anexo:", arquivo.name)
-            # Salva no Drive seguindo a estrutura Curso/Turma
-            id_salvo, nome_salvo = salvar_arquivo_em_pasta(
-                uploaded_file=arquivo,
-                nome_arquivo=arquivo.name,
-                curso=curso,
-                turma=turma,
-                pasta_raiz_id=pasta_raiz
+        if turmas_selecionadas:
+            quantidade_total = (
+                df_base[(df_base["DISCIPLINA"] == disciplina) & 
+                        (df_base["TURMADISC"].isin(turmas_selecionadas))]['ALUNO'].count() + (5 * len(turmas_selecionadas))
             )
-            st.success(f"Arquivo salvo no Drive: {nome_salvo}")
 
-        enviar_email_gmail_api(remetente, dest_list, assunto, mensagem, arquivo)
-        st.success("E-mail enviado!")
+            st.markdown(f"**Quantidade de cópias (total):** {quantidade_total}")
 
-    except Exception as e:
-        st.error(f"Erro: {e}")
+            data_aplicar = st.date_input("Data da prova")
+            tipo = st.selectbox("Tipo", ["Prova", "Recuperação", "Prova final"])
+            if tipo == "Recuperação":
+                ##quantidade_total= print("Quantidade de cópias (total) baseado nas notas menor que 7 (prova + quizz)")
+                pasta_raiz = st.secrets["drive_pasta_recuperacao"]["drive_recuperacao"]
+            else: 
+                pasta_raiz = st.secrets["drive_pasta"]["drive_provas"]
+            tipo_prova = st.selectbox("Nº Prova", ["1", "2"])
+
+            dest_list = destinatarios(curso)
+            arquivo = st.file_uploader("Anexo (opcional)")
+
+            if st.button("Enviar"):
+                if not arquivo:
+                    st.warning("Por favor, envie um arquivo antes de continuar.")
+                    st.stop()
+                try:
+                    st.subheader("Prévia:")
+                    st.write("De:", remetente)
+                    st.write("Para:", dest_list)
+
+                    assunto_preview, mensagem_preview = create_assunto(
+                        curso, disciplina, quantidade_total, tipo, tipo_prova, data_aplicar, ", ".join(turmas_selecionadas)
+                    )
+
+                    st.write("Assunto:", assunto_preview)
+                    st.code(mensagem_preview, language="markdown")
+
+                    if arquivo:
+                        st.write("Anexo:", arquivo.name)
+
+                    erros = []
+                    for turma in turmas_selecionadas:
+                        assunto, mensagem = create_assunto(
+                            curso, disciplina,
+                            df_base[(df_base["DISCIPLINA"] == disciplina) & (df_base["TURMADISC"] == turma)]['ALUNO'].count() + 5,
+                            tipo, tipo_prova, data_aplicar, turma
+                        )
+
+                        if arquivo:
+                            id_salvo, nome_salvo = salvar_arquivo_em_pasta(
+                                uploaded_file=arquivo,
+                                nome_arquivo=arquivo.name,
+                                curso=curso,
+                                turma=turma,
+                                pasta_raiz_id=pasta_raiz
+                            )
+                            st.success(f"Arquivo salvo no Drive ({turma}): {nome_salvo}")
+
+                        sucesso = enviar_email_gmail_api(remetente, dest_list, assunto, mensagem, arquivo)
+                        if sucesso:
+                            st.success(f"E-mail enviado para turma {turma}")
+                        else:
+                            erros.append(turma)
+                    
+                    if erros:
+                        st.error(f"Erro ao enviar para as turmas: {', '.join(erros)}")
+                    
+                except Exception as e:
+                    st.error(f"Erro inesperado: {e}")
+            
+                    
