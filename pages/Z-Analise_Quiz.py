@@ -3,6 +3,15 @@ import pandas as pd
 import io
 from auth import check_authentication
 
+st.markdown(
+    """
+    <h1 style='color:gold; font-size: 64px; text-align: center;'>Em Manutenção</h1>
+    """,
+    unsafe_allow_html=True
+)
+st.stop()
+
+
 # Configuração da página
 st.set_page_config(page_title="Analise de Quiz",
                    page_icon="", 

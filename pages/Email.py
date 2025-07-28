@@ -1,21 +1,23 @@
 import streamlit as st
 import pandas as pd
+import base64
+import pickle
+import os
+import io 
+import time
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from googleapiclient.http import MediaIoBaseUpload
 from google.oauth2 import service_account
-import base64
-import pickle
-import os
-import io 
 from googleapiclient.discovery import build
 import pickle
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 import base64
 from auth import check_authentication
+
 
 token_b64 = st.secrets["gmail_token"]["token_b64"]
 pasta_raiz = st.secrets["drive_pasta"]["drive_provas"]
@@ -103,18 +105,30 @@ def destinatarios(curso):
     e = m.get(curso.strip())
     return base + ([e] if e else [])
 
-def enviar_email_gmail_api(remetente, destinatarios, assunto, mensagem, arquivo=None):
+def enviar_email_gmail_api(remetente, destinatarios, assunto, mensagem, arquivo=None, tentativas=3, espera=2):
     service = criar_servico_gmail()
-    msg = MIMEMultipart()
-    msg["From"], msg["To"], msg["Subject"] = remetente, ", ".join(destinatarios), assunto
-    msg.attach(MIMEText(mensagem, "plain"))
-    if arquivo:
-        arquivo.seek(0)
-        part = MIMEApplication(arquivo.read(), Name=arquivo.name)
-        part["Content-Disposition"] = f'attachment; filename="{arquivo.name}"'
-        msg.attach(part)
-    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-    service.users().messages().send(userId="me", body={"raw": raw}).execute()
+
+    for tentativa in range(1, tentativas + 1):
+        try:
+            msg = MIMEMultipart()
+            msg["From"] = remetente
+            msg["To"] = ", ".join(destinatarios)
+            msg["Subject"] = assunto
+            msg.attach(MIMEText(mensagem, "plain"))
+            if arquivo:
+                arquivo.seek(0)
+                part = MIMEApplication(arquivo.read(), Name=arquivo.name)
+                part["Content-Disposition"] = f'attachment; filename="{arquivo.name}"'
+                msg.attach(part)
+            raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+            service.users().messages().send(userId="me", body={"raw": raw}).execute()
+            return True  
+        except Exception as e:
+            print(f"Tentativa {tentativa} falhou: {e}")
+            if tentativa < tentativas:
+                time.sleep(espera)
+            else:
+                return False 
     
 def upload_para_drive(arquivo, nome_arquivo, pasta_destino_id):
     # Autenticando com a Service Account
@@ -187,8 +201,6 @@ def salvar_arquivo_em_pasta(uploaded_file, nome_arquivo, curso, turma, pasta_rai
     ).execute()
 
     return arquivo["id"], arquivo["name"]
-
-
 
 # --- Interface Streamlit ---
 st.title("Envio de Provas por E-mail (Gmail API)")
