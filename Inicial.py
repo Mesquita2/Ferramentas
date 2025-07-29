@@ -11,7 +11,7 @@ st.set_page_config(page_title="Alteração de Dados",
                    page_icon="", 
                    layout="wide")
 
-
+    
 # Verifica se o usuário está autenticado
 if not check_authentication():
     st.stop()
@@ -150,4 +150,6 @@ for chave, df in st.session_state["dados"].items():
         # Aplica o mesmo filtro após substituição
         novo_exibido = novo_df.loc[:, novo_df.columns.intersection(colunas)] if colunas else novo_df
         st.dataframe(novo_exibido)
+        
+    
          
