@@ -62,28 +62,4 @@ def logout():
     st.session_state.authenticated = False
     st.rerun()
     
-    from google_auth_oauthlib.flow import InstalledAppFlow
-import pickle
-import streamlit as st
-import os
-
-SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-
-client_config = {
-    "installed": {
-        "client_id": st.secrets["gmail_oauth"]["client_id"],
-        "client_secret": st.secrets["gmail_oauth"]["client_secret"],
-        "auth_uri": st.secrets["gmail_oauth"]["auth_uri"],
-        "token_uri": st.secrets["gmail_oauth"]["token_uri"],
-        "redirect_uris": st.secrets["gmail_oauth"]["redirect_uris"],
-    }
-}
-
-def salvar_token_gmail():
-    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-    creds = flow.run_console()
-    with open("token_gmail.pkl", "wb") as token_file:
-        pickle.dump(creds, token_file)
-    print("Token salvo em token_gmail.pkl")
-
 

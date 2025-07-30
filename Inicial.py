@@ -16,7 +16,6 @@ st.set_page_config(page_title="Alteração de Dados",
 if not check_authentication():
     st.stop()
 
-
 # Estilo personalizado para os botões
 st.markdown(
     """
@@ -53,7 +52,7 @@ credentials = service_account.Credentials.from_service_account_info(
 drive_service = build("drive", "v3", credentials=credentials)
 
 # Lista de arquivos
-NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx"]
+NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx", "rec_simulado.xlsx"]
 
 def limpeza_alunos_disciplinas(df):
     if 'NOME_SOCIAL' in df.columns:

@@ -27,7 +27,7 @@ def limpar_rec(df):
         df["RA"] = df["RA"].astype(str).str.zfill(7)
         df.rename(columns={'VALOR': 'DISCIPLINA', 'RA': 'RA'}, inplace=True)
         df = df[df['NOMESTATUS'] == 'Período em Curso']
-        df['RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
+        df.loc[:, 'RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
         st.success("Dados de alunos substituídos com sucesso!")
         return df
     else:
