@@ -1,2 +1,9 @@
 # Ignorar arquivos de configuração do Streamlit
 .streamlit/secrets.toml
+gerartoken.py
+token_gmail.pkl
+# Ignora bytecode compilado do Python
+__pycache__/
+*.py[cod]
+# Ignorar log 
+email_errors.log
