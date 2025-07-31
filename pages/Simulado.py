@@ -9,10 +9,9 @@ from carregamento import carregar_drive, limpeza_alunos_disciplinas
 st.set_page_config(page_title="Sistema", layout="wide")
 
 if check_authentication():
-    if st.session_state["dados"]["alunosxdisciplinas"]:
-        print("carregado")
-    else:
-        carregar_drive()
+    
+    carregar_drive()
+    
     df_alunos = st.session_state["dados"]["alunosxdisciplinas"]
     df_limpo = limpeza_alunos_disciplinas(df_alunos)
     st.session_state["dados"]["alunosxdisciplinas"] = df_limpo
