@@ -87,7 +87,7 @@ def carregar():
     st.session_state["dados"]["alunosxdisciplinas"] = df_limpo
 
     # Criar abas
-    tab1, tab2 = st.tabs(["📂 Visualizar dados", "⬆️ Substituir arquivos"])
+    tab1, tab2 = st.tabs(["Visualizar dados", "Substituir arquivos"])
 
     with tab1:
         for chave, df in st.session_state["dados"].items():
