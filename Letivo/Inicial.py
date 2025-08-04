@@ -26,7 +26,8 @@ def carregar():
             colunas = {
                 "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "RA"],
                 "disciplina": ["CODTURMA", "NOME", "IDMOODLE"],
-                "rec": ["DISCIPLINA", "NOME"]
+                "rec": ["DISCIPLINA", "NOME"],
+                "rec_simulado":["DISCIPLINA", "NOME"]
             }.get(chave)
             df_exibido = df.loc[:, df.columns.intersection(colunas)] if colunas else df
             st.dataframe(df_exibido, use_container_width=True)
