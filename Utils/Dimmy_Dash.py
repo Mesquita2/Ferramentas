@@ -6,7 +6,7 @@ def carregar():
     df = st.session_state["dados"]["dashnotas"]
     st.title("Painel de Análise de Notas")
     st.caption("Visualize a distribuição das notas por curso, disciplina e avaliação.")
-
+    
     col_avaliacoes = ['E01','P1', 'RECP1', 'QUIZZ1','E02', 'P2', 'RECP2', 'QUIZZ2', 'P3', 'RECP3', 'RECF']
 
     if {"CURSO", "NOMEDISC", "CODPERLET", "P1"}.issubset(df.columns):
