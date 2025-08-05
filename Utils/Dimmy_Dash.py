@@ -31,7 +31,7 @@ def get_avaliacoes_por_grupo(grupo: str) -> list[str]:
 def carregar():
     df = carregar_dados()
     if df.empty:
-        st.error('Nenhum dado disponível para os filtros aplicados.')
+        st.error('Nenhum dado disponível para os filtros aplicados..')
         st.stop()
 
     st.title('Painel de Análise de Notas')
