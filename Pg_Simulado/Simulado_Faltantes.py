@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from auth import check_authentication
 
 def carregar():
     # Pega o DataFrame geral dos alunos

@@ -1,10 +1,5 @@
-import os 
 import streamlit as st
 import pandas as pd
-import io
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
 from carregamento import carregar_drive, limpeza_alunos_disciplinas
 
 

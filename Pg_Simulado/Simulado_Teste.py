@@ -1,6 +1,5 @@
 import io
 import streamlit as st
-from auth import check_authentication
 import pandas as pd
 import numpy as np
 

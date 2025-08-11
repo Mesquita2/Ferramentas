@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import io
-from auth import check_authentication
 
 def carregar():
     st.title("Conversor de Notas Totvs")

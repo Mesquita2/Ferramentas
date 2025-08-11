@@ -5,7 +5,6 @@ from docx.shared import Pt, RGBColor, Inches
 import streamlit as st
 import pandas as pd
 import io
-from auth import check_authentication
 
 imagem_rodape = "Endereço.jpeg"
 imagem_cabecalho = 'Logo.jpg'    

@@ -4,8 +4,6 @@ import io
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 import streamlit as st
-from auth import check_authentication
-
 
 def carregar():
         

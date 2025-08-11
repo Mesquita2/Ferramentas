@@ -8,7 +8,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from googleapiclient.http import MediaIoBaseUpload
-from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import pickle
 
