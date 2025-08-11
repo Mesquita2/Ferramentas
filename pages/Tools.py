@@ -16,7 +16,7 @@ if check_authentication():
     st.session_state["dados"]["alunosxdisciplinas"] = df_limpo
 
     with st.sidebar:
-        escolha = option_menu("Menu", ["DNT oficinas", "QR_Code", "Z Analise Quiz", "Dimmy Dash"],
+        escolha = option_menu("Menu", ["DNT oficinas", "QR Code", "Z Analise Quiz", "Dimmy Dash"],
                               icons=["bar-chart-line", "qr-code", "bar-chart-line", "clipboard-pulse"],
                               menu_icon="cast", default_index=0)
 
