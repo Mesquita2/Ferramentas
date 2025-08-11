@@ -32,8 +32,7 @@ def carregar():
         # Remove duplicados e cancelados
         df = df.drop_duplicates(subset=['RA'])
         df = df[df['CODSTATUS'] != 'C']
-        
-        st.success("Dados de alunos substituídos com sucesso!")
+    
         return df
 
     def adicionar_imagem_no_cabecalho(doc, imagem_cabecalho):
