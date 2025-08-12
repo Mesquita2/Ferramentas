@@ -9,19 +9,57 @@ def carregar_dados():
     return st.session_state['dados']['dashnotas']
 
 # === gráfico ORIGINAL de barras (mantido para 'o outro' que quer continuar igual) ===
-def analise_notas_bar(notas):
-    notas_num = pd.to_numeric(notas, errors='coerce').dropna()
-    if notas_num.empty:
-        df_empty = pd.DataFrame({'Nota': [], 'Quantidade': []})
-        fig = px.bar(df_empty, x='Nota', y='Quantidade')
+def analise_notas_bar(notas, anos=None):
+    notas_num = pd.to_numeric(notas, errors='coerce')
+
+    if anos is not None:
+        anos = pd.Series(anos)
+
+    if anos is not None:
+        df = pd.DataFrame({'Nota': notas_num, 'Ano': anos}).dropna()
+    else:
+        df = pd.DataFrame({'Nota': notas_num}).dropna()
+
+    if df.empty:
+        if anos is not None:
+            df_empty = pd.DataFrame({'Nota': [], 'Quantidade': [], 'Ano': []})
+            fig = px.bar(df_empty, x='Nota', y='Quantidade', color='Ano')
+        else:
+            df_empty = pd.DataFrame({'Nota': [], 'Quantidade': []})
+            fig = px.bar(df_empty, x='Nota', y='Quantidade')
         fig.update_layout(title='Distribuição de Notas', xaxis_title='Nota', yaxis_title='Quantidade')
         return fig
-    contagem = notas_num.value_counts().sort_index()
-    df_plot = pd.DataFrame({'Nota': contagem.index.astype(float), 'Quantidade': contagem.values})
-    fig = px.bar(df_plot, x='Nota', y='Quantidade', color_discrete_sequence=['#5C2D91'])
-    fig.update_layout(title='Distribuição de Notas', xaxis_title='Nota', yaxis_title='Quantidade',
-                      margin=dict(t=40, b=20, l=10, r=10))
+
+    if anos is not None:
+        df_plot = df.groupby(['Ano', 'Nota']).size().reset_index(name='Quantidade')
+        fig = px.bar(
+            df_plot,
+            x='Nota',
+            y='Quantidade',
+            color='Ano',
+            barmode='group',
+            color_discrete_sequence=px.colors.qualitative.Set2
+        )
+    else:
+        contagem = df['Nota'].value_counts().sort_index()
+        df_plot = pd.DataFrame({'Nota': contagem.index.astype(float), 'Quantidade': contagem.values})
+        fig = px.bar(
+            df_plot,
+            x='Nota',
+            y='Quantidade',
+            color_discrete_sequence=['#5C2D91']
+        )
+
+    fig.update_layout(
+        title='Distribuição de Notas por Ano' if anos is not None else 'Distribuição de Notas',
+        xaxis_title='Nota',
+        yaxis_title='Quantidade',
+        margin=dict(t=40, b=20, l=10, r=10),
+        legend_title_text='Ano' if anos is not None else None
+    )
     return fig
+
+
 
 # === gráfico EM LINHA (usado apenas para TURMA) ===
 def analise_notas_line(notas):
@@ -102,7 +140,7 @@ def carregar():
 
     # meta cols e opções de avaliação
     meta_cols = {'RA', 'ALUNO', 'CURSO', 'CODPERLET', 'NOMEDISC', 'CODTURMA'}
-    eval_options = [c for c in df.columns if c not in meta_cols]
+    eval_options = [i for i in df.columns if i not in meta_cols]
     eval_options = sorted(eval_options)
 
     # --- abas por curso ---
@@ -135,12 +173,11 @@ def carregar():
                 st.info('Nenhuma turma encontrada para a disciplina selecionada.')
                 turmas_sel = []
                 
-
             if turmas_sel:
                 df_filtrado = df_filtrado[df_filtrado['CODTURMA'].isin(turmas_sel)].copy()
 
             # multiselect avaliações
-            avaliaveis_no_df = [c for c in eval_options if c in df_filtrado.columns]
+            avaliaveis_no_df = [i for i in eval_options if i in df_filtrado.columns]
             
             termos_filtro = ['REC', 'QUIZ', 'P1', 'P2', 'P3', 'MÉDIA']
             
@@ -244,8 +281,28 @@ def carregar():
             c4.metric('Desvio Padrão', f"{metricas['Desvio Padrão']:.2f}")
 
             if not notas_empilhadas.empty:
-                # MANTÉM o gráfico original EM BARRAS para a visão geral desta aba
-                st.plotly_chart(analise_notas_bar(notas_empilhadas), use_container_width=True)
+                # Criar DataFrame com Nota e Ano
+                notas_empilhadas_df = (
+                    df_filtrado[['CODPERLET'] + avals_existentes]
+                    .melt(id_vars=['CODPERLET'], value_vars=avals_existentes, var_name='Avaliacao', value_name='Nota')
+                    .dropna(subset=['Nota'])
+                )
+                anos_unicos = sorted(notas_empilhadas_df['CODPERLET'].unique())
+                st.info(f"Períodos letivos analisados: {', '.join(map(str, anos_unicos))}")
+
+                if len(anos_unicos) > 1:
+                    fig_bar = analise_notas_bar(notas_empilhadas_df['Nota'], notas_empilhadas_df['CODPERLET'])
+                else:
+                    fig_bar = analise_notas_bar(notas_empilhadas_df['Nota'])
+
+
+                # Se tiver mais de 1 período, mostrar colorido por ano
+                if notas_empilhadas_df['CODPERLET'].nunique() > 1:
+                    fig_bar = analise_notas_bar(notas_empilhadas_df['Nota'], notas_empilhadas_df['CODPERLET'])
+                else:
+                    fig_bar = analise_notas_bar(notas_empilhadas_df['Nota'])
+
+                st.plotly_chart(fig_bar, use_container_width=True)
             else:
                 st.info("Não há notas para o filtro aplicado.")
 
