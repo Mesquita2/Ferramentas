@@ -200,7 +200,7 @@ def carregar():
     if not cursos:
         st.info('Não há cursos na base.')
         st.stop()
-    subtabs = st.tabs(cursos + ['Total'])
+    subtabs = st.tabs(cursos[:: -1])
 
     # meta cols e opções de avaliação
     meta_cols = {'RA', 'ALUNO', 'CURSO', 'CODPERLET', 'NOMEDISC', 'CODTURMA'}
@@ -211,7 +211,7 @@ def carregar():
     for i, curso in enumerate(cursos):
         with subtabs[i]:
             st.markdown(f'### {curso}')
-            df_curso = df[df['CURSO'] == curso].drop_duplicates(subset=['ALUNO', 'NOMEDISC']).copy()
+            df_curso = df[df['CURSO'] == curso].copy()
 
             # disciplina
             disciplinas = sorted(df_curso['NOMEDISC'].dropna().unique())
@@ -436,83 +436,3 @@ def carregar():
                     for col in resumo.columns if 'Qtd. Alunos' in col
                 }
                 st.dataframe(resumo.style.format(formatador, precision=2, na_rep="N/A"))
-
-    # --- Aba TOTAL ---
-    with subtabs[-1]:
-        st.markdown('### Total (Todos os Cursos)')
-        curso_total_sel = st.selectbox(
-            'Selecione o Curso (ou "Todos os Cursos") para análise',
-            ['Todos os Cursos'] + cursos,
-            index=0,
-            key='total_curso'
-        )
-        if curso_total_sel == 'Todos os Cursos':
-            df_base = df.copy()
-        else:
-            df_base = df[df['CURSO'] == curso_total_sel].copy()
-
-        avaliaveis_no_base = [c for c in eval_options if c in df_base.columns]
-        termos_filtro = ['REC', 'QUIZ', 'P', 'MÉDIA']
-        opcoes_filtradas = [
-            coluna for coluna in avaliaveis_no_base
-            if any(termo in coluna.upper() for termo in termos_filtro)
-        ]
-
-        avaliacoes_sel = st.multiselect(
-            'Selecione uma ou mais avaliações',
-            opcoes_filtradas, 
-            default=[],
-            key='total_avals'
-        )
-
-        if not avaliacoes_sel:
-            st.warning('Selecione ao menos uma avaliação para visualizar os dados.')
-        else:
-            avals_existentes = [a for a in avaliacoes_sel if a in df_base.columns]
-            if not avals_existentes:
-                st.info("As avaliações selecionadas não estão presentes na base/curso escolhido.")
-            else:
-                for col in avals_existentes:
-                    df_base[col] = pd.to_numeric(df_base[col], errors='coerce')
-
-                notas_tot = df_base[avals_existentes].stack().dropna()
-                mask_alunos_com_nota = df_base[avals_existentes].notna().any(axis=1)
-                alunos_unicos_com_nota = int(df_base.loc[mask_alunos_com_nota, 'RA'].nunique())
-
-                metricas_tot = calcular_metricas(notas_tot)
-                d1, d2, d3, d4 = st.columns(4)
-                d1.metric('Qtd Alunos (únicos com nota)', alunos_unicos_com_nota)
-                d2.metric('Média', f"{metricas_tot['Média']:.2f}")
-                d3.metric('Mediana', f"{metricas_tot['Mediana']:.2f}")
-                d4.metric('Desvio Padrão', f"{metricas_tot['Desvio Padrão']:.2f}")
-
-                # aqui MANTÉM o gráfico principal como BARRAS (igual ao que você tinha)
-                if not notas_tot.empty:
-                    st.plotly_chart(analise_notas_bar(notas_tot), use_container_width=True)
-                else:
-                    st.info("Não há notas para o filtro aplicado.")
-
-                # ... restante da aba Total (pizza, situação) mantido como antes ...
-                # (mantive a sua lógica original de pizza/situação e adicionei abaixo a versão por turma
-                #  que usa analise_notas_line como feito na aba do curso)
-
-                # Gráficos de DISTRIBUIÇÃO por turma na aba TOTAL (linha)
-                df_plot_total = df_base[['CODTURMA'] + avals_existentes].copy()
-                turmas_total = sorted(df_plot_total['CODTURMA'].dropna().unique())
-                if turmas_total:
-                    st.markdown("**Distribuição (linha) por Turma — (Total)**")
-                    for turma in turmas_total:
-                        with st.expander(f"Turma {turma} — distribuição (linha)"):
-                            df_t = df_plot_total[df_plot_total['CODTURMA'] == turma].copy()
-                            if df_t.empty or df_t[avals_existentes].dropna(how='all').empty:
-                                st.write("Sem dados.")
-                                continue
-                            notas_turma = df_t[avals_existentes].stack().dropna()
-                            if notas_turma.empty:
-                                st.write("Sem notas válidas para plotagem.")
-                                continue
-                            fig = analise_notas_line(notas_turma)
-                            fig.update_layout(title=f"Turma {turma} — Distribuição (linha)")
-                            st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("Não há turmas na base para gerar gráficos por turma.")
