@@ -198,7 +198,7 @@ def carregar():
     # cursos e tabs
     cursos = sorted(df['CURSO'].dropna().unique())
     if not cursos:
-        st.info('Não há cursos na base.')
+        st.info('Não há cursos na base..')
         st.stop()
     subtabs = st.tabs(cursos[:: -1])
 
