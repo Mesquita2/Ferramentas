@@ -10,6 +10,7 @@ def carregar_dados():
 
 # === gráfico ORIGINAL de barras (mantido para 'o outro' que quer continuar igual) ===
 def analise_notas_bar(notas, anos=None):
+    ## Analise temporal das notas com base nas escolhas que forem passadas Ano e Nota separados por Turma 
     notas_num = pd.to_numeric(notas, errors='coerce')
 
     if anos is not None:
@@ -59,6 +60,60 @@ def analise_notas_bar(notas, anos=None):
     )
     return fig
 
+def grafico_temporal_turma_disciplina(df, avals):
+    """
+    Gera gráfico temporal mostrando a média das avaliações selecionadas
+    separada por Turma e Disciplina.
+    
+    Parâmetros:
+    - df: DataFrame filtrado contendo as colunas 'CODTURMA', 'NOMEDISC', 'CODPERLET' e as avaliações.
+    - avals: lista de colunas de avaliações a considerar.
+    
+    Retorna:
+    - fig: gráfico Plotly Express
+    """
+    if df.empty or not avals:
+        st.info("Sem dados suficientes para gerar o gráfico temporal.")
+        return None
+
+    # Agrupa por Turma, Disciplina e Período letivo e calcula a média
+    df_media = (
+        df[['CODTURMA', 'NOMEDISC', 'CODPERLET'] + avals]
+        .groupby(['CODTURMA', 'NOMEDISC', 'CODPERLET'])
+        .mean(numeric_only=True)
+        .reset_index()
+    )
+
+    if df_media.empty:
+        st.info("Sem dados suficientes para o gráfico temporal.")
+        return None
+
+    # Se houver várias avaliações, cria uma média geral
+    if len(avals) > 1:
+        df_media['Média Geral'] = df_media[avals].mean(axis=1)
+        y_col = 'Média Geral'
+    else:
+        y_col = avals[0]
+
+    # Cria o gráfico
+    fig = px.line(
+        df_media,
+        x='CODPERLET',
+        y=y_col,
+        color='CODTURMA',            # cada turma uma linha
+        line_dash='NOMEDISC',        # cada disciplina com traço diferente
+        markers=True,
+        title=f"Evolução da média ({', '.join(avals)}) por Turma e Disciplina"
+    )
+
+    fig.update_layout(
+        xaxis_title='Período Letivo',
+        yaxis_title='Média',
+        margin=dict(t=40, b=20, l=10, r=10),
+        xaxis=dict(tickmode='linear')
+    )
+
+    return fig
 
 
 # === gráfico EM LINHA (usado apenas para TURMA) ===
@@ -105,8 +160,8 @@ def calcular_metricas(notas):
     }
 
 def carregar():
-    df = carregar_dados()
-    if df is None or df.empty:
+    df_base = carregar_dados()
+    if df_base is None or df_base.empty:
         st.error('Nenhum dado disponível para os filtros aplicados.')
         st.stop()
 
@@ -114,7 +169,7 @@ def carregar():
     st.caption('Visualize a distribuição das notas por curso, disciplina e avaliação.')
 
     # renomeações
-    df = df.copy()
+    df = df_base.copy()
     df.rename(columns={
         'E01': 'Média P1',
         'E02': 'Média P2',
@@ -125,11 +180,20 @@ def carregar():
     # período
     df['CODPERLET'] = df['CODPERLET'].astype(str)
     periodos = sorted(df['CODPERLET'].dropna().unique())
+    periodos = ['Todos os Períodos'] + periodos
+
     periodo_sel = st.multiselect('Selecione o Período Letivo', periodos)
+
+    # Se não selecionar nada, pega todos (exceto o 'Todos os Períodos')
     if not periodo_sel:
-        st.warning('Selecione pelo menos um período letivo.')
-        st.stop()
+        periodo_sel = periodos[1:]  # ignora o "Todos os Períodos"
+
+    # Se selecionar "Todos os Períodos", também pega todos
+    if 'Todos os Períodos' in periodo_sel:
+        periodo_sel = periodos[1:]
+
     df = df[df['CODPERLET'].isin(periodo_sel)]
+
 
     # cursos e tabs
     cursos = sorted(df['CURSO'].dropna().unique())
@@ -168,7 +232,10 @@ def carregar():
                     turmas_na_disc,
                     key=f'turmas_{curso}_{i}'
                 )
-                st.success(f"Analisando {len(turmas_sel)} turma(s): {', '.join(map(str, turmas_sel))}")
+                if turmas_sel:
+                    st.success(f"Analisando {len(turmas_sel)} turma(s): {', '.join(map(str, turmas_sel))}")
+                else: 
+                    st.success(f"Analisando todas as turmas da disciplina: {disciplina_sel}")
             else:
                 st.info('Nenhuma turma encontrada para a disciplina selecionada.')
                 turmas_sel = []
@@ -216,6 +283,7 @@ def carregar():
                 df_top['MEDIA_SEL'] = df_top[avals_existentes].mean(axis=1, skipna=True)
                 col_top = 'MEDIA_SEL'
                 notas_para_metricas = df_top['MEDIA_SEL'].dropna()
+
 
             # Top 5 por turma
             with st.expander('Top 5 Alunos por Turma'):
@@ -305,46 +373,47 @@ def carregar():
                 st.plotly_chart(fig_bar, use_container_width=True)
             else:
                 st.info("Não há notas para o filtro aplicado.")
+                
+            fig_temporal = grafico_temporal_turma_disciplina(df_filtrado, avals_existentes)
+            if fig_temporal:
+                st.plotly_chart(fig_temporal, use_container_width=True)
 
-            # ---------- Gráfico por TURMA: DISTRIBUIÇÃO EM LINHA (0..10 ou valores exatos) ----------
-            df_plot_turmas = df_filtrado[['CODTURMA'] + avals_existentes].copy()
+            # ---------- Gráfico por TURMA: DISTRIBUIÇÃO EM BARRAS ----------
+            df_plot_turmas = df_filtrado[['CODTURMA', 'CODPERLET'] + avals_existentes].copy()  # inclua CODPERLET
             turmas_para_grafico = turmas_sel if turmas_sel else sorted(df_plot_turmas['CODTURMA'].dropna().unique())
 
             if not turmas_para_grafico:
                 st.info("Não há turmas para gerar os gráficos de distribuição por turma.")
             else:
-                st.markdown("**Distribuição (linha) por Turma — cada turma um gráfico**")
-                # ---------- Novo: gráficos POR AVALIAÇÃO e um AGREGADO por TURMA ----------
+                st.markdown("**Distribuição (barras) por Turma — cada turma um gráfico**")
                 n_cols = 3  # quantos gráficos por linha para as avaliações
                 for turma in turmas_para_grafico:
-                    with st.expander(f"Turma {turma} — distribuição por avaliação + total"):
-                        df_t = df_plot_turmas[df_plot_turmas['CODTURMA'] == turma].copy()
-                        if df_t.empty or df_t[avals_existentes].dropna(how='all').empty:
-                            st.write("Sem dados.")
-                            continue
-                        # 1) Gráficos individuais por avaliação (em grid)
-                        st.markdown("**Por avaliação**")
+                    df_t = df_plot_turmas[df_plot_turmas['CODTURMA'] == turma].copy()
+                    if df_t.empty or df_t[avals_existentes].dropna(how='all').empty:
+                        st.write(f"Turma {turma}: sem dados.")
+                        continue
+
+                    # Captura os anos distintos da turma para exibir no título do expander
+                    anos_turma = sorted(df_t['CODPERLET'].unique())
+                    anos_str = ", ".join(map(str, anos_turma))
+
+                    with st.expander(f"Turma {turma} — distribuição por avaliação ({anos_str})"):
+                        # Gráficos individuais por avaliação
                         for idx in range(0, len(avals_existentes), n_cols):
                             grupo = avals_existentes[idx: idx + n_cols]
                             row_cols = st.columns(len(grupo))
                             for j, aval in enumerate(grupo):
                                 with row_cols[j]:
                                     notas_eval = df_t[aval].dropna()
+                                    anos_eval = df_t.loc[notas_eval.index, 'CODPERLET']
                                     if notas_eval.empty:
                                         st.write(f"{aval}: sem dados")
                                         continue
-                                    fig_eval = analise_notas_line(notas_eval)
+                                    fig_eval = analise_notas_bar(notas_eval, anos=anos_eval)
                                     fig_eval.update_layout(title=f"{aval}")
                                     st.plotly_chart(fig_eval, use_container_width=True)
-                        # 2) Gráfico agregado (soma/empilhado das avaliações selecionadas)
-                        st.markdown("**Agregado (todas as avaliações selecionadas)**")
-                        notas_turma = df_t[avals_existentes].stack().dropna()
-                        if notas_turma.empty:
-                            st.write("Sem notas válidas para o agregado.")
-                        else:
-                            fig_total = analise_notas_line(notas_turma)
-                            fig_total.update_layout(title=f"Turma {turma} — Agregado")
-                            st.plotly_chart(fig_total, use_container_width=True)
+
+
 
             # Resumo por período letivo
             resumo = (
