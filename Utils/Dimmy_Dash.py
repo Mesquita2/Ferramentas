@@ -208,7 +208,7 @@ def carregar():
     eval_options = sorted(eval_options)
 
     # --- abas por curso ---
-    for i, curso in enumerate(cursos):
+    for i, curso in enumerate(cursos[:: -1]):
         with subtabs[i]:
             st.markdown(f'### {curso}')
             df_curso = df[df['CURSO'] == curso].copy()
