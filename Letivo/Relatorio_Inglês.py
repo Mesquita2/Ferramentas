@@ -192,7 +192,7 @@ def carregar():
                 df_para_relatorio.to_excel(writer, sheet_name='Encontrados', index=False)
             if not df_nao_encontrados.empty:
                 df_nao_encontrados.to_excel(writer, sheet_name='Nao_Encontrados', index=False)
-            writer.save()
+
         output_excel_completo.seek(0)
         st.download_button(
             label="Download Excel Completo (Encontrados + Não Encontrados)",
