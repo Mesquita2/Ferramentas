@@ -36,7 +36,7 @@ def carregar():
         footer_paragraph = footer.paragraphs[0]
         footer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run_footer = footer_paragraph.add_run()
-        run_footer.add_picture(imagem_rodape, width=Inches(10)))
+        run_footer.add_picture(imagem_rodape, width=Inches(10))
 
         # Conteúdo
         doc.add_paragraph(f"Curso: {curso}", style='Heading 2')
