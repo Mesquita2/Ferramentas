@@ -5,6 +5,7 @@ import streamlit as st
 from docx import Document
 from docx.shared import Inches
 import os
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 def carregar():
     imagem_rodape = "./Endereço.jpeg"
@@ -23,17 +24,19 @@ def carregar():
         section.top_margin = Inches(1)   
         section.bottom_margin = Inches(1) 
 
-        # Cabeçalho
+        # Cabeçalho centralizado
         header = section.header
-        header_paragraph = header.paragraphs[0]
+        header_paragraph = header.paragraphs[0]  # pega o parágrafo existente
+        header_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # centraliza o parágrafo
         run = header_paragraph.add_run()
-        run.add_picture(imagem_cabecalho, width=Inches(9))  
+        run.add_picture(imagem_cabecalho, width=Inches(8))  # largura da imagem
 
-        # Rodapé
+        # Rodapé centralizado
         footer = section.footer
         footer_paragraph = footer.paragraphs[0]
+        footer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run_footer = footer_paragraph.add_run()
-        run_footer.add_picture(imagem_rodape, width=Inches(9))  
+        run_footer.add_picture(imagem_rodape, width=Inches(5))
 
         # Conteúdo
         doc.add_paragraph(f"Curso: {curso}", style='Heading 2')
