@@ -7,22 +7,6 @@ from docx.shared import Inches
 
 def carregar():
 
-    # Excel com filtros
-    def gerar_excel_com_filtros(df_rec, disciplinas, turmas):
-        df_filtrado = df_rec[
-            (df_rec["DISCIPLINA"].isin(disciplinas)) & 
-            (df_rec["TURMADISC"].isin(turmas))
-        ].copy()
-
-        colunas = ['TURMADISC', 'DISCIPLINA', 'ALUNO']
-        df_filtrado = df_filtrado[colunas].sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
-        
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df_filtrado.to_excel(writer, index=False, sheet_name="Notas")
-        output.seek(0)
-        return output
-
     # Relatório para assinatura
     def gerar_relatorio_assinatura(df, disciplinas, turmas):
         data_hoje = date.today().strftime("%d/%m/%Y")
@@ -66,7 +50,7 @@ def carregar():
         return output
 
     # ----------- INTERFACE STREAMLIT -------------
-    st.title("📂 Upload do Arquivo de REC")
+    st.title("Upload do Arquivo de Nivelamento de Inglês")
 
     uploaded_file = st.file_uploader("Selecione o arquivo REC (Excel ou CSV)", type=["xlsx", "csv"])
 
@@ -121,16 +105,8 @@ def carregar():
                 # Relatórios
                 relatorio_docx = gerar_relatorio_assinatura(df_periodo, disciplinas_sel, turmas_sel)
                 st.download_button(
-                    label="📄 Gerar Relatório para Impressão",
+                    label="Gerar Relatório para Impressão",
                     data=relatorio_docx,
                     file_name=f"Relatorio_Assinaturas_{curso_sel}_{periodo_sel}.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-
-                relatorio_excel = gerar_excel_com_filtros(df_periodo, disciplinas_sel, turmas_sel)
-                st.download_button(
-                    label="📊 Gerar Planilha de Notas",
-                    data=relatorio_excel,
-                    file_name=f"Relatorio_Notas_{curso_sel}_{periodo_sel}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
