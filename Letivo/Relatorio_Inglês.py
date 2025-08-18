@@ -7,25 +7,31 @@ from docx.shared import Inches
 
 def carregar():
 
-    # Função para limpar e preparar dados
-    def limpar_rec(df):
-        if df is not None:
-            df["RA"] = df["RA"].astype(str).str.zfill(7)
-            df.rename(columns={'VALOR': 'DISCIPLINA', 'RA': 'RA'}, inplace=True, errors="ignore")
-            df = df[df['NOMESTATUS'] == 'Período em Curso']
-            df.loc[:, 'RA'] = df['RA'].apply(lambda x: str(x).zfill(7))
-            st.success("Dados carregados e filtrados com sucesso!")
-            return df
-        else:
-            st.warning("Arquivo não carregado!")
-            return pd.DataFrame()
+    # Excel com filtros
+    def gerar_excel_com_filtros(df_rec, disciplinas, turmas):
+        df_filtrado = df_rec[
+            (df_rec["DISCIPLINA"].isin(disciplinas)) & 
+            (df_rec["TURMADISC"].isin(turmas))
+        ].copy()
+
+        colunas = ['TURMADISC', 'DISCIPLINA', 'ALUNO']
+        df_filtrado = df_filtrado[colunas].sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
+        
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_filtrado.to_excel(writer, index=False, sheet_name="Notas")
+        output.seek(0)
+        return output
 
     # Relatório para assinatura
     def gerar_relatorio_assinatura(df, disciplinas, turmas):
         data_hoje = date.today().strftime("%d/%m/%Y")
-        df = df[(df["DISCIPLINA"].isin(disciplinas)) & (df["TURMADISC"].isin(turmas))].copy()
-        df = df.sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
+        df = df[
+            (df["DISCIPLINA"].isin(disciplinas)) & 
+            (df["TURMADISC"].isin(turmas))
+        ].copy()
 
+        df = df.sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
         doc = Document()
 
         # Definições de margem
@@ -60,7 +66,7 @@ def carregar():
         return output
 
     # ----------- INTERFACE STREAMLIT -------------
-    st.title("Upload do Arquivo de Nivelamento de Inglês")
+    st.title("📂 Upload do Arquivo de REC")
 
     uploaded_file = st.file_uploader("Selecione o arquivo REC (Excel ou CSV)", type=["xlsx", "csv"])
 
@@ -68,50 +74,63 @@ def carregar():
         if uploaded_file.name.endswith(".xlsx"):
             df = pd.read_excel(uploaded_file)
         else:
-            df = pd.read_csv(uploaded_file, sep=";")  # ajusta separador se precisar
+            df = pd.read_csv(uploaded_file, sep=";")  # ajuste o separador se necessário
 
-        df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
-                           'NOMECURSO': 'CURSO',
-                           'NOMEALUNO': 'ALUNO'}, inplace=True, errors="ignore")
+        # Padroniza colunas principais
+        df.rename(columns={
+            'NOMEDISCIPLINA': 'DISCIPLINA',
+            'NOMECURSO': 'CURSO',
+            'NOMEALUNO': 'ALUNO',
+            'CODPERLET': 'PERIODO'
+        }, inplace=True, errors="ignore")
 
         st.subheader("Pré-visualização dos dados carregados")
         st.dataframe(df.head(10))
 
-        df_rec = limpar_rec(df)
-        if df_rec.empty:
-            st.stop()
-
-        # Separação por Curso e Período
-        cursos = df_rec["CURSO"].dropna().unique().tolist()
+        # 🔹 Filtro por Curso
+        cursos = df["CURSO"].dropna().unique().tolist()
         curso_sel = st.selectbox("Selecione o Curso", cursos)
 
-        df_curso = df_rec[df_rec["CURSO"] == curso_sel]
+        df_curso = df[df["CURSO"] == curso_sel]
 
-        # Filtro de disciplinas e turmas
-        disciplinas = df_curso["DISCIPLINA"].dropna().unique().tolist()
+        # 🔹 Filtro por Período
+        periodos = df_curso["PERIODO"].dropna().unique().tolist()
+        periodo_sel = st.selectbox("Selecione o Período Letivo", periodos)
+
+        df_periodo = df_curso[df_curso["PERIODO"] == periodo_sel]
+
+        # 🔹 Filtro de disciplinas e turmas
+        disciplinas = df_periodo["DISCIPLINA"].dropna().unique().tolist()
         disciplinas_sel = st.multiselect("1. Escolha as disciplinas", disciplinas)
 
         if disciplinas_sel:
-            turmas_disp = df_curso[df_curso["DISCIPLINA"].isin(disciplinas_sel)]["TURMADISC"].dropna().unique().tolist()
+            turmas_disp = df_periodo[df_periodo["DISCIPLINA"].isin(disciplinas_sel)]["TURMADISC"].dropna().unique().tolist()
             turmas_sel = st.multiselect("2. Escolha as turmas", turmas_disp)
 
             if turmas_sel:
-                df_filtrado = df_curso[
-                    (df_curso["DISCIPLINA"].isin(disciplinas_sel)) &
-                    (df_curso["TURMADISC"].isin(turmas_sel))
+                df_filtrado = df_periodo[
+                    (df_periodo["DISCIPLINA"].isin(disciplinas_sel)) &
+                    (df_periodo["TURMADISC"].isin(turmas_sel))
                 ]
 
-                st.write(f"**Alunos da(s) Disciplina(s): {disciplinas_sel} | Turma(s): {turmas_sel}**")
-                st.write(f"**Quantidade de REC solicitadas: {df_filtrado['ALUNO'].count()}**")
-                st.write(f"**Quantidade de alunos distintos: {df_filtrado['ALUNO'].nunique()}**")
+                st.write(f"**Curso:** {curso_sel} | **Período:** {periodo_sel}")
+                st.write(f"**Disciplinas:** {disciplinas_sel} | **Turmas:** {turmas_sel}")
+                st.write(f"**Total de alunos: {df_filtrado['ALUNO'].nunique()}**")
                 st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
                 # Relatórios
-                relatorio_docx = gerar_relatorio_assinatura(df_curso, disciplinas_sel, turmas_sel)
+                relatorio_docx = gerar_relatorio_assinatura(df_periodo, disciplinas_sel, turmas_sel)
                 st.download_button(
                     label="📄 Gerar Relatório para Impressão",
                     data=relatorio_docx,
-                    file_name=f"Relatorio_Assinaturas_{curso_sel}.docx",
+                    file_name=f"Relatorio_Assinaturas_{curso_sel}_{periodo_sel}.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
-                
+
+                relatorio_excel = gerar_excel_com_filtros(df_periodo, disciplinas_sel, turmas_sel)
+                st.download_button(
+                    label="📊 Gerar Planilha de Notas",
+                    data=relatorio_excel,
+                    file_name=f"Relatorio_Notas_{curso_sel}_{periodo_sel}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
