@@ -259,7 +259,7 @@ def carregar():
             output_excel_nao.seek(0)
 
             st.download_button(
-                label="Download Excel - Alunos Não Encontrados",
+                label="Download Excel - Alunos Não Encontrados te et",
                 data=output_excel_nao,
                 file_name="Alunos_Nao_Encontrados.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
