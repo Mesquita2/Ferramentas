@@ -27,13 +27,13 @@ def carregar():
         header = section.header
         header_paragraph = header.paragraphs[0]
         run = header_paragraph.add_run()
-        run.add_picture(imagem_cabecalho, width=Inches(12))  
+        run.add_picture(imagem_cabecalho, width=Inches(9))  
 
         # Rodapé
         footer = section.footer
         footer_paragraph = footer.paragraphs[0]
         run_footer = footer_paragraph.add_run()
-        run_footer.add_picture(imagem_rodape, width=Inches(12))  
+        run_footer.add_picture(imagem_rodape, width=Inches(9))  
 
         # Conteúdo
         doc.add_paragraph(f"Curso: {curso}", style='Heading 2')
