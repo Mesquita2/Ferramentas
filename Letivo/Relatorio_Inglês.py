@@ -74,6 +74,7 @@ def carregar():
             "Selecione uma data:",
             value=date.today()
         )
+        data_hoje = data_sel
     
         df_curso = df[df["CURSO"] == curso_sel]
 
@@ -88,7 +89,7 @@ def carregar():
         st.dataframe(df_periodo[["ALUNO"]])
 
         # Botão de relatório
-        relatorio_docx = gerar_relatorio_assinatura(df_periodo, curso_sel, periodo_sel, data_sel)
+        relatorio_docx = gerar_relatorio_assinatura(df_periodo, curso_sel, periodo_sel, data_hoje)
         st.download_button(
             label="Gerar Relatório para Impressão",
             data=relatorio_docx,
