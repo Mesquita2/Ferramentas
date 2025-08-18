@@ -2,14 +2,14 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 from auth import check_authentication, logout
 import Letivo.Inicial as Inicio
-from Letivo import ConversorTotvs, Email, Rec, Relatorio_Status, GerarPlanilhas, Quizz, TCC
+from Letivo import ConversorTotvs, Email, Rec, Relatorio_Status, GerarPlanilhas, Quizz, TCC, Relatorio_Inglês
 
 st.set_page_config(page_title="Sistema", layout="wide")
 
 if check_authentication():
 
     with st.sidebar:
-        escolha = option_menu("Letivo", ["Início", "Email", "Planilhas", "Conversor Notas Totvs","Quizz", "Rec", "Relatório Status", "TCC - Analise" ,"Sair"],
+        escolha = option_menu("Letivo", ["Início", "Email", "Planilhas", "Conversor Notas Totvs","Quizz", "Rec", "Relatório Status", "Nivelamento Inglês", "TCC - Analise" ,"Sair"],
                               icons=["house", "envelope", "download","upload","upload", "box-arrow-right", "arrow-repeat", "bar-chart", "box-arrow-right"],
                               menu_icon="cast", default_index=0)
 
@@ -33,6 +33,9 @@ if check_authentication():
         
     if escolha == "Relatório Status": 
         Relatorio_Status.carregar()
+        
+    if escolha == "Nivelamento Inglês":
+        Relatorio_Inglês.carregar()
         
     if escolha == "TCC - Analise":
         TCC.carregar()
