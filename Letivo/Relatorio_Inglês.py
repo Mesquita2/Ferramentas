@@ -4,11 +4,13 @@ import pandas as pd
 import streamlit as st
 from docx import Document
 from docx.shared import Inches
+import os
 
 def carregar():
+    imagem_rodape = "./Endereço.jpeg"
+    imagem_cabecalho = "./Logo.jpg"
 
-    # Relatório para assinatura
-    def gerar_relatorio_assinatura(df, curso, periodo, data_hoje):
+    def gerar_relatorio_assinatura(df, curso, periodo, data_hoje, imagem_cabecalho, imagem_rodape):
         data_hoje = data_hoje.strftime("%d/%m/%Y")
         df = df.sort_values(by=["ALUNO"])
 
@@ -18,10 +20,22 @@ def carregar():
         section = doc.sections[0]
         section.left_margin = Inches(0.5)
         section.right_margin = Inches(0.5)
-        section.top_margin = Inches(0.5)
-        section.bottom_margin = Inches(0.5)
+        section.top_margin = Inches(1)   
+        section.bottom_margin = Inches(1) 
 
         # Cabeçalho
+        header = section.header
+        header_paragraph = header.paragraphs[0]
+        run = header_paragraph.add_run()
+        run.add_picture(imagem_cabecalho, width=Inches(12))  
+
+        # Rodapé
+        footer = section.footer
+        footer_paragraph = footer.paragraphs[0]
+        run_footer = footer_paragraph.add_run()
+        run_footer.add_picture(imagem_rodape, width=Inches(12))  
+
+        # Conteúdo
         doc.add_paragraph(f"Curso: {curso}", style='Heading 2')
         doc.add_paragraph(f"Período: {periodo}")
         doc.add_paragraph(f"Data: {data_hoje}")
@@ -89,7 +103,7 @@ def carregar():
         st.dataframe(df_periodo[["ALUNO"]])
 
         # Botão de relatório
-        relatorio_docx = gerar_relatorio_assinatura(df_periodo, curso_sel, periodo_sel, data_hoje)
+        relatorio_docx = gerar_relatorio_assinatura(df_periodo, curso_sel, periodo_sel, data_hoje, imagem_cabecalho, imagem_rodape)
         st.download_button(
             label="Gerar Relatório para Impressão",
             data=relatorio_docx,
