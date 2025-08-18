@@ -8,8 +8,8 @@ from docx.shared import Inches
 def carregar():
 
     # Relatório para assinatura
-    def gerar_relatorio_assinatura(df, curso, periodo):
-        data_hoje = date.today().strftime("%d/%m/%Y")
+    def gerar_relatorio_assinatura(df, curso, periodo, data_hoje):
+        data_hoje = data_hoje.strftime("%d/%m/%Y")
         df = df.sort_values(by=["ALUNO"])
 
         doc = Document()
@@ -46,7 +46,6 @@ def carregar():
         output.seek(0)
         return output
 
-    # ----------- INTERFACE STREAMLIT -------------
     st.title("Upload do Arquivo de Nivelamento de Inglês")
 
     uploaded_file = st.file_uploader("Selecione o arquivo (Excel ou CSV)", type=["xlsx", "csv"])
@@ -61,7 +60,7 @@ def carregar():
         df.rename(columns={
             'Curso': 'CURSO',
             'Nome completo': 'ALUNO',
-            'Périodo atual': 'PERIODO'
+            'Período atual': 'PERIODO'
         }, inplace=True, errors="ignore")
 
         st.subheader("Pré-visualização dos dados carregados")
@@ -70,7 +69,12 @@ def carregar():
         # 🔹 Filtro por Curso
         cursos = df["CURSO"].dropna().unique().tolist()
         curso_sel = st.selectbox("Selecione o Curso", cursos)
-
+        
+        data_sel = st.date_input(
+            "Selecione uma data:",
+            value=date.today()
+        )
+    
         df_curso = df[df["CURSO"] == curso_sel]
 
         # 🔹 Filtro por Período
@@ -84,7 +88,7 @@ def carregar():
         st.dataframe(df_periodo[["ALUNO"]])
 
         # Botão de relatório
-        relatorio_docx = gerar_relatorio_assinatura(df_periodo, curso_sel, periodo_sel)
+        relatorio_docx = gerar_relatorio_assinatura(df_periodo, curso_sel, periodo_sel, data_sel)
         st.download_button(
             label="Gerar Relatório para Impressão",
             data=relatorio_docx,
