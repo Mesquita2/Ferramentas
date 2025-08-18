@@ -29,14 +29,14 @@ def carregar():
         header_paragraph = header.paragraphs[0]  # pega o parágrafo existente
         header_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # centraliza o parágrafo
         run = header_paragraph.add_run()
-        run.add_picture(imagem_cabecalho, width=Inches(8))  # largura da imagem
+        run.add_picture(imagem_cabecalho, width=Inches(10))  # largura da imagem
 
         # Rodapé centralizado
         footer = section.footer
         footer_paragraph = footer.paragraphs[0]
         footer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run_footer = footer_paragraph.add_run()
-        run_footer.add_picture(imagem_rodape, width=Inches(8))
+        run_footer.add_picture(imagem_rodape, width=Inches(10)))
 
         # Conteúdo
         doc.add_paragraph(f"Curso: {curso}", style='Heading 2')
