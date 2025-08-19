@@ -216,7 +216,7 @@ def carregar():
                 # atualiza PERIODO via envio (se existir)
                 try:
                     df_base_local = df_base_local.merge(
-                        df_env[['EMAIL','PERIODO']].drop_duplicates(subset=['EMAIL']),
+                        df_env[['EMAIL','PERIODO']].drop_duplicates(subset=['EMAIL', 'PERIODO']),
                         on='EMAIL', how='left', suffixes=('','_env')
                     )
                     if 'PERIODO_env' in df_base_local.columns:
