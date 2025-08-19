@@ -449,15 +449,14 @@ def carregar():
                         df_upload['Earned Points Final'] = df_upload['Earned Points Original'] + df_upload['Bonus Anuladas']
 
                         # Regra de cálculo original
-                        df_upload['NOTAS'] = np.minimum((df_upload['Earned Points Final']) / df_upload['Possible Points Ajustado'], 1).fillna(0) * 10
-                        df_upload['STATUS'] = 'APROVADO'
-                        df_upload['STATUS'] = df_upload['Earned Points Final'].fillna(0).apply(status_por_linha)
+                        df_upload['NOTAS'] = np.minimum((df_upload['Earned Points Final']) / df_upload['Possible Points Ajustado'], 1).fillna(0) * 10                    
+                        df_upload['STATUS_32'] = df_upload['Earned Points Final'].fillna(0).apply(status_por_linha)
                         # Agrega por RA (em caso de múltiplas linhas por aluno no export)
                         # também traz primeiro NOMEALUNO caso exista
                         df_agregado = df_upload.groupby('RA', as_index=False).agg({
                             'NOTAS': 'mean',
                             'NOMEALUNO': 'first',
-                            'STATUS': 'first',
+                            'STATUS_32': 'first',
                         })
 
                         # Se tivermos a base de alunos, faz merge para trazer CURSO/TURMA/ID/etc
@@ -479,11 +478,12 @@ def carregar():
 
                         # adiciona metadados da avaliação
                         df_final['PROVA'] = prova
+                        df_final['STATUS_7'] = np.where(df_final['NOTAS'] >= 7, 'Aprovado', 'Reprovado')
                         
 
                         # organiza colunas no formato desejado
                         colunas = ['CURSO','TURMADISC','RA','ALUNO',
-                                   'PROVA','NOTAS', 'STATUS']
+                                   'PROVA','NOTAS', 'STATUS_32', 'STATUS_7']
                         # garante que existam todas as colunas
                         for c in colunas:
                             if c not in df_final.columns:
