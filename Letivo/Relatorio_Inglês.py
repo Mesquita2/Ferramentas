@@ -51,15 +51,11 @@ def carregar():
         tabela.style = "Table Grid"
         hdr_cells = tabela.rows[0].cells
         hdr_cells[0].text = 'Aluno'
-        hdr_cells[1].text = 'RA'
-        hdr_cells[2].text = 'E-mail'
         hdr_cells[3].text = 'Assinatura'
 
         for _, row in df_sorted.iterrows():
             linha = tabela.add_row().cells
             linha[0].text = str(row.get("ALUNO", ""))[:200]
-            linha[1].text = str(row.get("RA", ""))
-            linha[2].text = str(row.get("EMAIL", ""))
             linha[3].text = " "
 
         output = io.BytesIO()
