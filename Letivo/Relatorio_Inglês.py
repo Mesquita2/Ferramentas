@@ -142,6 +142,17 @@ def carregar():
 
         # Mantém todas as outras colunas; somente assegura RA e NOMEALUNO presentes
         return df
+    
+    def status_por_linha(v):
+        try:
+            v_num = float(v)
+        except Exception:
+            # se não for possível converter, considera 0 (ou poderia retornar '')
+            v_num = 0.0
+        if v_num >= 32:
+            return 'Aprovado'
+        return 'Reprovado'
+
 
     
     st.title("Sistema de Nivelamento de Inglês")
@@ -328,10 +339,9 @@ def carregar():
             # padroniza colunas importantes na base (se existir)
             df_base = df_base.copy()
             df_base.rename(columns={
-                'NOMEDISCIPLINA': 'DISCIPLINA',
-                'NOMECURSO': 'CURSO',
-                'NOMEALUNO': 'ALUNO',
-                'TURMA': 'TURMADISC'
+                'Curso': 'CURSO',
+                'Aluno': 'ALUNO',
+                'Turma': 'TURMADISC'
             }, inplace=True, errors="ignore")
             for col in ['RA','ALUNO','CURSO','TURMADISC','IDTURMADISC','CODCOLIGADA']:
                 if col not in df_base.columns:
@@ -440,12 +450,14 @@ def carregar():
 
                         # Regra de cálculo original
                         df_upload['NOTAS'] = np.minimum((df_upload['Earned Points Final']) / df_upload['Possible Points Ajustado'], 1).fillna(0) * 10
-
+                        df_upload['STATUS'] = 'APROVADO'
+                        df_upload['STATUS'] = df_upload['Earned Points Final'].fillna(0).apply(status_por_linha)
                         # Agrega por RA (em caso de múltiplas linhas por aluno no export)
                         # também traz primeiro NOMEALUNO caso exista
                         df_agregado = df_upload.groupby('RA', as_index=False).agg({
                             'NOTAS': 'mean',
-                            'NOMEALUNO': 'first'
+                            'NOMEALUNO': 'first',
+                            'STATUS': 'first',
                         })
 
                         # Se tivermos a base de alunos, faz merge para trazer CURSO/TURMA/ID/etc
@@ -463,10 +475,6 @@ def carregar():
                         else:
                             # sem base, monta colunas mínimas
                             df_final = df_agregado.copy()
-                            df_final['CODCOLIGADA'] = ''
-                            df_final['CURSO'] = ''
-                            df_final['TURMADISC'] = ''
-                            df_final['IDTURMADISC'] = ''
                             df_final['ALUNO'] = df_final['NOMEALUNO']
 
                         # adiciona metadados da avaliação
@@ -475,7 +483,7 @@ def carregar():
 
                         # organiza colunas no formato desejado
                         colunas = ['CURSO','TURMADISC','RA','ALUNO',
-                                   'PROVA','NOTAS']
+                                   'PROVA','NOTAS', 'STATUS']
                         # garante que existam todas as colunas
                         for c in colunas:
                             if c not in df_final.columns:
