@@ -143,18 +143,6 @@ def carregar():
         # Mantém todas as outras colunas; somente assegura RA e NOMEALUNO presentes
         return df
     
-    def status_por_linha(v):
-        try:
-            v_num = float(v)
-        except Exception:
-            # se não for possível converter, considera 0 (ou poderia retornar '')
-            v_num = 0.0
-        if v_num >= 32:
-            return 'Aprovado'
-        return 'Reprovado'
-
-
-    
     st.title("Sistema de Nivelamento de Inglês")
     
     tab1, tab2 = st.tabs(["Relatório de Alunos", "Notas do Nivelamento"])
@@ -450,7 +438,7 @@ def carregar():
 
                         # Regra de cálculo original
                         df_upload['NOTAS'] = np.minimum((df_upload['Earned Points Final']) / df_upload['Possible Points Ajustado'], 1).fillna(0) * 10                    
-                        df_upload['STATUS_32'] = df_upload['Earned Points Final'].fillna(0).apply(status_por_linha)
+                        df_upload['STATUS_32'] = np.where(df_upload['Earned Points Final'] >= 32, 'Aprovado', 'Reprovado')
                         # Agrega por RA (em caso de múltiplas linhas por aluno no export)
                         # também traz primeiro NOMEALUNO caso exista
                         df_agregado = df_upload.groupby('RA', as_index=False).agg({
