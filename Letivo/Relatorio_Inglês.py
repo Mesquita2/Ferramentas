@@ -312,7 +312,7 @@ def carregar():
 
     with tab2:
         import numpy as np  # import local para garantir disponibilidade
-        st.subheader("Notas dos Alunos — cálculo direto a partir do arquivo (SEM disciplina)")
+        st.subheader("Notas dos Alunos — cálculo direto a partir do arquivo")
 
         # tenta carregar a base de alunos (opcional)
         ARQUIVOBASE = "alunosxdisciplinas_geral"
