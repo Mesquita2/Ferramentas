@@ -292,17 +292,17 @@ def carregar():
 
                 # excel completo (duas abas) — só se houver dados
                 if (not df_cruzado.empty) or (not df_nao_encontrados.empty):
-                    output_excel_completo = io.BytesIO()
+                    output = io.BytesIO()
                     try:
-                        with pd.ExcelWriter(output_excel_completo, engine='xlsxwriter') as writer:
+                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                             if not df_cruzado.empty:
                                 df_para_relatorio.to_excel(writer, sheet_name='Encontrados', index=False)
                             if not df_nao_encontrados.empty:
                                 df_nao_encontrados.to_excel(writer, sheet_name='Nao_Encontrados', index=False)
-                        output_excel_completo.seek(0)
+                        output.seek(0)
                         st.download_button(
                             label="Download Excel Completo (Encontrados + Não Encontrados)",
-                            data=output_excel_completo,
+                            data=output,
                             file_name=f"Relatorio_Completo_{curso_head}_{periodo_sel or 'todas'}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
