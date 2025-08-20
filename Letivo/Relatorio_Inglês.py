@@ -625,7 +625,6 @@ def carregar():
                     df_adj['Last Name'] = ''
 
                 # montar df de saída (apenas colunas requisitadas)
-                df_out = df_adj.loc[:, [c for c in ['Student ID','Teacher Name', 'First Name', 'Last Name','Gender', 'PERIODO', 'CURSO'] if c in df_adj.columns]].copy()
                 # Criar nova coluna
                 df_out['Class Name'] = df_out.apply(
                     lambda row: f"{sigla_curso(row['CURSO'])} {para_romano(int(row['PERIODO'].split()[0]))}",
@@ -633,6 +632,10 @@ def carregar():
                 )
                 st.write(df_out.columns.tolist())
                 
+                df_out = ['Teacher Name'] = ''
+                df_out = ['Gender'] = ''
+                df_out = ['Grade'] = ''
+                df_out = df_adj.loc[:, [c for c in ['Student ID','Teacher Name', 'First Name', 'Last Name','Gender', 'Grade', 'Class Name'] if c in df_adj.columns]].copy()
                     
                 
                 
