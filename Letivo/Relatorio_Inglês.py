@@ -63,6 +63,15 @@ def carregar():
         output.seek(0)
         return output
     
+    def sigla_curso(nome):
+        palavras = nome.split()
+        return "".join(p[0].upper() for p in palavras[:3])  # até 3 letras (ajuste se quiser mais)
+
+    # Função para converter número em romano
+    def para_romano(num):
+        romanos = {1:'I', 2:'II', 3:'III', 4:'IV', 5:'V', 6:'VI', 7:'VII', 8:'VIII', 9:'IX', 10:'X'}
+        return romanos.get(num, str(num))  # fallback p/ número normal se > 10
+    
     def ajustes_dataframe(df):
         """
         Normaliza o DataFrame de upload (ZipGrade/Excel).
@@ -617,8 +626,13 @@ def carregar():
 
                 # montar df de saída (apenas colunas requisitadas)
                 df_out = df_adj.loc[:, [c for c in ['Student ID','Teacher Name', 'First Name', 'Last Name','Gender', 'PERIODO', 'CURSO'] if c in df_adj.columns]].copy()
+                # Criar nova coluna
+                df_out['Class Name'] = df_out.apply(
+                    lambda row: f"{sigla_curso(row['CURSO'])} {para_romano(int(row['PERIODO'].split()[0]))}",
+                    axis=1
+                )
                 st.write(df_out.columns.tolist())
-                df_out.rename(columns={'CURSO': 'Class Name'}, inplace=True)
+                
                     
                 
                 
