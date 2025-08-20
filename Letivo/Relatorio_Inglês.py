@@ -292,6 +292,7 @@ def carregar():
 
                 # excel completo (duas abas) — só se houver dados
                 if (not df_cruzado.empty) or (not df_nao_encontrados.empty):
+                    import io  
                     output_excel_completo = io.BytesIO()
                     try:
                         with pd.ExcelWriter(output_excel_completo, engine='xlsxwriter') as writer:
@@ -487,7 +488,6 @@ def carregar():
                         st.dataframe(df_final)
 
                         # Download em TXT (seu padrão)
-                        import io 
                         output = io.BytesIO()
                         df_final.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
                         output.seek(0)
