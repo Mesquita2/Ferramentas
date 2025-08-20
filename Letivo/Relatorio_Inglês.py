@@ -145,7 +145,7 @@ def carregar():
     
     st.title("Sistema de Nivelamento de Inglês")
     
-    tab1, tab2 = st.tabs(["Relatório de Alunos", "Notas do Nivelamento"])
+    tab1, tab2, tab3= st.tabs(["Relatório de Alunos", "Notas do Nivelamento", "Formatar para Questionário"])
     
     # ---------------------------
     # TAB 1: relatório de alunos (corrigido)
@@ -497,3 +497,141 @@ def carregar():
                             file_name=nome_arquivo,
                             mime="text/plain"
                         )
+                        
+    with tab3:
+        st.subheader("Formatar para Questionário (ZipGrade/Google Forms) — DEBUG e Formatar")
+        uploaded_file_format = st.file_uploader(
+            "Envie o arquivo de notas (Excel/CSV)",
+            type=["xlsx", "csv"],
+            key="formatar_tab"
+        )
+
+        if uploaded_file_format is None:
+            st.info("Envie um arquivo para formatar (aba Formatar).")
+        else:
+            import io
+            # leitura robusta
+            try:
+                name = str(uploaded_file_format.name).lower()
+                if name.endswith(".xlsx"):
+                    df_env = pd.read_excel(uploaded_file_format, engine="openpyxl")
+                else:
+                    # tenta ; então , então utf-8/latin1
+                    try:
+                        df_env = pd.read_csv(uploaded_file_format, sep=";")
+                    except Exception:
+                        try:
+                            df_env = pd.read_csv(uploaded_file_format, sep=",")
+                        except Exception:
+                            uploaded_file_format.seek(0)
+                            df_env = pd.read_csv(uploaded_file_format, sep=",", encoding="latin1")
+            except Exception as e:
+                st.error(f"Erro ao ler o arquivo enviado: {e}")
+                df_env = None
+
+            if df_env is None:
+                st.warning("Não foi possível ler o arquivo. Verifique o formato/encoding.")
+            else:
+                # ----- DIAGNÓSTICO RÁPIDO -----
+                st.write("### Diagnóstico rápido")
+                st.write("Colunas detectadas:")
+                st.write(df_env.columns.tolist())
+                st.write("Preview (10 linhas):")
+                st.dataframe(df_env.head(10))
+                buf = io.StringIO()
+                df_env.info(buf=buf)
+                st.text(buf.getvalue())
+                st.write("Contagem de valores não-nulos por coluna:")
+                st.write(df_env.notnull().sum())
+
+                # opção para usar ajustes_dataframe (útil para testar se ela filtra tudo)
+                usar_ajustes = st.checkbox("Usar ajustes_dataframe() (se existir)", value=False)
+                if usar_ajustes:
+                    try:
+                        df_adj = ajustes_dataframe(df_env.copy())
+                        st.success("ajustes_dataframe() aplicada.")
+                        st.write("Linhas após ajustes_dataframe:", len(df_adj))
+                    except Exception as e:
+                        st.warning(f"ajustes_dataframe() não pôde ser executada: {e}")
+                        df_adj = df_env.copy()
+                else:
+                    df_adj = df_env.copy()
+
+                # mostrar colunas candidatas a nome e RA
+                possíveis_nomes = [c for c in df_adj.columns if any(k in c.lower() for k in ['nome','aluno','name'])]
+                possíveis_ras = [c for c in df_adj.columns if any(k in c.lower() for k in ['ra','student','id'])]
+
+                st.write("Possíveis colunas de nome encontradas:", possíveis_nomes)
+                st.write("Possíveis colunas RA/ID encontradas:", possíveis_ras)
+
+                # --- Construir NOMEALUNO se não existir ---
+                if 'NOMEALUNO' not in df_adj.columns or df_adj['NOMEALUNO'].isna().all():
+                    # tenta colunas comuns
+                    for cand in ['ALUNO','Aluno','Nome completo','Nome','Student Name','Student']:
+                        if cand in df_adj.columns:
+                            df_adj['NOMEALUNO'] = df_adj[cand].astype(str).fillna('')
+                            break
+                    else:
+                        # concatena colunas que pareçam nome (última tentativa)
+                        name_cols = [c for c in df_adj.columns if 'nome' in c.lower() or 'name' in c.lower() or 'aluno' in c.lower()]
+                        if name_cols:
+                            df_adj['NOMEALUNO'] = df_adj[name_cols].astype(str).agg(' '.join, axis=1).str.replace(r'\s+', ' ', regex=True).str.strip()
+                        else:
+                            df_adj['NOMEALUNO'] = ''
+
+                # --- Gerar Student ID de forma segura ---
+                if 'RA' in df_adj.columns and df_adj['RA'].notna().any():
+                    df_adj['Student ID'] = df_adj['RA'].astype(str).fillna('').apply(lambda x: str(x).split('.')[0])
+                    df_adj['Student ID'] = df_adj['Student ID'].str.replace(r'\D', '', regex=True).apply(lambda x: x.zfill(7) if x != '' else '')
+                elif 'Student ID' in df_adj.columns and df_adj['Student ID'].notna().any():
+                    df_adj['Student ID'] = df_adj['Student ID'].astype(str).fillna('').apply(lambda x: str(x).split('.')[0])
+                else:
+                    # tenta detectar coluna numérica curta que pareça ID
+                    candidate_numeric = None
+                    for c in df_adj.columns:
+                        s = df_adj[c].astype(str).str.replace(r'\D','', regex=True)
+                        # se ao menos metade das linhas tiver dígitos e comprimentos razoáveis
+                        if (s.str.len() > 0).sum() >= max(1, int(0.4*len(s))) and s.str.len().mean() > 4:
+                            candidate_numeric = c
+                            break
+                    if candidate_numeric:
+                        st.info(f"Usando coluna {candidate_numeric} como Student ID (detectada automaticamente).")
+                        df_adj['Student ID'] = df_adj[candidate_numeric].astype(str).fillna('').apply(lambda x: str(x).split('.')[0]).str.replace(r'\D', '', regex=True).apply(lambda x: x.zfill(7) if x != '' else '')
+                    else:
+                        df_adj['Student ID'] = ''
+
+                # --- Dividir nome de forma segura ---
+                names = df_adj['NOMEALUNO'].astype(str).fillna('').str.strip()
+                split = names.str.split(n=1, expand=True)
+                # primeira coluna
+                if hasattr(split, "shape") and split.shape[1] >= 1:
+                    df_adj['First Name'] = split.iloc[:, 0].fillna('').astype(str)
+                else:
+                    df_adj['First Name'] = names
+                # segunda coluna (pode não existir)
+                if hasattr(split, "shape") and split.shape[1] >= 2:
+                    df_adj['Last Name'] = split.iloc[:, 1].fillna('').astype(str)
+                else:
+                    df_adj['Last Name'] = ''
+
+                # montar df de saída (apenas colunas requisitadas)
+                df_out = df_adj.loc[:, [c for c in ['Student ID', 'First Name', 'Last Name', 'NOMEALUNO'] if c in df_adj.columns]].copy()
+                if 'NOMEALUNO' in df_out.columns:
+                    df_out.rename(columns={'NOMEALUNO': 'Aluno'}, inplace=True)
+
+                st.write("Linhas totais após processamento:", len(df_adj))
+                st.write("Contagem de Student ID não vazio:", (df_out['Student ID'].astype(str).str.strip() != '').sum() if 'Student ID' in df_out.columns else 0)
+                st.write("Contagem de First Name não vazio:", (df_out['First Name'].astype(str).str.strip() != '').sum())
+                st.write("Contagem de Aluno (nome completo) não vazio:", (df_out['Aluno'].astype(str).str.strip() != '').sum() if 'Aluno' in df_out.columns else 0)
+
+                st.subheader("Resultado formatado (preview)")
+                st.dataframe(df_out.head(200))
+
+                # botão para download
+                csv_bytes = df_out.to_csv(index=False).encode('utf-8-sig')
+                st.download_button("Baixar CSV", csv_bytes, file_name="formatado.csv", mime="text/csv")
+                xlsx_io = io.BytesIO()
+                with pd.ExcelWriter(xlsx_io, engine='openpyxl') as writer:
+                    df_out.to_excel(writer, index=False, sheet_name='Formatado')
+                xlsx_io.seek(0)
+                st.download_button("Baixar XLSX", xlsx_io, file_name="formatado.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
