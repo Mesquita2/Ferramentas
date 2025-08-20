@@ -616,7 +616,7 @@ def carregar():
                     df_adj['Last Name'] = ''
 
                 # montar df de saída (apenas colunas requisitadas)
-                df_out = df_adj.loc[:, [c for c in ['Student ID','Teacher Name', 'First Name', 'Last Name','Gender', 'Grade', 'CURSO'] if c in df_adj.columns]].copy()
+                df_out = df_adj.loc[:, [c for c in ['Student ID','Teacher Name', 'First Name', 'Last Name','Gender', 'PERIODO', 'CURSO'] if c in df_adj.columns]].copy()
                 st.write(df_out.columns.tolist())
                 df_out.rename(columns={'CURSO': 'Class Name'}, inplace=True)
                     
