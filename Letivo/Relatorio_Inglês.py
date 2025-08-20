@@ -618,6 +618,8 @@ def carregar():
                 df_out = df_adj.loc[:, [c for c in ['Student ID','Teacher Name', 'First Name', 'Last Name','Gender', 'Grade', 'CURSO'] if c in df_adj.columns]].copy()
                 if 'NOMEALUNO' in df_out.columns:
                     df_out.rename(columns={'CURSO': 'Class Name'}, inplace=True)
+                    
+                df_out = ['Teacher Name', 'Gender', 'Grade']
 
                 st.write("Linhas totais após processamento:", len(df_adj))
                 st.write("Contagem de Student ID não vazio:", (df_out['Student ID'].astype(str).str.strip() != '').sum() if 'Student ID' in df_out.columns else 0)
