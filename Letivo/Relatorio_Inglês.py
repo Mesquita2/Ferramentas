@@ -66,6 +66,14 @@ def carregar():
     def sigla_curso(nome):
         palavras = nome.split()
         return "".join(p[0].upper() for p in palavras[:3])  # até 3 letras (ajuste se quiser mais)
+    
+    def gerar_excel_com_filtros(df_rec):
+        df_filtrado = df_rec.copy()
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df_filtrado.to_excel(writer, index=False, sheet_name="Notas")
+        output.seek(0)
+        return output
 
     # Função para converter número em romano
     def para_romano(num):
@@ -509,13 +517,13 @@ def carregar():
                             file_name=nome_arquivo,
                             mime="text/plain"
                         )
+                        relatorio_excel = gerar_excel_com_filtros(df_final)
                         st.download_button(
-                            label="⬇ Baixar Notas Tratadas (Excel)",
-                            data=df_final.to_excel(index=False, engine='openpyxl'),
-                            file_name=f"notas_enviadas_{prova}.xlsx",
+                            label="Gerar Relatório de Notas",
+                            data=relatorio_excel,
+                            file_name=f"Relatorio_Notas_{prova}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
-                        
     with tab3:
         st.subheader("Formatar para Questionário (ZipGrade/Google Forms) — DEBUG e Formatar")
         uploaded_file_format = st.file_uploader(
