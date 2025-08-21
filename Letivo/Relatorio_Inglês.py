@@ -477,7 +477,7 @@ def carregar():
 
                         # adiciona metadados da avaliação
                         df_final['PROVA'] = prova
-                        df_final['STATUS_7'] = np.where(df_final['NOTAS'] >= 8, 'Aprovado', 'Reprovado')
+                        df_final['STATUS_8'] = np.where(df_final['NOTAS'] >= 8, 'Aprovado', 'Reprovado')
                         
 
                         # organiza colunas no formato desejado
@@ -508,6 +508,12 @@ def carregar():
                             data=output,
                             file_name=nome_arquivo,
                             mime="text/plain"
+                        )
+                        st.download_button(
+                            label="⬇ Baixar Notas Tratadas (Excel)",
+                            data=df_final.to_excel(index=False, engine='openpyxl'),
+                            file_name=f"notas_enviadas_{prova}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
                         
     with tab3:
