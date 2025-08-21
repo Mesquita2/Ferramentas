@@ -455,6 +455,7 @@ def carregar():
                             'NOTAS': 'mean',
                             'NOMEALUNO': 'first',
                             'STATUS_32': 'first',
+                            'Earned Points Final': 'sum',
                         })
 
                         # Se tivermos a base de alunos, faz merge para trazer CURSO/TURMA/ID/etc
@@ -481,7 +482,7 @@ def carregar():
 
                         # organiza colunas no formato desejado
                         colunas = ['CURSO','TURMADISC','RA','ALUNO',
-                                   'PROVA','NOTAS', 'STATUS_32', 'STATUS_7']
+                                   'PROVA','NOTAS', 'STATUS_32', 'STATUS_7', 'Earned Points Final',]
                         # garante que existam todas as colunas
                         for c in colunas:
                             if c not in df_final.columns:
