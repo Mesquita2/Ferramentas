@@ -498,6 +498,7 @@ def carregar():
                         st.dataframe(df_final)
 
                         # Download em TXT (seu padrão)
+                        import io 
                         output = io.BytesIO()
                         df_final.to_csv(output, index=False, sep=';', encoding='utf-8', header=False)
                         output.seek(0)
