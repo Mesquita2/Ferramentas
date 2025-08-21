@@ -476,7 +476,7 @@ def carregar():
 
                         # adiciona metadados da avaliação
                         df_final['PROVA'] = prova
-                        df_final['STATUS_7'] = np.where(df_final['NOTAS'] >= 7, 'Aprovado', 'Reprovado')
+                        df_final['STATUS_7'] = np.where(df_final['NOTAS'] >= 8, 'Aprovado', 'Reprovado')
                         
 
                         # organiza colunas no formato desejado
@@ -634,8 +634,6 @@ def carregar():
                 st.write(df_out.columns.tolist())
                 df_out.rename(columns={'CURSO': 'Class Name'}, inplace=True)
                     
-                
-                
 
                 st.write("Linhas totais após processamento:", len(df_adj))
                 st.write("Contagem de Student ID não vazio:", (df_out['Student ID'].astype(str).str.strip() != '').sum() if 'Student ID' in df_out.columns else 0)
