@@ -490,7 +490,7 @@ def carregar():
 
                         # organiza colunas no formato desejado
                         colunas = ['CURSO','TURMADISC','RA','ALUNO',
-                                   'PROVA','NOTAS', 'STATUS_32', 'STATUS_7', 'Earned Points Final',]
+                                   'PROVA','NOTAS', 'STATUS_32', 'STATUS_8', 'Earned Points Final',]
                         # garante que existam todas as colunas
                         for c in colunas:
                             if c not in df_final.columns:
