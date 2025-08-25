@@ -11,8 +11,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 def carregar(): 
-
-
+    
     def iniciar_driver():
         options = Options()
         options.add_argument("--headless")
@@ -76,6 +75,8 @@ def carregar():
     # Inputs
     st.session_state.usuario = st.text_input("Usuário", value=st.session_state.usuario)
     st.session_state.senha = st.text_input("Senha", type="password", value=st.session_state.senha)
+    
+    
     curso_id = st.number_input("ID do Curso", min_value=1, value=2562)
 
     # Botão único para login e tarefas
