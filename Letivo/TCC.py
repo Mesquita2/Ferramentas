@@ -1,68 +1,62 @@
+import streamlit as st
+import pandas as pd
+import time
+
+#playwright e selenium
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
-
-import streamlit as st
-import pandas as pd
-import time
-from playwright.sync_api import sync_playwright
-
 def carregar(): 
 
-    def iniciar_browser():
-        p = sync_playwright().start()
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        return p, browser, page
+    def iniciar_driver():
+        options = Options()
+        options.add_argument("--headless")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--window-size=1920x1080")
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        return driver
 
     def login_moodle(usuario, senha):
-        p, browser, page = iniciar_browser()
-        page.goto("https://icev.digital/login/index.php")
-        page.fill("#username", usuario)
-        page.fill("#password", senha)
-        page.click("#loginbtn")
-        page.wait_for_load_state("networkidle")
-        return p, browser, page
+        driver = iniciar_driver()
+        driver.get("https://icev.digital/login/index.php")
+        time.sleep(2)
+        driver.find_element(By.ID, "username").send_keys(usuario)
+        driver.find_element(By.ID, "password").send_keys(senha)
+        driver.find_element(By.ID, "loginbtn").click()
+        time.sleep(3)
+        return driver
     
-    def coletar_tarefas(page, curso_id):
-        page.goto(f"https://icev.digital/course/view.php?id={curso_id}")
-        page.wait_for_load_state("networkidle")
-        tarefas = page.locator("li.activity.assign a")
-        resultados = []
-        for i in range(tarefas.count()):
-            link = tarefas.nth(i)
-            resultados.append((link.inner_text(), link.get_attribute("href")))
-        return resultados
+    def coletar_tarefas(driver, curso_id):
+        driver.get(f"https://icev.digital/course/view.php?id={curso_id}")
+        time.sleep(3)
+        tarefas = driver.find_elements(By.CSS_SELECTOR, "li.activity.assign a")
+        return [(t.text, t.get_attribute("href")) for t in tarefas]
 
-    def coletar_envios(page, link_tarefa):
-        page.goto(link_tarefa)
-        page.wait_for_load_state("networkidle")
+    def coletar_envios(driver, link_tarefa):
+        driver.get(link_tarefa)
+        time.sleep(3)
         try:
-            page.click("text=Ver todos os envios")
-            page.wait_for_load_state("networkidle")
-            linhas = page.locator("table.generaltable tbody tr")
-            dados = []
-            for i in range(linhas.count()):
-                linha = linhas.nth(i)
-                colunas = linha.locator("td")
-                dados.append([colunas.nth(j).inner_text() for j in range(colunas.count())])
+            driver.find_element(By.LINK_TEXT, "Ver todos os envios").click()
+            time.sleep(3)
+            linhas = driver.find_elements(By.CSS_SELECTOR, "table.generaltable tbody tr")
+            dados = [[c.text for c in linha.find_elements(By.TAG_NAME, "td")] for linha in linhas if linha]
             return dados
         except:
             return []
 
     # ================== STREAMLIT ==================
 
-    st.title("Moodle – Tarefas e Envios (Scraping com Playwright)")
+    st.title("Moodle – Tarefas e Envios (Scraping)")
 
-    if "playwright" not in st.session_state:
-        st.session_state.playwright = None
-    if "browser" not in st.session_state:
-        st.session_state.browser = None
-    if "page" not in st.session_state:
-        st.session_state.page = None
+
+    if "driver" not in st.session_state:
+        st.session_state.driver = None
     if "tarefas" not in st.session_state:
         st.session_state.tarefas = []
     if "usuario" not in st.session_state:
@@ -74,16 +68,15 @@ def carregar():
     st.session_state.usuario = st.text_input("Usuário", value=st.session_state.usuario)
     st.session_state.senha = st.text_input("Senha", type="password", value=st.session_state.senha)
     
+    
     curso_id = st.number_input("ID do Curso", min_value=1, value=2562)
 
     # Botão único para login e tarefas
     if st.button("Conectar e buscar tarefas"):
         if st.session_state.usuario and st.session_state.senha:
             with st.spinner("Conectando ao Moodle..."):
-                st.session_state.playwright, st.session_state.browser, st.session_state.page = login_moodle(
-                    st.session_state.usuario, st.session_state.senha
-                )
-                st.session_state.tarefas = coletar_tarefas(st.session_state.page, curso_id)
+                st.session_state.driver = login_moodle(st.session_state.usuario, st.session_state.senha)
+                st.session_state.tarefas = coletar_tarefas(st.session_state.driver, curso_id)
 
     # Mostra tarefas
     if st.session_state.tarefas:
@@ -93,16 +86,17 @@ def carregar():
 
         if escolha:
             link_escolhido = df.loc[df["Tarefa"] == escolha, "Link"].iloc[0]
-            envios = coletar_envios(st.session_state.page, link_escolhido)
+            envios = coletar_envios(st.session_state.driver, link_escolhido)
             if envios:
-                df_envios = pd.DataFrame(envios)
-                st.subheader("Envios dos alunos")
-                st.dataframe(df_envios)
-                st.download_button(
-                    "Baixar envios",
-                    df_envios.to_csv(index=False).encode("utf-8"),
-                    "envios.csv",
-                    "text/csv"
-                )
+                    df_envios = pd.DataFrame(envios)
+                    st.subheader("Envios dos alunos")
+                    st.dataframe(df_envios)
+                    st.download_button(
+                        "Baixar envios",
+                        df_envios.to_csv(index=False).encode("utf-8"),
+                        "envios.csv",
+                        "text/csv"
+                    )
             else:
                 st.warning("Nenhum envio encontrado ou sem permissão.")
+        
