@@ -104,11 +104,12 @@ def carregar():
     curso = df_totvs['CURSO'].unique().tolist()
     curso = st.selectbox("Escolha o Curso", curso)
 
-    disciplinas = sorted(df_totvs[df_totvs["CURSO"] == curso]["DISCIPLINA"].unique().tolist())
+    turmas_filtradas = df_totvs[df_totvs["DISCIPLINA"] == curso]["TURMADISC"].unique().tolist()
+    turma = st.selectbox("Escolha a turma", turmas_filtradas)
+    
+    disciplinas = sorted(df_totvs[df_totvs["CURSO"] == turma]["DISCIPLINA"].unique().tolist())
     disciplina = st.selectbox("Escolha a disciplina", disciplinas)
 
-    turmas_filtradas = df_totvs[df_totvs["DISCIPLINA"] == disciplina]["TURMADISC"].unique().tolist()
-    turma = st.selectbox("Escolha a turma", turmas_filtradas)
 
     codigo_disciplina = df_totvs[(df_totvs["DISCIPLINA"] == disciplina) & (df_totvs["TURMADISC"] == turma)]["IDTURMADISC"].unique().tolist()
         
