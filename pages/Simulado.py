@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 from auth import check_authentication, logout
 import Letivo.Inicial as Inicio
-from Pg_Simulado import REC_Simulado, Simulado_2, Simulado_Faltantes, Simulado_Teste
+from Pg_Simulado import REC_Simulado, Simulado_2, Simulado_Faltantes, Simulado_Teste, Calculo
 from Letivo.Inicial import carregar_drive
 from carregamento import carregar_drive, limpeza_alunos_disciplinas
 
@@ -17,7 +17,7 @@ if check_authentication():
     st.session_state["dados"]["alunosxdisciplinas"] = df_limpo
 
     with st.sidebar:
-        escolha = option_menu("Menu", ["REC_Simulado", "Simulado_2", "Simulado_Faltantes", "Simulado_Teste"],
+        escolha = option_menu("Menu", ["REC_Simulado", "Simulado_2", "Simulado_Faltantes", "Simulado_Teste", "Apenas Calculo"],
                               icons=["", "", "", ""],
                               menu_icon="cast", default_index=0)
 
@@ -29,3 +29,5 @@ if check_authentication():
         Simulado_Faltantes.carregar()
     elif escolha == "Simulado_Teste":
         Simulado_Teste.carregar()
+    elif escolha == "Apenas Calculo":
+        Calculo.carregar()
