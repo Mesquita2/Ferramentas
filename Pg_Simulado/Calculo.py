@@ -79,8 +79,8 @@ def carregar():
             output.seek(0)
 
             st.download_button(
-                label="⬇ Baixar Notas Tratadas (CSV)",
+                label="Baixar Notas Tratadas (TXT)",
                 data=output,
-                file_name="notas_tratadas.csv",
-                mime="text/csv"
+                file_name="notas_tratadas.txt",
+                mime="text/plain"
             )
