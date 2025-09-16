@@ -176,7 +176,7 @@ def carregar():
                 dias_uteis = calcular_dias_uteis(date.today(), data_aplicar)
 
                 if dias_uteis < 3:
-                    st.error(f"Prazo mínimo de 3 dias úteis para impressão. Faltam apenas {dias_uteis} dias úteis.")
+                    st.error(f"ATENÇÃO: Prazo mínimo de 3 dias úteis para impressão. Faltam apenas {dias_uteis} dias úteis.")
                 else:
                     st.success(f"Prazo atendido: {dias_uteis} dias úteis até a data escolhida.")
 
