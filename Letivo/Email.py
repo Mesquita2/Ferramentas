@@ -3,7 +3,7 @@ import pandas as pd
 import base64
 import io 
 import time
-from datetime import datetime
+from datetime import date, datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
@@ -135,6 +135,11 @@ def carregar():
         ).execute()
 
         return arquivo["id"], arquivo["name"]
+    
+    # Calcular dias prazo minimo 
+    def calcular_dias_uteis(data_inicio, data_fim):
+        dias = pd.bdate_range(data_inicio, data_fim)  # bdate_range ignora sábados e domingos
+        return len(dias) - 1  # exclui o próprio dia_inicio
 
     # --- Interface Streamlit ---
     st.title("Envio de Provas por E-mail (Gmail API)")
@@ -161,7 +166,21 @@ def carregar():
 
                 st.markdown(f"**Quantidade de cópias (total):** {quantidade_total}")
 
+                
                 data_aplicar = st.date_input("Data da prova")
+                
+                # Entrada de data
+                data_aplicar = st.date_input("Data da prova", min_value=date.today())
+
+                # Calcula dias úteis entre hoje e a data escolhida
+                dias_uteis = calcular_dias_uteis(date.today(), data_aplicar)
+
+                if dias_uteis < 3:
+                    st.error(f"⚠️ Prazo mínimo de 3 dias úteis para impressão. Faltam apenas {dias_uteis} dias úteis.")
+                else:
+                    st.success(f"✅ Prazo atendido: {dias_uteis} dias úteis até a data escolhida.")
+
+                
                 tipo = st.selectbox("Tipo", ["Prova", "Recuperação", "Prova final"])
                 if tipo == "Recuperação":
                     ##quantidade_total= print("Quantidade de cópias (total) baseado nas notas menor que 7 (prova + quizz)")
@@ -214,6 +233,7 @@ def carregar():
                                 st.success(f"Arquivo salvo no Drive ({turma}): {nome_salvo}")
 
                             sucesso = enviar_email_gmail_api(remetente, dest_list, assunto, mensagem, arquivo)
+                            # Enviar email para o professor que a prova foi enviada para mecanografia
                             if sucesso:
                                 st.success(f"E-mail enviado para turma {turma}")
                             else:
