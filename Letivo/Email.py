@@ -117,14 +117,15 @@ def carregar():
             pasta = drive_service.files().create(body=metadata, fields="id").execute()
             return pasta["id"]
 
-    def salvar_arquivo_em_pasta(uploaded_file, nome_arquivo, curso, turma, pasta_raiz_id):
+    def salvar_arquivo_em_pasta(uploaded_file, nome_arquivo, curso, turma, pasta_raiz_id, tipodeprova):
         pasta_curso_id = encontrar_ou_criar_pasta(curso, pasta_raiz_id)
         pasta_turma_id = encontrar_ou_criar_pasta(turma, pasta_curso_id)
+        pasta_tipo_id = encontrar_ou_criar_pasta(tipodeprova, pasta_turma_id)
         media = MediaIoBaseUpload(uploaded_file, mimetype=uploaded_file.type)
 
         metadata = {
             "name": nome_arquivo,
-            "parents": [pasta_turma_id],
+            "parents": [pasta_tipo_id],
         }
 
         arquivo = drive_service.files().create(
@@ -169,6 +170,8 @@ def carregar():
                     pasta_raiz = st.secrets["drive_pasta"]["drive_provas"]
                 tipo_prova = st.selectbox("Nº Prova", ["1", "2"])
 
+                tipodeprova = tipo + " " + tipo_prova
+                
                 dest_list = destinatarios(curso)
                 arquivo = st.file_uploader("Anexo (opcional)")
 
@@ -205,7 +208,8 @@ def carregar():
                                     nome_arquivo=arquivo.name,
                                     curso=curso,
                                     turma=turma,
-                                    pasta_raiz_id=pasta_raiz
+                                    pasta_raiz_id=pasta_raiz,
+                                    tipodeprova=tipodeprova
                                 )
                                 st.success(f"Arquivo salvo no Drive ({turma}): {nome_salvo}")
 
