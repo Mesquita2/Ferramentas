@@ -167,9 +167,6 @@ def carregar():
                 st.markdown(f"**Quantidade de cópias (total):** {quantidade_total}")
 
                 
-                data_aplicar = st.date_input("Data da prova")
-                
-                # Entrada de data
                 data_aplicar = st.date_input("Data da prova", min_value=date.today())
 
                 # Calcula dias úteis entre hoje e a data escolhida
