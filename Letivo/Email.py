@@ -179,6 +179,7 @@ def carregar():
                     st.error(f"ATENÇÃO: Prazo mínimo de 3 dias úteis para impressão. Faltam apenas {dias_uteis} dias úteis.")
                 else:
                     st.success(f"Prazo atendido: {dias_uteis} dias úteis até a data escolhida.")
+                    st.stop()
 
                 
                 tipo = st.selectbox("Tipo", ["Prova", "Recuperação", "Prova final"])
