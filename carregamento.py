@@ -5,7 +5,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
-NOME_ARQUIVOS = ["disciplina.xlsx", "rec.xlsx", "rec_simulado.xlsx", "dashnotas.xlsx", "alunosxdisciplinas_geral.xlsx"]
+NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx", "rec_simulado.xlsx", "dashnotas.xlsx", "alunosxdisciplinas_geral.xlsx"]
 
 def carregar_arquivo_drive(drive_service, nome_arquivo):
     response = drive_service.files().list(
@@ -89,7 +89,7 @@ def carregar_totvs(perletivo):
     response = requests.get(url, auth=HTTPBasicAuth(usuario, senha))
 
     if response.status_code == 200:
-        st.success("Request OK")
+        st.success("OK")
         #st.json(response.json())
     else:
         st.error(f"Erro: {response.status_code}")
