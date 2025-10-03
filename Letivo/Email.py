@@ -166,7 +166,6 @@ def carregar():
 
                 st.markdown(f"**Quantidade de cópias (total):** {quantidade_total}")
 
-                
                 data_aplicar = st.date_input("Data da prova", min_value=date.today())
 
                 # Calcula dias úteis entre hoje e a data escolhida
@@ -178,8 +177,6 @@ def carregar():
                 else:
                     st.success(f"Prazo atendido: {dias_uteis} dias úteis até a data escolhida.")
                     
-
-                
                 tipo = st.selectbox("Tipo", ["Prova", "Recuperação", "Prova final"])
                 if tipo == "Recuperação":
                     ##quantidade_total= print("Quantidade de cópias (total) baseado nas notas menor que 7 (prova + quizz)")

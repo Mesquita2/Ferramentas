@@ -1,12 +1,41 @@
+from matplotlib.font_manager import json_dump
 import streamlit as st
 import pandas as pd
-from carregamento import carregar_drive, limpeza_alunos_disciplinas
+from carregamento import carregar_drive, limpeza_alunos_disciplinas, carregar_totvs
+import datetime
+from datetime import date, datetime
 
 
 def carregar():
     st.title("Início")
     
     carregar_drive()
+    
+    agora = datetime.now()
+    ano = agora.year
+    semestre = 1 if agora.month <= 6 else 2
+
+    # Gera períodos possíveis (ano atual e talvez próximo)
+    opcoes = [f"{ano}.{semestre}", f"{ano}.{1 if semestre == 2 else 2}"]
+
+    # Selectbox para usuário escolher
+    periodo = st.selectbox("Selecione o período letivo:", opcoes, index=0)
+    st.write(f"Período escolhido: {periodo}")
+    if periodo: 
+        arquivo = carregar_totvs(periodo)
+        # Converter para lista de dicionários
+        if isinstance(arquivo, dict):
+            lista = list(arquivo.values())
+        else:
+            lista = arquivo  # caso já seja lista
+        # Criar DataFrame
+        df = pd.DataFrame(lista)
+        st.session_state["dados"]["alunosxdisciplinas"] = df
+        
+        if df is not None:
+            st.write("Dados do TOTVS:")
+            st.write(df)
+        
 
     df_alunos = st.session_state["dados"]["alunosxdisciplinas"]
     df_limpo = limpeza_alunos_disciplinas(df_alunos)
@@ -16,6 +45,7 @@ def carregar():
     tab1, tab2 = st.tabs(["Visualizar dados", "Substituir arquivos"])
 
     with tab1:
+        
         for chave, df in st.session_state["dados"].items():
             st.subheader(f"{chave}")
             colunas = {

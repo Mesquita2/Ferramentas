@@ -5,7 +5,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
-NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx", "rec_simulado.xlsx", "dashnotas.xlsx", "alunosxdisciplinas_geral.xlsx"]
+NOME_ARQUIVOS = ["disciplina.xlsx", "rec.xlsx", "rec_simulado.xlsx", "dashnotas.xlsx", "alunosxdisciplinas_geral.xlsx"]
 
 def carregar_arquivo_drive(drive_service, nome_arquivo):
     response = drive_service.files().list(
@@ -73,3 +73,27 @@ def limpeza_alunos_disciplinas(df):
     df = df[df['NOMESTATUS'] != 'Aproveitamento de Estudo']
     df = df.assign(RA=df['RA'].apply(str).str.zfill(7))
     return df
+
+def carregar_totvs(perletivo):
+    import streamlit as st
+    import requests
+    from requests.auth import HTTPBasicAuth
+
+    st.title("Exemplo de Request com Basic Auth")
+
+    # Credenciais (poderiam vir do st.secrets)
+    usuario = st.secrets["basic_auth"]["usuario"]  
+    senha = st.secrets["basic_auth"]["senha"]
+                
+    url = st.secrets["caminho_periodo_letivo"]["link"] + str(perletivo)
+    response = requests.get(url, auth=HTTPBasicAuth(usuario, senha))
+
+    if response.status_code == 200:
+        st.success("Request OK")
+        #st.json(response.json())
+    else:
+        st.error(f"Erro: {response.status_code}")
+        st.text(response.text)
+            
+    response = response.json()
+    return response
