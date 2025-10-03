@@ -32,9 +32,9 @@ def carregar():
         df = pd.DataFrame(lista)
         st.session_state["dados"]["alunosxdisciplinas"] = df
         
-        if df is not None:
-            st.write("Dados do TOTVS:")
-            st.write(df)
+        if df is None:
+            st.warning("Nenhum dado retornado do TOTVS.")
+            
         
 
     df_alunos = st.session_state["dados"]["alunosxdisciplinas"]
