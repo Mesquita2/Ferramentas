@@ -380,7 +380,8 @@ def carregar():
 
             # ---------- Gráfico por TURMA: DISTRIBUIÇÃO EM BARRAS ----------
             df_plot_turmas = df_filtrado[['CODTURMA', 'CODPERLET'] + avals_existentes].copy()  # inclua CODPERLET
-            turmas_para_grafico = turmas_sel if turmas_sel else sorted(df_plot_turmas['CODTURMA'].dropna().unique())
+            if df_plot_turmas:
+                turmas_para_grafico = turmas_sel if turmas_sel else sorted(df_plot_turmas['CODTURMA'].dropna().unique())
 
             if not turmas_para_grafico:
                 st.info("Não há turmas para gerar os gráficos de distribuição por turma.")
