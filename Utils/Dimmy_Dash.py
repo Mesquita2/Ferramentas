@@ -413,8 +413,6 @@ def carregar():
                                     fig_eval.update_layout(title=f"{aval}")
                                     st.plotly_chart(fig_eval, use_container_width=True)
 
-
-
             # Resumo por período letivo
             resumo = (
                 df_filtrado.groupby('CODPERLET')[avals_existentes]
@@ -436,97 +434,131 @@ def carregar():
                     for col in resumo.columns if 'Qtd. Alunos' in col
                 }
                 st.dataframe(resumo.style.format(formatador, precision=2, na_rep="N/A"))
+    
+        # === ANÁLISE DE DESVIO PADRÃO POR DISCIPLINA ===
+        st.markdown("### Análise: Disciplinas com Maior Desvio Padrão (por Turma)")
 
-     # ---------- BOXPLOT POR TURMA ----------
-    st.markdown("### Boxplot por Turma — Distribuição de Notas")
+        if not df_filtrado.empty and avals_existentes:
+            import plotly.express as px
 
-    if not turmas_para_grafico:
-        st.info("Não há turmas para gerar o boxplot.")
-    else:
-        import plotly.express as px
-
-        for turma in turmas_para_grafico:
-            df_t = df_plot_turmas[df_plot_turmas['CODTURMA'] == turma].copy()
-            if df_t.empty or df_t[avals_existentes].dropna(how=False).empty:
-                st.write(f"Turma {turma}: sem dados para boxplot.")
-                continue
-
-            # Converter para formato longo (melt)
-            df_melt = df_t.melt(
-                id_vars=['CODPERLET'],
+            # Converter para formato longo (uma linha por nota)
+            df_melt_std = df_filtrado.melt(
+                id_vars=['CODTURMA', 'NOMEDISC'],
                 value_vars=avals_existentes,
                 var_name='Avaliação',
                 value_name='Nota'
             ).dropna(subset=['Nota'])
 
-            if df_melt.empty:
-                st.write(f"Turma {turma}: sem dados para boxplot.")
-                continue
+            if df_melt_std.empty:
+                st.info("Sem dados suficientes para calcular o desvio padrão.")
+            else:
+                # Agrupar por turma e disciplina e calcular desvio padrão real
+                df_std = (
+                    df_melt_std.groupby(['CODTURMA', 'NOMEDISC'])['Nota']
+                    .std()
+                    .reset_index(name='Desvio Padrão')
+                )
 
-            # Criar boxplot com Plotly Express
-            fig_box = px.box(
-                df_melt,
-                x='Avaliação',
-                y='Nota',
-                color='CODPERLET',
-                points='all',  # mostra outliers individuais
-                title=f"Distribuição de Notas — Turma {turma}"
-            )
+                # Mostrar tabela resumo
+                st.dataframe(
+                    df_std.sort_values('Desvio Padrão', ascending=False)
+                    .style.format({'Desvio Padrão': '{:.2f}'})
+                )
 
-            fig_box.update_layout(
-                xaxis_title="Avaliação",
-                yaxis_title="Nota",
-                legend_title="Período Letivo",
-                boxmode="group"
-            )
+                # Selecionar a turma
+                turmas_disp = sorted(df_std['CODTURMA'].unique())
+                turma_sel_std = st.selectbox(
+                    'Selecione a Turma para análise detalhada',
+                    turmas_disp,
+                    key=f'turma_std_{curso}_{i}'
+                )
 
-            st.plotly_chart(fig_box, use_container_width=True)
-            
-    # ---------- BOXPLOT GERAL COMPARANDO TURMAS ----------
-    st.markdown("### Boxplot Geral — Comparativo entre Turmas")
+                df_std_turma = df_std[df_std['CODTURMA'] == turma_sel_std]
 
-    if not turmas_para_grafico:
-        st.info("Não há turmas para gerar o boxplot geral.")
-    else:
-        import plotly.express as px
+                # Top 3 disciplinas com maior desvio padrão
+                top3_disc_std = df_std_turma.nlargest(3, 'Desvio Padrão')['NOMEDISC'].tolist()
 
-        df_box_all = df_plot_turmas[
-            df_plot_turmas['CODTURMA'].isin(turmas_para_grafico)
-        ].copy()
+                st.success(f"Top 3 disciplinas com maior desvio padrão na turma {turma_sel_std}: {', '.join(top3_disc_std)}")
 
-        # Converter para formato longo
-        df_melt_all = df_box_all.melt(
-            id_vars=['CODTURMA', 'CODPERLET'],
-            value_vars=avals_existentes,
-            var_name='Avaliação',
-            value_name='Nota'
-        ).dropna(subset=['Nota'])
+                # Filtrar dados originais para essas disciplinas e turma
+                df_top3 = df_melt_std[
+                    (df_melt_std['CODTURMA'] == turma_sel_std) &
+                    (df_melt_std['NOMEDISC'].isin(top3_disc_std))
+                ]
 
-        if df_melt_all.empty:
-            st.info("Sem dados suficientes para gerar o boxplot geral.")
+                if df_top3.empty:
+                    st.info("Sem dados suficientes para gerar o boxplot das disciplinas com maior desvio padrão.")
+                else:
+                    fig_box_top3 = px.box(
+                        df_top3,
+                        x='NOMEDISC',
+                        y='Nota',
+                        color='CODTURMA',
+                        facet_col='Avaliação',
+                        facet_col_wrap=3,
+                        title=f"Top 3 Disciplinas com Maior Desvio Padrão — Turma {turma_sel_std}",
+                        points=False,
+                        category_orders={'NOMEDISC': top3_disc_std}  # mantém a ordem top3
+                    )
+
+                    fig_box_top3.update_layout(
+                        xaxis_title="Disciplina",
+                        yaxis_title="Nota",
+                        legend_title="Turma",
+                        boxmode="group"
+                    )
+
+                    st.plotly_chart(fig_box_top3, use_container_width=True)
+
         else:
+            st.info("Sem dados suficientes para calcular o desvio padrão por disciplina.")
 
-            turmas_ordenadas = sorted(df_melt_all['CODTURMA'].unique())
+                
+        # ---------- BOXPLOT GERAL COMPARANDO TURMAS ----------
+        st.markdown("### Boxplot Geral — Comparativo entre Turmas")
 
-            
-            fig_box_all = px.box(
-                df_melt_all,
-                x='CODTURMA',
-                y='Nota',
-                color='CODPERLET',
-                facet_col='Avaliação',   # cria uma coluna para cada avaliação
-                facet_col_wrap=3,         # quebra em múltiplas linhas se houver muitas avaliações
-                points=False,
-                title="Comparativo entre Turmas — Distribuição das Notas",
-                category_orders={'CODTURMA': turmas_ordenadas}  
-            )
+        if not turmas_para_grafico:
+            st.info("Não há turmas para gerar o boxplot geral.")
+        else:
+            import plotly.express as px
 
-            fig_box_all.update_layout(
-                xaxis_title="Turma",
-                yaxis_title="Nota",
-                legend_title="Período Letivo",
-                boxmode="group"
-            )
+            df_box_all = df_plot_turmas[
+                df_plot_turmas['CODTURMA'].isin(turmas_para_grafico)
+            ].copy()
 
-            st.plotly_chart(fig_box_all, use_container_width=True)
+            # Converter para formato longo
+            df_melt_all = df_box_all.melt(
+                id_vars=['CODTURMA', 'CODPERLET'],
+                value_vars=avals_existentes,
+                var_name='Avaliação',
+                value_name='Nota'
+            ).dropna(subset=['Nota'])
+
+            if df_melt_all.empty:
+                st.info("Sem dados suficientes para gerar o boxplot geral.")
+            else:
+
+                turmas_ordenadas = sorted(df_melt_all['CODTURMA'].unique())
+
+                
+                fig_box_all = px.box(
+                    df_melt_all,
+                    x='CODTURMA',
+                    y='Nota',
+                    color='CODPERLET',
+                    facet_col='Avaliação',   # cria uma coluna para cada avaliação
+                    facet_col_wrap=3,         # quebra em múltiplas linhas se houver muitas avaliações
+                    points=False,
+                    title="Comparativo entre Turmas — Distribuição das Notas",
+                    category_orders={'CODTURMA': turmas_ordenadas}  
+                )
+
+                fig_box_all.update_layout(
+                    xaxis_title="Turma",
+                    yaxis_title="Nota",
+                    legend_title="Período Letivo",
+                    boxmode="group"
+                )
+
+                st.plotly_chart(fig_box_all, use_container_width=True)
 
