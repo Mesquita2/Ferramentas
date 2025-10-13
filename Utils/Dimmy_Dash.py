@@ -440,6 +440,7 @@ def carregar():
 
         if not df_filtrado.empty and avals_existentes:
             import plotly.express as px
+            import numpy as np
 
             # Converter para formato longo (uma linha por nota)
             df_melt_std = df_filtrado.melt(
@@ -447,17 +448,30 @@ def carregar():
                 value_vars=avals_existentes,
                 var_name='Avaliação',
                 value_name='Nota'
-            ).dropna(subset=['Nota'])
+            )
 
+            # --- TRATAMENTO DE NULOS ---
+            total_notas = len(df_melt_std)
+            df_melt_std = df_melt_std.dropna(subset=['Nota'])  # remove None/NaN
+            nulos_descartados = total_notas - len(df_melt_std)
+
+            if nulos_descartados > 0:
+                perc_nulos = (nulos_descartados / total_notas) * 100
+                st.warning(f"Foram removidos {nulos_descartados} valores nulos ({perc_nulos:.1f}% das notas).")
+
+            # --- Caso após limpeza não haja dados suficientes ---
             if df_melt_std.empty:
                 st.info("Sem dados suficientes para calcular o desvio padrão.")
             else:
-                # Agrupar por turma e disciplina e calcular desvio padrão real
+                # Agrupar por turma e disciplina e calcular desvio padrão
                 df_std = (
                     df_melt_std.groupby(['CODTURMA', 'NOMEDISC'])['Nota']
-                    .std()
+                    .std(ddof=1)  # ddof=1 = desvio padrão amostral
                     .reset_index(name='Desvio Padrão')
                 )
+
+                # Substitui NaN de turmas com apenas 1 nota por 0 (para evitar erro no sort)
+                df_std['Desvio Padrão'] = df_std['Desvio Padrão'].fillna(0)
 
                 # Mostrar tabela resumo
                 st.dataframe(
@@ -478,42 +492,45 @@ def carregar():
                 # Top 3 disciplinas com maior desvio padrão
                 top3_disc_std = df_std_turma.nlargest(3, 'Desvio Padrão')['NOMEDISC'].tolist()
 
-                st.success(f"Top 3 disciplinas com maior desvio padrão na turma {turma_sel_std}: {', '.join(top3_disc_std)}")
-
-                # Filtrar dados originais para essas disciplinas e turma
-                df_top3 = df_melt_std[
-                    (df_melt_std['CODTURMA'] == turma_sel_std) &
-                    (df_melt_std['NOMEDISC'].isin(top3_disc_std))
-                ]
-
-                if df_top3.empty:
-                    st.info("Sem dados suficientes para gerar o boxplot das disciplinas com maior desvio padrão.")
+                if not top3_disc_std:
+                    st.info("Não há disciplinas suficientes para calcular o desvio padrão.")
                 else:
-                    fig_box_top3 = px.box(
-                        df_top3,
-                        x='NOMEDISC',
-                        y='Nota',
-                        color='CODTURMA',
-                        facet_col='Avaliação',
-                        facet_col_wrap=3,
-                        title=f"Top 3 Disciplinas com Maior Desvio Padrão — Turma {turma_sel_std}",
-                        points=False,
-                        category_orders={'NOMEDISC': top3_disc_std}  # mantém a ordem top3
-                    )
+                    st.success(f"Top 3 disciplinas com maior desvio padrão na turma {turma_sel_std}: {', '.join(top3_disc_std)}")
 
-                    fig_box_top3.update_layout(
-                        xaxis_title="Disciplina",
-                        yaxis_title="Nota",
-                        legend_title="Turma",
-                        boxmode="group"
-                    )
+                    # Filtrar dados originais para essas disciplinas e turma
+                    df_top3 = df_melt_std[
+                        (df_melt_std['CODTURMA'] == turma_sel_std) &
+                        (df_melt_std['NOMEDISC'].isin(top3_disc_std))
+                    ]
 
-                    st.plotly_chart(fig_box_top3, use_container_width=True)
+                    if df_top3.empty:
+                        st.info("Sem dados suficientes para gerar o boxplot das disciplinas com maior desvio padrão.")
+                    else:
+                        fig_box_top3 = px.box(
+                            df_top3,
+                            x='NOMEDISC',
+                            y='Nota',
+                            color='CODTURMA',
+                            facet_col='Avaliação',
+                            facet_col_wrap=3,
+                            title=f"Top 3 Disciplinas com Maior Desvio Padrão — Turma {turma_sel_std}",
+                            points=False,
+                            category_orders={'NOMEDISC': top3_disc_std}
+                        )
+
+                        fig_box_top3.update_layout(
+                            xaxis_title="Disciplina",
+                            yaxis_title="Nota",
+                            legend_title="Turma",
+                            boxmode="group"
+                        )
+
+                        st.plotly_chart(fig_box_top3, use_container_width=True)
 
         else:
             st.info("Sem dados suficientes para calcular o desvio padrão por disciplina.")
 
-                
+
         # ---------- BOXPLOT GERAL COMPARANDO TURMAS ----------
         st.markdown("### Boxplot Geral — Comparativo entre Turmas")
 
@@ -532,25 +549,32 @@ def carregar():
                 value_vars=avals_existentes,
                 var_name='Avaliação',
                 value_name='Nota'
-            ).dropna(subset=['Nota'])
+            )
+
+            # --- TRATAMENTO DE NULOS ---
+            total_all = len(df_melt_all)
+            df_melt_all = df_melt_all.dropna(subset=['Nota'])
+            nulos_all = total_all - len(df_melt_all)
+
+            if nulos_all > 0:
+                perc_nulos_all = (nulos_all / total_all) * 100
+                st.warning(f"Foram removidos {nulos_all} valores nulos ({perc_nulos_all:.1f}% das notas totais).")
 
             if df_melt_all.empty:
                 st.info("Sem dados suficientes para gerar o boxplot geral.")
             else:
-
                 turmas_ordenadas = sorted(df_melt_all['CODTURMA'].unique())
 
-                
                 fig_box_all = px.box(
                     df_melt_all,
                     x='CODTURMA',
                     y='Nota',
                     color='CODPERLET',
-                    facet_col='Avaliação',   # cria uma coluna para cada avaliação
-                    facet_col_wrap=3,         # quebra em múltiplas linhas se houver muitas avaliações
+                    facet_col='Avaliação',
+                    facet_col_wrap=3,
                     points=False,
                     title="Comparativo entre Turmas — Distribuição das Notas",
-                    category_orders={'CODTURMA': turmas_ordenadas}  
+                    category_orders={'CODTURMA': turmas_ordenadas}
                 )
 
                 fig_box_all.update_layout(
@@ -561,4 +585,79 @@ def carregar():
                 )
 
                 st.plotly_chart(fig_box_all, use_container_width=True)
+                
+        # === ANÁLISE DE DISPERSÃO (Desvio Padrão + IQR) ===
+        st.markdown("### Análise de Dispersão — Desvio Padrão vs IQR (Intervalo Interquartil)")
+
+        if not df_melt_std.empty:
+            # Agrupar por turma e disciplina
+            def calc_disp(grupo):
+                q1 = grupo['Nota'].quantile(0.25)
+                q3 = grupo['Nota'].quantile(0.75)
+                iqr = q3 - q1
+                std = grupo['Nota'].std(ddof=1)
+                n = grupo['Nota'].count()
+                return pd.Series({
+                    'Q1': q1,
+                    'Q3': q3,
+                    'IQR': iqr,
+                    'Desvio Padrão': std,
+                    'Nº Alunos': n
+                })
+
+            df_disp = df_melt_std.groupby(['CODTURMA', 'NOMEDISC']).apply(calc_disp).reset_index()
+
+            # Selecionar a turma
+            turma_disp = st.selectbox(
+                'Selecione a Turma para análise de IQR',
+                sorted(df_disp['CODTURMA'].unique()),
+                key=f'turma_iqr_{curso}_{i}'
+            )
+
+            df_disp_turma = df_disp[df_disp['CODTURMA'] == turma_disp]
+
+            # Mostrar tabela com IQR e desvio padrão
+            st.dataframe(
+                df_disp_turma.sort_values('Desvio Padrão', ascending=False)
+                .style.format({
+                    'Desvio Padrão': '{:.2f}',
+                    'IQR': '{:.2f}',
+                    'Q1': '{:.2f}',
+                    'Q3': '{:.2f}'
+                })
+            )
+
+            # Gráfico comparativo entre std e IQR
+            import plotly.graph_objects as go
+
+            fig_disp = go.Figure()
+
+            fig_disp.add_trace(go.Bar(
+                x=df_disp_turma['NOMEDISC'],
+                y=df_disp_turma['Desvio Padrão'],
+                name='Desvio Padrão',
+                marker_color='royalblue',
+                opacity=0.8
+            ))
+
+            fig_disp.add_trace(go.Bar(
+                x=df_disp_turma['NOMEDISC'],
+                y=df_disp_turma['IQR'],
+                name='IQR (Q3–Q1)',
+                marker_color='lightseagreen',
+                opacity=0.7
+            ))
+
+            fig_disp.update_layout(
+                title=f"Dispersão das Notas — Turma {turma_disp}",
+                xaxis_title="Disciplina",
+                yaxis_title="Valor",
+                barmode='group',
+                xaxis_tickangle=-45,
+                legend_title="Métrica"
+            )
+
+            st.plotly_chart(fig_disp, use_container_width=True)
+        else:
+            st.info("Ainda não há dados disponíveis para calcular o IQR.")
 
