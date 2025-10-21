@@ -102,7 +102,6 @@ def carregar_totvs(chave_caminho: str, parametro: str = ""):
     response = requests.get(url, auth=HTTPBasicAuth(usuario, senha))
 
     if response.status_code == 200:
-        st.success("Requisição bem-sucedida.")
         return response.json()
     else:
         st.error(f"Erro na requisição: {response.status_code}")
