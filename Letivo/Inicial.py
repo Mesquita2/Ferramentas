@@ -14,32 +14,60 @@ def carregar():
     agora = datetime.now()
     ano = agora.year
     semestre = 1 if agora.month <= 6 else 2
-
-    # Gera períodos possíveis (ano atual e talvez próximo)
     opcoes = [f"{ano}.{semestre}", f"{ano}.{1 if semestre == 2 else 2}"]
 
     # Selectbox para usuário escolher
     periodo = st.selectbox("Selecione o período letivo:", opcoes, index=0)
     st.write(f"Período escolhido: {periodo}")
-    if periodo: 
-        arquivo = carregar_totvs(periodo)
-        # Converter para lista de dicionários
+
+    # Verifica se o período mudou ou se ainda não foi carregado
+    if (
+        "periodo_carregado" not in st.session_state 
+        or st.session_state["periodo_carregado"] != periodo
+    ):
+        st.info("Carregando dados do TOTVS...")
+
+        # === 1. Buscar dados de alunos x disciplinas ===
+        arquivo = carregar_totvs("caminho_periodo_letivo", periodo)
+
         if isinstance(arquivo, dict):
             lista = list(arquivo.values())
         else:
             lista = arquivo  # caso já seja lista
-        # Criar DataFrame
-        df = pd.DataFrame(lista)
-        st.session_state["dados"]["alunosxdisciplinas"] = df
-        
-        if df is None:
-            st.warning("Nenhum dado retornado do TOTVS.")
-            
-        
 
-    df_alunos = st.session_state["dados"]["alunosxdisciplinas"]
-    df_limpo = limpeza_alunos_disciplinas(df_alunos)
-    st.session_state["dados"]["alunosxdisciplinas"] = df_limpo
+        df = pd.DataFrame(lista)
+        if df is None or df.empty:
+            st.warning("Nenhum dado retornado do TOTVS para alunos x disciplinas.")
+        else:
+            df_limpo = limpeza_alunos_disciplinas(df)
+            st.session_state["dados"]["alunosxdisciplinas"] = df_limpo
+            st.success("Dados de alunos x disciplinas carregados.")
+
+        # === 2. Buscar dados de professores ===
+        professores = carregar_totvs("caminho_periodo_professores", periodo)
+
+        if isinstance(professores, dict):
+            lista_prof = list(professores.values())
+        else:
+            lista_prof = professores
+
+        df_prof = pd.DataFrame(lista_prof)
+        if df_prof is None or df_prof.empty:
+            st.warning("Nenhum dado retornado do TOTVS para professores.")
+        else:
+            st.session_state["dados"]["professores"] = df_prof
+            st.success("Dados de professores carregados.")
+
+        # === Atualiza o período salvo ===
+        st.session_state["periodo_carregado"] = periodo
+
+    else:
+        st.info("Usando dados já carregados do período selecionado.")
+
+
+    # Recupera o DataFrame do estado da sessão
+    df_alunos = st.session_state["dados"].get("alunosxdisciplinas", pd.DataFrame())
+
 
     # Criar abas
     tab1, tab2 = st.tabs(["Visualizar dados", "Substituir arquivos"])
@@ -50,6 +78,7 @@ def carregar():
             st.subheader(f"{chave}")
             colunas = {
                 "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "RA"],
+                "professores": ["CODPROF","PROFESSOR","CURSO"],
                 "disciplina": ["CODTURMA", "NOME", "IDMOODLE"],
                 "rec": ["DISCIPLINA", "NOME"],
                 "rec_simulado":["DISCIPLINA", "NOME"]

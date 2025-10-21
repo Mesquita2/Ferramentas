@@ -74,26 +74,62 @@ def limpeza_alunos_disciplinas(df):
     df = df.assign(RA=df['RA'].apply(str).str.zfill(7))
     return df
 
-def carregar_totvs(perletivo):
+def carregar_totvs(chave_caminho: str, parametro: str = ""):
+    """
+    Função genérica para buscar dados no TOTVS com autenticação básica.
+
+    Parâmetros:
+        chave_caminho (str): nome da chave em st.secrets que contém o link base (ex: "caminho_periodo_letivo").
+        parametro (str): valor a ser concatenado ao final do link (ex: código do período letivo).
+    """
     import streamlit as st
     import requests
     from requests.auth import HTTPBasicAuth
 
-    st.title("Exemplo de Request com Basic Auth")
-
-    # Credenciais (poderiam vir do st.secrets)
-    usuario = st.secrets["basic_auth"]["usuario"]  
+    # Credenciais seguras
+    usuario = st.secrets["basic_auth"]["usuario"]
     senha = st.secrets["basic_auth"]["senha"]
-                
-    url = st.secrets["caminho_periodo_letivo"]["link"] + str(perletivo)
+
+    # Montar URL dinamicamente
+    try:
+        url_base = st.secrets[chave_caminho]["link"]
+    except KeyError:
+        st.error(f"Chave '{chave_caminho}' não encontrada em st.secrets.")
+        return None
+
+    url = url_base + str(parametro)
+    # Requisição
     response = requests.get(url, auth=HTTPBasicAuth(usuario, senha))
 
     if response.status_code == 200:
-        st.success("OK")
-        #st.json(response.json())
+        st.success("Requisição bem-sucedida.")
+        return response.json()
     else:
-        st.error(f"Erro: {response.status_code}")
+        st.error(f"Erro na requisição: {response.status_code}")
         st.text(response.text)
+        return None
+
+
+# def carregar_totvs(perletivo):
+#     import streamlit as st
+#     import requests
+#     from requests.auth import HTTPBasicAuth
+
+#     st.title("Exemplo de Request com Basic Auth")
+
+#     # Credenciais (poderiam vir do st.secrets)
+#     usuario = st.secrets["basic_auth"]["usuario"]  
+#     senha = st.secrets["basic_auth"]["senha"]
+                
+#     url = st.secrets["caminho_periodo_letivo"]["link"] + str(perletivo)
+#     response = requests.get(url, auth=HTTPBasicAuth(usuario, senha))
+
+#     if response.status_code == 200:
+#         st.success("OK")
+#         #st.json(response.json())
+#     else:
+#         st.error(f"Erro: {response.status_code}")
+#         st.text(response.text)
             
-    response = response.json()
-    return response
+#     response = response.json()
+#     return response
