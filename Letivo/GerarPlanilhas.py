@@ -77,7 +77,7 @@ def carregar():
         msg["From"] = remetente
         msg["To"] = ", ".join(destinatarios)
         msg["Subject"] = assunto
-        msg.attach(MIMEText(mensagem, "plain"))
+        msg.attach(MIMEText(mensagem, "html"))
 
         part = MIMEApplication(arquivo.read(), Name=arquivo.name)
         part["Content-Disposition"] = f'attachment; filename="{arquivo.name}"'
@@ -110,10 +110,10 @@ def carregar():
                 arquivo_excel = gerar_excel(df_alunos, disciplina, turma)
 
                 corpo_email = (
-                    f"Olá, {nome_prof},\n\n"
-                    f"Segue em anexo a planilha de notas da turma *{turma}* "
-                    f"da disciplina *{disciplina}* referente à *{prova}*.\n\n"
-                    "Atenciosamente,\nEquipe Acadêmica."
+                    f"Olá, <b>{nome_prof}</b>,<br><br>"
+                    f"Segue em anexo a planilha de notas da turma <b>{turma}</b> "
+                    f"da disciplina <b>{disciplina}</b> referente à <b>{prova}</b>.<br><br>"
+                    "Atenciosamente,<br>Equipe Acadêmica."
                 )
 
                 try:
