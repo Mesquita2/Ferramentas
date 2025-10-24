@@ -62,8 +62,8 @@ def carregar():
         df_filtrado = df[(df["DISCIPLINA"] == disciplina) & (df["TURMADISC"] == turma)]
         colunas = ["CODCOLIGADA", "CURSO", "TURMADISC", "IDTURMADISC", "DISCIPLINA", "RA", "ALUNO"]
         df_filtrado = df_filtrado[colunas]
-        df_filtrado["P1"] = 0
-        df_filtrado["QUIZ P1"] = None
+        df_filtrado[prova] = 0
+        df_filtrado[f"QUIZ {prova}"] = None
 
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
