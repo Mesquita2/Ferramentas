@@ -259,7 +259,7 @@ def carregar():
             # Botão para gerar planilha Excel
             excel_file = gerar_excel(df_rec, prova ,disciplinas_selecionadas, turmas_selecionadas)
             st.download_button(
-                label="⬇ Gerar e Baixar Planilha Excel (Multi)",
+                label=" Gerar e Baixar Planilha Excel (Multi)",
                 data=excel_file,
                 file_name=f"Planilha_REC_{prova}_{disciplinas_selecionadas[0]}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -268,7 +268,7 @@ def carregar():
             st.title("Criar Relatório de Assinatura")
             relatorio = gerar_relatorio(df_rec, disciplinas_selecionadas, turmas_selecionadas)
             st.download_button(
-                label="📄 Gerar e Baixar Relatório de Assinaturas",
+                label=" Gerar e Baixar Relatório de Assinaturas",
                 data=relatorio,
                 file_name=f"Relatorio_Assinatura_REC_{prova}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
