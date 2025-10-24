@@ -86,56 +86,90 @@ def carregar():
 
         raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
         gmail_service.users().messages().send(userId="me", body={"raw": raw}).execute()
+    
+    
+    col1, col2 = st.columns(2)
+    # === Botão para gerar e baixar arquivos XLSX ===
+    import io
+    import zipfile
 
-    # === Botão único para envio ===
-    if st.button("Gerar e enviar planilhas para todas as disciplinas selecionadas"):
-        remetente = "me"
-        total_envios = 0
+    with col1:
+        # === Botão único para baixar todas as planilhas selecionadas ===
+        if st.button(" Baixar todas as planilhas selecionadas (.zip)"):
+            buffer_zip = io.BytesIO()
 
-        for disciplina in disciplinas_selecionadas:
-            st.markdown(f"### {disciplina}")
-            prof_disciplina = df_professor[df_professor["DISCIPLINA"] == disciplina]
+            with zipfile.ZipFile(buffer_zip, "w") as zipf:
+                for disciplina in disciplinas_selecionadas:
+                    turmas = sorted(df_alunos[df_alunos["DISCIPLINA"] == disciplina]["TURMADISC"].unique())
 
-            if prof_disciplina.empty:
-                st.warning(f"Nenhum professor encontrado para {disciplina}.")
-                continue
+                    for turma in turmas:
+                        st.write(f"Gerando planilha para **{disciplina} - {turma}**...")
+                        arquivo_excel = gerar_excel(df_alunos, disciplina, turma)
 
-            nome_prof = prof_disciplina.iloc[0]["PROFESSOR"]
-            email_prof = prof_disciplina.iloc[0]["EMAIL"]
+                        # Adiciona o arquivo Excel no ZIP
+                        zipf.writestr(arquivo_excel.name, arquivo_excel.getvalue())
 
-            turmas = sorted(df_alunos[df_alunos["DISCIPLINA"] == disciplina]["TURMADISC"].unique())
+            buffer_zip.seek(0)
 
-            for turma in turmas:
-                st.write(f"Gerando planilha para **{turma}**...")
-                arquivo_excel = gerar_excel(df_alunos, disciplina, turma)
+            # Botão de download do ZIP final
+            st.download_button(
+                label="Baixar ZIP com todas as planilhas",
+                data=buffer_zip,
+                file_name="planilhas_notas.zip",
+                mime="application/zip",
+            )
 
-                corpo_email = (
-                    f"Olá, <b>{nome_prof}</b>,<br><br>"
-                    f"Segue em anexo a planilha de notas da turma <b>{turma}</b> "
-                    f"da disciplina <b>{disciplina}</b> referente à <b>{prova}</b>.<br><br>"
-                    "Atenciosamente,<br>Equipe Acadêmica."
-                )
 
-                try:
-                    destinatarios = [email_prof]
-                    if email_assistente:
-                        destinatarios.append(email_assistente)
+    with col2:
+        # === Botão único para envio ===
+        if st.button("Gerar e enviar planilhas para todas as disciplinas selecionadas"):
+            remetente = "me"
+            total_envios = 0
 
-                    corpo = enviar_email(
-                        remetente=remetente,
-                        destinatarios=destinatarios,
-                        assunto=f"Planilha de Notas - {disciplina} - {turma} - {prova}",
-                        mensagem=corpo_email,
-                        arquivo=arquivo_excel,
+            for disciplina in disciplinas_selecionadas:
+                st.markdown(f"### {disciplina}")
+                prof_disciplina = df_professor[df_professor["DISCIPLINA"] == disciplina]
+
+                if prof_disciplina.empty:
+                    st.warning(f"Nenhum professor encontrado para {disciplina}.")
+                    continue
+
+                nome_prof = prof_disciplina.iloc[0]["PROFESSOR"]
+                email_prof = prof_disciplina.iloc[0]["EMAIL"]
+
+                turmas = sorted(df_alunos[df_alunos["DISCIPLINA"] == disciplina]["TURMADISC"].unique())
+
+                for turma in turmas:
+                    st.write(f"Gerando planilha para **{turma}**...")
+                    arquivo_excel = gerar_excel(df_alunos, disciplina, turma)
+
+                    corpo_email = (
+                        f"Olá, <b>{nome_prof}</b>,<br><br>"
+                        f"Segue em anexo a planilha de notas da turma <b>{turma}</b> "
+                        f"da disciplina <b>{disciplina}</b> referente à <b>{prova}</b>.<br><br>"
+                        "Atenciosamente,<br>Equipe Acadêmica."
                     )
-                    
-                    st.write(f"Enviado... \n")
 
-                    total_envios += 1
-                    st.success(f" Enviado para {', '.join(destinatarios)} (Turma {turma})")
-                except Exception as e:
-                    st.error(f" Falha ao enviar planilha da turma {turma}: {e}")
+                    try:
+                        destinatarios = [email_prof]
+                        if email_assistente:
+                            destinatarios.append(email_assistente)
 
-                time.sleep(1.5)
+                        corpo = enviar_email(
+                            remetente=remetente,
+                            destinatarios=destinatarios,
+                            assunto=f"Planilha de Notas - {disciplina} - {turma} - {prova}",
+                            mensagem=corpo_email,
+                            arquivo=arquivo_excel,
+                        )
+                        
+                        st.write(f"Enviado... \n")
 
-        st.success(f" Processo concluído! {total_envios} e-mails enviados com sucesso.")
+                        total_envios += 1
+                        st.success(f" Enviado para {', '.join(destinatarios)} (Turma {turma})")
+                    except Exception as e:
+                        st.error(f" Falha ao enviar planilha da turma {turma}: {e}")
+
+                    time.sleep(1.5)
+
+            st.success(f" Processo concluído! {total_envios} e-mails enviados com sucesso.")

@@ -30,10 +30,6 @@ def carregar():
         "https://www.googleapis.com/auth/drive.metadata",  
     ]
     
-    @st.cache_resource(show_spinner=False)
-    def criar_servico_gmail():
-        return build("gmail", "v1", credentials=creds)
-    
     def encontrar_ou_criar_pasta(nome, id_pasta_mae):
         """
         Verifica se a pasta já existe dentro da pasta mãe. Se não existir, cria.
@@ -98,7 +94,6 @@ def carregar():
 
         # --- 🔗 Faz o merge agora de forma segura ---
         df = pd.merge(df_base, df[colunas_validas], on=['DISCIPLINA', 'RA'], how='left')
-        st.write(df)
         
         df = df.copy()
         
@@ -136,7 +131,7 @@ def carregar():
         """
 
         mapa_etapa = {"P1": 1, "P2": 2, "P3": 3}
-        mapa_prova = {"PROVA": 1, "RECUPERAÇÃO": 2, "QUIZ": 3, "QUIZZ": 3}
+        mapa_prova = {"PROVA": 1, "RECUPERAÇÃO": 2, "QUIZZ": 3}
 
         # Aceita colunas como "P1", "Quiz P1", "Rec P2", "Recuperação P3", "Prova P1"
         padrao = re.compile(r"(?:(QUIZ|QUIZZ|RECUPERAÇÃO|REC|PROVA)\s*)?(P1|P2|P3)", re.IGNORECASE)
@@ -152,6 +147,8 @@ def carregar():
                 # Normaliza "REC" → "RECUPERAÇÃO"
                 if tipo_raw in ["REC", "RECUP"]:
                     tipo = "RECUPERAÇÃO"
+                if tipo_raw in ["QUIZ", "QUIZZ"]:
+                    tipo = "QUIZZ"
                     
                 else:
                     tipo = tipo_raw
@@ -193,7 +190,6 @@ def carregar():
         df_original = df_original.dropna(axis=1, how='all') 
         df, mapeamento= detectar_etapas_provas(df_original)
         st.write(df, mapeamento)
-        st.dataframe(df_original)
         
         # lista para armazenar resultados por prova+disciplina
         dfs_limpos = []
@@ -273,8 +269,6 @@ def carregar():
     
         tipos_provas = "_".join(sorted(tipos_provas))
         name_file = f"{disciplina}_{turma}_{tipos_provas}_{etapa}.txt"
-            
-        st.write(tipos_provas)
         
         clicou = st.download_button(
             label="Baixar Notas Tratadas (TXT)",
