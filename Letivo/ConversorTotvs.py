@@ -145,7 +145,7 @@ def carregar():
                 etapa = match.group(2).upper()
 
                 # Normaliza "REC" → "RECUPERAÇÃO"
-                if tipo_raw in ["REC", "RECUP"]:
+                if tipo_raw.upper() in ["REC", "RECUP"]:
                     tipo = "RECUPERAÇÃO"
                 if tipo_raw in ["QUIZ", "QUIZZ"]:
                     tipo = "QUIZZ"
