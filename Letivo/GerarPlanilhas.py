@@ -129,7 +129,7 @@ def carregar():
                         arquivo=arquivo_excel,
                     )
                     
-                    st.write(f"Enviado... \n{corpo}")
+                    st.write(f"Enviado... \n")
 
                     total_envios += 1
                     st.success(f" Enviado para {', '.join(destinatarios)} (Turma {turma})")
