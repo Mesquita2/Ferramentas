@@ -107,28 +107,3 @@ def carregar_totvs(chave_caminho: str, parametro: str = ""):
         st.error(f"Erro na requisição: {response.status_code}")
         st.text(response.text)
         return None
-
-
-# def carregar_totvs(perletivo):
-#     import streamlit as st
-#     import requests
-#     from requests.auth import HTTPBasicAuth
-
-#     st.title("Exemplo de Request com Basic Auth")
-
-#     # Credenciais (poderiam vir do st.secrets)
-#     usuario = st.secrets["basic_auth"]["usuario"]  
-#     senha = st.secrets["basic_auth"]["senha"]
-                
-#     url = st.secrets["caminho_periodo_letivo"]["link"] + str(perletivo)
-#     response = requests.get(url, auth=HTTPBasicAuth(usuario, senha))
-
-#     if response.status_code == 200:
-#         st.success("OK")
-#         #st.json(response.json())
-#     else:
-#         st.error(f"Erro: {response.status_code}")
-#         st.text(response.text)
-            
-#     response = response.json()
-#     return response

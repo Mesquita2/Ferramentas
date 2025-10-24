@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+import re
 
 def carregar():
     st.title("Conversor de Notas Totvs")
@@ -72,6 +73,45 @@ def carregar():
 
         return df
 
+    # === FUNÇÃO: detectar e limpar colunas ===
+    def detectar_etapas_provas(df: pd.DataFrame):
+        """
+        Detecta automaticamente colunas que representam provas (P1, P2, P3)
+        e tipos (Prova, Recuperação, Quizz). Remove colunas vazias de Quiz.
+        Retorna o DataFrame limpo e um dicionário com metadados das colunas.
+        """
+
+        # Mapas de códigos
+        mapa_etapa = {"P1": 1, "P2": 2, "P3": 3}
+        mapa_prova = {"PROVA": 1, "RECUPERAÇÃO": 2, "QUIZ": 3, "QUIZZ": 3}
+
+        padrao = re.compile(r"(QUIZ|QUIZZ|RECUPERAÇÃO|PROVA).*?(P1|P2|P3)", re.IGNORECASE)
+
+        mapeamento = {}
+
+        for col in df.columns:
+            match = padrao.search(col)
+            if match:
+                tipo = match.group(1).upper()
+                etapa = match.group(2).upper()
+
+                # Salva metadados da coluna
+                mapeamento[col] = {
+                    "etapa": etapa,
+                    "prova": tipo,
+                    "codetapa": mapa_etapa.get(etapa),
+                    "codprova": mapa_prova.get(tipo)
+                }
+
+        # === Remover colunas de QUIZ totalmente nulas ===
+        colunas_quiz_vazias = [
+            c for c in df.columns if re.search(r"QUIZ|QUIZZ", c, re.IGNORECASE) and df[c].isna().all()
+        ]
+        if colunas_quiz_vazias:
+            df = df.drop(columns=colunas_quiz_vazias)
+            st.info(f"Removidas colunas de Quiz sem dados: {', '.join(colunas_quiz_vazias)}")
+
+        return df, mapeamento
     # Interface do Streamlit
     st.title("Limpeza e Tratamento de Notas")
 
@@ -79,38 +119,12 @@ def carregar():
     uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
 
     # Definir as variáveis de configuração para o filtro
-    etapa = st.selectbox('Selecione a etapa', ['P1', 'P2', 'P3'])
-    prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação', 'Quizz'])
     tipoetapa = 'N'  # Tipo de etapa
-    codetapa = 2  # Código da etapa
-    codprova = 1  # Código da prova
-
-    # Limitar as opções de Etapa com base na escolha da Prova
-    if etapa == 'P1' and prova == "Prova":
-        codetapa = 1  # P1 = 1
-        codprova = 1  # Prova = 1
-    elif etapa == 'P2' and prova == "Prova":
-        codetapa = 2  # P2 = 2
-        codprova = 1  # Prova = 1
-    elif etapa == 'P1' and prova == "Recuperação":
-        codetapa = 1  # P1 = 1
-        codprova = 2  # Recuperação = 2
-    elif etapa == 'P2' and prova == "Recuperação":
-        codetapa = 2  # P2 = 2
-        codprova = 2  # Recuperação = 2
-    elif etapa == 'P1' and prova == 'Quizz': 
-        codetapa = 1  # P1 = 1
-        codprova = 3  # Quizz = 3
-    elif etapa == 'P2' and prova == 'Quizz':
-        codetapa = 2  # P2 = 2
-        codprova = 3  # Quizz = 3
-    elif etapa == 'P3' and prova == 'Prova':
-        codetapa = 3  # P3 = 3
-        codprova = 1  # Prova = 1
-    elif etapa == 'P3' and prova == 'Recuperação':
-        codetapa = 3  # P3 = 3
-        codprova = 2  # Recuperação = 2
-
+    df, mapeamento= detectar_etapas_provas(uploaded_file)
+    st.write(df, mapeamento)
+    
+    
+    
     # Carregar e limpar os dados
     if uploaded_file:
         df_original = carregar_dados(uploaded_file)

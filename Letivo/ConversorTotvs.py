@@ -7,6 +7,7 @@ import pickle
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from datetime import date
+import re 
 
 
 def carregar():
@@ -28,6 +29,10 @@ def carregar():
         "https://www.googleapis.com/auth/drive.file", 
         "https://www.googleapis.com/auth/drive.metadata",  
     ]
+    
+    @st.cache_resource(show_spinner=False)
+    def criar_servico_gmail():
+        return build("gmail", "v1", credentials=creds)
     
     def encontrar_ou_criar_pasta(nome, id_pasta_mae):
         """
@@ -64,13 +69,11 @@ def carregar():
     def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
         df_aluno = st.session_state["dados"].get("alunosxdisciplinas")
         df_base = df_aluno.copy()
-        
-        
 
         df_base['RA'] = df_base['RA'].astype(str).str.zfill(7)
         df['RA'] = df['RA'].astype(str).str.zfill(7)
         
-        # Renomear colunas
+        # Renomear colunas para padronizar
         df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
                                 'NOMECURSO': 'CURSO',
                                 'NOMEALUNO': 'ALUNO'}, inplace=True)
@@ -79,14 +82,27 @@ def carregar():
                         'NOMECURSO': 'CURSO',
                         'NOMEALUNO': 'ALUNO'}, inplace=True)
 
+        # --- 🔍 Detectar a disciplina e filtrar df_base ---
+        if 'DISCIPLINA' in df.columns and not df['DISCIPLINA'].empty:
+            disciplina_arquivo = df['DISCIPLINA'].iloc[0]
+            df_base = df_base[df_base['DISCIPLINA'] == disciplina_arquivo]
+        else:
+            st.warning("Coluna 'DISCIPLINA' não encontrada ou vazia no arquivo enviado.")
+            return pd.DataFrame()
         
-        df = pd.merge(df_base, df[['DISCIPLINA', 'RA',  'NOTAS']],
-                    on=['DISCIPLINA', 'RA'],
-                    how='left')  
+        # --- ✅ Garantir que só usa colunas existentes no df ---
+        colunas_validas = [c for c in ['DISCIPLINA', 'RA', 'NOTAS'] if c in df.columns]
+        if len(colunas_validas) < 3:
+            st.warning(f"Colunas insuficientes para merge: {colunas_validas}")
+            return pd.DataFrame()
+
+        # --- 🔗 Faz o merge agora de forma segura ---
+        df = pd.merge(df_base, df[colunas_validas], on=['DISCIPLINA', 'RA'], how='left')
+        st.write(df)
         
         df = df.copy()
         
-        # Adicionar as novas colunas
+        # Adicionar colunas complementares
         df['CODETAPA'] = codetapa
         df['CODPROVA'] = codprova
         df['TIPOETAPA'] = tipoetapa
@@ -94,22 +110,71 @@ def carregar():
         df['ETAPA'] = etapa
         df['RA novo'] = df['RA'].astype(int)
         
-        # Nova ordem das colunas
-        colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
+        # Reorganizar colunas
+        colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA',
+                'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA',
+                'CODPROVA', 'NOTAS']
         df = df[colunas]
 
-        # Condicional para a limpeza das notas
+        # Limpeza condicional das notas
         df_teste = df
         if prova == "Prova":
             df_teste = df_teste.dropna(subset=['NOTAS']).copy()
-        elif prova == "Recuperação" or prova == "Recuperação Final":
+        elif prova in ["Recuperação", "Recuperação Final"]:
             df_teste = df_teste.dropna(subset=['NOTAS'])
-            df_teste = df_teste[df_teste['NOTAS'] != 0]
         elif prova == "Quizz":
             df_teste = df_teste.dropna(subset=['NOTAS'])
 
-
         return df_teste
+
+    
+    def detectar_etapas_provas(df: pd.DataFrame):
+        """
+        Detecta automaticamente colunas que representam provas (P1, P2, P3)
+        e tipos (Prova, Recuperação, Quiz). Remove colunas vazias de Quiz.
+        Retorna o DataFrame limpo e um dicionário com metadados das colunas.
+        """
+
+        mapa_etapa = {"P1": 1, "P2": 2, "P3": 3}
+        mapa_prova = {"PROVA": 1, "RECUPERAÇÃO": 2, "QUIZ": 3, "QUIZZ": 3}
+
+        # Aceita colunas como "P1", "Quiz P1", "Rec P2", "Recuperação P3", "Prova P1"
+        padrao = re.compile(r"(?:(QUIZ|QUIZZ|RECUPERAÇÃO|REC|PROVA)\s*)?(P1|P2|P3)", re.IGNORECASE)
+
+        mapeamento = {}
+
+        for col in df.columns:
+            match = padrao.search(col)
+            if match:
+                tipo_raw = match.group(1).upper() if match.group(1) else "PROVA"
+                etapa = match.group(2).upper()
+
+                # Normaliza "REC" → "RECUPERAÇÃO"
+                if tipo_raw in ["REC", "RECUP"]:
+                    tipo = "RECUPERAÇÃO"
+                    
+                else:
+                    tipo = tipo_raw
+
+                mapeamento[col] = {
+                    "etapa": etapa,
+                    "prova": tipo,
+                    "codetapa": mapa_etapa.get(etapa),
+                    "codprova": mapa_prova.get(tipo, 1)
+                }
+
+        # === Remover colunas de QUIZ totalmente nulas ===
+        colunas_quiz_vazias = [
+            c for c in df.columns
+            if re.search(r"QUIZ|QUIZZ", c, re.IGNORECASE) and df[c].isna().all()
+        ]
+        if colunas_quiz_vazias:
+            df = df.drop(columns=colunas_quiz_vazias)
+            st.info(f"Removidas colunas de Quiz sem dados: {', '.join(colunas_quiz_vazias)}")
+
+        return df, mapeamento
+
+
 
     # Interface do Streamlit
     st.title("Conversor de Notas Totvs")
@@ -118,48 +183,75 @@ def carregar():
     uploaded_file = st.file_uploader("Envie o arquivo de notas (Excel)", type=["xlsx"])
 
     # Definir as variáveis de configuração para o filtro
-    etapa = st.selectbox('Selecione a etapa', ['P1', 'P2', 'P3', 'REC FINAL'])
-    prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação', 'Quizz', 'Recuperação Final'])
     tipoetapa = 'N'  # Tipo de etapa
-    codetapa = 2  # Código da etapa
-    codprova = 1  # Código da prova
-
-    # Limitar as opções de Etapa com base na escolha da Prova
-    if etapa == 'P1' and prova == "Prova":
-        codetapa = 1  # P1 = 1
-        codprova = 1  # Prova = 1
-    elif etapa == 'P2' and prova == "Prova":
-        codetapa = 2  # P2 = 2
-        codprova = 1  # Prova = 1
-    elif etapa == 'P1' and prova == "Recuperação":
-        codetapa = 1  # P1 = 1
-        codprova = 2  # Recuperação = 2
-    elif etapa == 'P2' and prova == "Recuperação":
-        codetapa = 2  # P2 = 2
-        codprova = 2  # Recuperação = 2
-    elif etapa == 'P1' and prova == 'Quizz': 
-        codetapa = 1
-        codprova = 3
-    elif etapa == 'P2' and prova == 'Quizz':
-        codetapa = 2
-        codprova = 3 
-    elif etapa == 'P3' and prova == "Prova":
-        codetapa = 3
-        codprova = 1
-    elif etapa == 'REC FINAL' and prova == "Recuperação Final":
-        codetapa = 5
-        codprova = 1 
+    
 
     if uploaded_file:
         # 1) Carrega e exibe os dados originais
         df_original = carregar_dados(uploaded_file)
         st.subheader("Dados Originais")
+        df_original = df_original.dropna(axis=1, how='all') 
+        df, mapeamento= detectar_etapas_provas(df_original)
+        st.write(df, mapeamento)
         st.dataframe(df_original)
+        
+        # lista para armazenar resultados por prova+disciplina
+        dfs_limpos = []
+        
+        tipos_provas = set()
+        # Loop sobre as colunas detectadas (ex: "P1", "Quiz P1", ...)
+        for col, info in mapeamento.items():
+            etapa = info["etapa"]
+            prova_tipo = info["prova"].capitalize()   # 'Prova', 'Quiz', 'Recuperação'
+            codetapa = info["codetapa"]
+            codprova = info["codprova"]
+            
+            tipos_provas.add(prova_tipo)
+            # renomeia a coluna detectada para NOTAS temporariamente
+            temp = df_original.rename(columns={col: "NOTAS"})[["DISCIPLINA", "RA", "NOTAS"]].copy()
 
-        # 2) Limpa e formata
-        df_limpo = limpar_dados(df_original, prova, etapa, codetapa, codprova, tipoetapa)
-        st.subheader("Dados Após Limpeza")
-        st.dataframe(df_limpo)
+            # pega as disciplinas que existem nesse arquivo/coluna (normalmente 1)
+            disciplinas_no_arquivo = temp["DISCIPLINA"].dropna().unique().tolist()
+            if not disciplinas_no_arquivo:
+                st.warning(f"Coluna {col}: não foi encontrada DISCIPLINA válida — pulando.")
+                continue
+
+            # itera por cada disciplina encontrada (caso o arquivo tenha mais de uma)
+            for disciplina in disciplinas_no_arquivo:
+                # filtra apenas as linhas da disciplina atual
+                df_temp = temp[temp["DISCIPLINA"] == disciplina].copy()
+
+                # se não houver notas válidas nessa coluna para a disciplina, pula
+                if df_temp["NOTAS"].dropna().empty:
+                    st.info(f"{prova_tipo} {etapa} — {disciplina}: sem notas válidas — pulando.")
+                    continue
+
+                # chama a função de limpeza (usa só DISCIPLINA, RA, NOTAS)
+                df_limpo = limpar_dados(df_temp, prova_tipo, etapa, codetapa, codprova, tipoetapa)
+
+                if df_limpo is None or df_limpo.empty:
+                    st.info(f"{prova_tipo} {etapa} — {disciplina}: nenhum registro após limpeza.")
+                    continue
+
+                dfs_limpos.append({
+                    "disciplina": disciplina,
+                    "prova": prova_tipo,
+                    "etapa": etapa,
+                    "codetapa": codetapa,
+                    "codprova": codprova,
+                    "df": df_limpo
+                })
+
+                st.success(f"{prova_tipo} {etapa} — {disciplina}: processada ({len(df_limpo)} registros).")
+
+        # concatena todos os dataframes processados (se houver)
+        if not dfs_limpos:
+            st.warning("Nenhuma coluna de prova válida encontrada após filtro por disciplina.")
+            st.stop()
+
+        df_final = pd.concat([item["df"] for item in dfs_limpos], ignore_index=True)
+        st.subheader("Dados combinados de todas as provas (após filtro por disciplina)")
+        st.dataframe(df_final)
 
         df_limpo['RA']    = df_limpo['RA'].astype(str).str.zfill(7)
         df_limpo['NOTAS']= pd.to_numeric(df_limpo['NOTAS'], errors='coerce')
@@ -177,11 +269,17 @@ def carregar():
         disciplina = df_limpo['DISCIPLINA'].iloc[0]
         turma = df_limpo['TURMADISC'].iloc[0]
         curso = df_limpo['CURSO'].iloc[0] 
-
+        
+    
+        tipos_provas = "_".join(sorted(tipos_provas))
+        name_file = f"{disciplina}_{turma}_{tipos_provas}_{etapa}.txt"
+            
+        st.write(tipos_provas)
+        
         clicou = st.download_button(
             label="Baixar Notas Tratadas (TXT)",
             data=output,
-            file_name=f"{disciplina}_{turma}_{prova}_{etapa}.txt",
+            file_name=name_file,
             mime="text/plain"
         )
 
@@ -189,15 +287,15 @@ def carregar():
         with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
             df_limpo.to_excel(writer, index=False, sheet_name="Notas")
         excel_buffer.seek(0)
-
-        if clicou:
+        justo = False
+        if justo:
             pasta_curso_id      = encontrar_ou_criar_pasta(curso, pasta_raiz_id)
             pasta_turma_id      = encontrar_ou_criar_pasta(turma, pasta_curso_id)
             pasta_disciplina_id = encontrar_ou_criar_pasta(disciplina, pasta_turma_id)
-            pasta_prova_id      = encontrar_ou_criar_pasta(prova, pasta_disciplina_id)
+            pasta_prova_id      = encontrar_ou_criar_pasta(prova_tipo, pasta_disciplina_id)
 
             now = date.today().strftime('%Y-%m-%d')
-            nome_xlsx = f"{disciplina}_{turma}_{prova}_{etapa}_{now}.xlsx"
+            nome_xlsx = f"{disciplina}_{turma}_{prova_tipo}_{etapa}_{now}.xlsx"
 
             media = MediaIoBaseUpload(
                 excel_buffer,

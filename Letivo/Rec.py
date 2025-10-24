@@ -211,11 +211,11 @@ def carregar():
         st.dataframe(df_cadastro[['DISCIPLINA', 'NOME']])
 
 
-    def gerar_excel(df_rec, disciplinas, turmas):
+    def gerar_excel(df_rec, prova,disciplinas, turmas):
         df_filtrado = df_rec[df_rec["DISCIPLINA"].isin(disciplinas) & df_rec["TURMADISC"].isin(turmas)].copy()
         df_filtrado['RA'] = df_filtrado['RA'].astype(str).str.zfill(7)
-        df_filtrado['NOTAS'] = 0
-        colunas = ['TURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'NOTAS']
+        df_filtrado[prova] = 0
+        colunas = ['TURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', prova]
         df_filtrado = df_filtrado[colunas].sort_values(by=["DISCIPLINA", "TURMADISC", "ALUNO"])
         
         output = io.BytesIO()
@@ -240,7 +240,7 @@ def carregar():
         turmas_selecionadas = st.multiselect("2. Escolha as turmas", turmas_disponiveis)
 
         if turmas_selecionadas:
-            prova = st.selectbox("3. Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC_P1", "REC_P2", "REC_FINAL"])
+            prova = st.selectbox("3. Escolha se é REC_P1 ou REC_P2 ou REC_FINAL", ["REC P1", "REC P2", "REC FINAL"])
 
             # Filtra os dados para visualização
             df_filtrado = df_rec[
@@ -257,11 +257,11 @@ def carregar():
             st.dataframe(df_filtrado[["ALUNO", "DISCIPLINA", "TURMADISC"]])
 
             # Botão para gerar planilha Excel
-            excel_file = gerar_excel(df_rec, disciplinas_selecionadas, turmas_selecionadas)
+            excel_file = gerar_excel(df_rec, prova ,disciplinas_selecionadas, turmas_selecionadas)
             st.download_button(
                 label="⬇ Gerar e Baixar Planilha Excel (Multi)",
                 data=excel_file,
-                file_name=f"Planilha_REC_{prova}.xlsx",
+                file_name=f"Planilha_REC_{prova}_{disciplinas_selecionadas[0]}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
