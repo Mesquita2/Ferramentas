@@ -11,7 +11,7 @@ from googleapiclient.discovery import build
 
 
 def carregar():
-    st.title("Gerador e Envio de Planilhas de Notas")
+    st.title("Gerador e Envio de Planilhas de Notas. ")
 
     # === Autenticação Gmail ===
     token_b64 = st.secrets["gmail_token"]["token_b64"]
