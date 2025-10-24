@@ -131,7 +131,7 @@ def carregar():
         """
 
         mapa_etapa = {"P1": 1, "P2": 2, "P3": 3}
-        mapa_prova = {"PROVA": 1, "RECUPERAÇÃO": 2, "QUIZZ": 3}
+        mapa_prova = {"PROVA": 1, "REC": 2, "QUIZZ": 3}
 
         # Aceita colunas como "P1", "Quiz P1", "Rec P2", "Recuperação P3", "Prova P1"
         padrao = re.compile(r"(?:(QUIZ|QUIZZ|RECUPERAÇÃO|REC|PROVA)\s*)?(P1|P2|P3)", re.IGNORECASE)
@@ -149,7 +149,6 @@ def carregar():
                     tipo = "RECUPERAÇÃO"
                 if tipo_raw in ["QUIZ", "QUIZZ"]:
                     tipo = "QUIZZ"
-                    
                 else:
                     tipo = tipo_raw
 
