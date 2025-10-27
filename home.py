@@ -4,7 +4,11 @@ from auth import check_authentication, logout
 import Letivo.Inicial as Inicio
 from Letivo import ConversorTotvs, Email, Rec, Relatorio_Status, GerarPlanilhas, Quizz, TCC, Relatorio_Inglês
 
-st.set_page_config(page_title="Sistema", layout="wide")
+st.set_page_config(
+    page_title="Sistema", 
+    layout="wide",
+    initial_sidebar_state="collapsed"
+    )
 
 if check_authentication():
 

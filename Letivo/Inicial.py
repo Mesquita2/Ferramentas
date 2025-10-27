@@ -78,7 +78,7 @@ def carregar():
             st.subheader(f"{chave}")
             colunas = {
                 "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "RA"],
-                "professores": ["CODPROF","PROFESSOR","CURSO"],
+                "professores": ["CODPROF","PROFESSOR","CURSO", "DISCIPLINA"],
                 "disciplina": ["CODTURMA", "NOME", "IDMOODLE"],
                 "rec": ["DISCIPLINA", "NOME"],
                 "rec_simulado":["DISCIPLINA", "NOME"]
