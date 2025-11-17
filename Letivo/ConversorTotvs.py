@@ -151,8 +151,9 @@ def carregar():
                     tipo = "RECUPERAÇÃO"
                 elif tipo_raw in ["QUIZ", "QUIZZ"]:
                     tipo = "QUIZZ"
-                else:
-                    st.stop()
+                elif tipo_raw == "PROVA":
+                    tipo = "PROVA"
+                else: 
                     st.warning("COLUNA NAO RECONHECIDA")
 
                     

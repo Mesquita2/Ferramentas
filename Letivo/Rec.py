@@ -96,7 +96,7 @@ def carregar():
 
             if buffer:
                 st.download_button(
-                    label="📄 Baixar Relatório Word",
+                    label="Baixar Relatório Word",
                     data=buffer,
                     file_name="alunos_removidos.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
