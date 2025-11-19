@@ -225,10 +225,15 @@ def carregar():
                 if df_temp["NOTAS"].dropna().empty:
                     st.info(f"{prova_tipo} {etapa} — {disciplina}: sem notas válidas — pulando.")
                     continue
+                
+                if etapa == "P1" or etapa == "P2" or etapa == "P3":
+                    df_temp["NOTAS"] = df_temp["NOTAS"].fillna(0)
+                else: 
+                    "ta de boa"
 
                 # chama a função de limpeza (usa só DISCIPLINA, RA, NOTAS)
                 df_limpo = limpar_dados(df_temp, prova_tipo, etapa, codetapa, codprova, tipoetapa)
-
+                
                 if df_limpo is None or df_limpo.empty:
                     st.info(f"{prova_tipo} {etapa} — {disciplina}: nenhum registro após limpeza.")
                     continue
