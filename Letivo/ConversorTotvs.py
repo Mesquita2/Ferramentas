@@ -290,8 +290,8 @@ def carregar():
         with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
             df_limpo.to_excel(writer, index=False, sheet_name="Notas")
         excel_buffer.seek(0)
-        justo = False
-        if justo:
+        clicou = False
+        if clicou:
             pasta_curso_id      = encontrar_ou_criar_pasta(curso, pasta_raiz_id)
             pasta_turma_id      = encontrar_ou_criar_pasta(turma, pasta_curso_id)
             pasta_disciplina_id = encontrar_ou_criar_pasta(disciplina, pasta_turma_id)
