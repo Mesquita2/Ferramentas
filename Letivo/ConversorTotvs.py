@@ -257,6 +257,8 @@ def carregar():
         df_final = pd.concat([item["df"] for item in dfs_limpos], ignore_index=True)
         st.subheader("Dados combinados de todas as provas (após filtro por disciplina)")
         st.dataframe(df_final)
+        
+        df_limpo = df_final.copy()
 
         df_limpo['RA']    = df_limpo['RA'].astype(str).str.zfill(7)
         df_limpo['NOTAS']= pd.to_numeric(df_limpo['NOTAS'], errors='coerce')
