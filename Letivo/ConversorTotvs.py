@@ -300,7 +300,7 @@ def carregar():
             pasta_disciplina_id = encontrar_ou_criar_pasta(disciplina, pasta_turma_id)
             pasta_prova_id      = encontrar_ou_criar_pasta(prova_tipo, pasta_disciplina_id)
 
-            now = date.today().strftime('%Y-%m-%d')
+            now = datetime.now().strftime('%Y-%m-%d %H:%M')
             nome_xlsx = f"{disciplina}_{turma}_{prova_tipo}_{etapa}_{now}.xlsx"
 
             media = MediaIoBaseUpload(
