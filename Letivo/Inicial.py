@@ -77,7 +77,7 @@ def carregar():
         for chave, df in st.session_state["dados"].items():
             st.subheader(f"{chave}")
             colunas = {
-                "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "RA"],
+                "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "NOME_SOCIAL", "RA"],
                 "professores": ["CODPROF","PROFESSOR","CURSO", "DISCIPLINA"],
                 "disciplina": ["CODTURMA", "NOME", "IDMOODLE"],
                 "rec": ["DISCIPLINA", "NOME"],

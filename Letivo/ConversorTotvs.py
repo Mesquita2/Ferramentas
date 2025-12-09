@@ -117,6 +117,7 @@ def carregar():
             df_teste = df_teste.dropna(subset=['NOTAS']).copy()
         elif prova in ["Recuperação", "Recuperação Final"]:
             df_teste = df_teste.dropna(subset=['NOTAS'])
+            df_teste = df_teste[df_teste['NOTAS'].notna() & (df_teste['NOTAS'] != 0)]
         elif prova == "Quizz":
             df_teste = df_teste.dropna(subset=['NOTAS'])
 
