@@ -194,12 +194,30 @@ def carregar():
         ids = df['RA'].astype(str).str.zfill(7)
         bonus_total = pd.Series(0, index=ids.unique())
 
+        # Total de questões respondidas por aluno
+        respondidas_por_aluno = (
+            df[colunas_respostas]
+            .notna()
+            .sum(axis=1)
+        )
+
         for q in questoes_anuladas:
             coluna = f"#{q} Points Earned"
+
             if coluna in df.columns:
-                ganhos = (df[coluna].fillna(0) == 0).astype(int)
+                # Recebe bônus SOMENTE se:
+                # - Questão está zerada
+                # - NÃO está NaN (ou seja, ele respondeu)
+                # - O aluno respondeu pelo menos 1 questão no simulado
+                ganhos = (
+                    (df[coluna] == 0) &
+                    (df[coluna].notna()) &
+                    (respondidas_por_aluno > 0)
+                ).astype(int)
+
                 bonus = pd.Series(ganhos.values, index=ids).groupby(level=0).sum()
                 bonus_total = bonus_total.add(bonus, fill_value=0)
+
 
         df['Bonus Anuladas'] = ids.map(bonus_total).fillna(0)
         df['Earned Points Final'] = df['Earned Points Original'] + df['Bonus Anuladas']
