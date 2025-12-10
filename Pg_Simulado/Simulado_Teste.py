@@ -10,8 +10,7 @@ def carregar():
 
     padrao_remover = r'(?:Projeto de Extensão|Seminários|Liga dos Campeões|Estágio|TCC|Trabalho de Conclusão de Curso)'
     df_base = df_base[
-        ~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False) &
-        df_base['TURMADISC'].astype(str).str.len().le(4)
+        ~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False)
     ].reset_index(drop=True)
 
     # Renomear colunas
