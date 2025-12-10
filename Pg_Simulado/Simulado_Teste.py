@@ -101,12 +101,27 @@ def carregar():
         return df
 
 
-    def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas, turma_selecionada):
-        df_base_local = df_alunos.copy()
+    def limpar_dados(
+        df,
+        prova,
+        etapa,
+        codetapa,
+        codprova,
+        tipoetapa,
+        questoes_anuladas,
+        disciplinas_excluidas,
+        turma_selecionada,
+        alunos_ajustar
+    ):
+        # ===============================
+        # BASE DE ALUNOS
+        # ===============================
+        df_base_local = st.session_state["dados"]["alunosxdisciplinas"].copy()
+
         padrao_remover = r'(?:Projeto de Extensão|Seminários|Liga dos Campeões|Estágio|TCC|Trabalho de Conclusão de Curso)'
-        df_base_local = df_base[
-            ~df_base['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False) &
-            df_base['TURMADISC'].astype(str).str.len().le(4)
+
+        df_base_local = df_base_local[
+            ~df_base_local['DISCIPLINA'].str.contains(padrao_remover, case=False, na=False)
         ].reset_index(drop=True)
 
         df_base_local.rename(columns={
@@ -115,115 +130,119 @@ def carregar():
             'NOMEALUNO': 'ALUNO'
         }, inplace=True)
 
-        # Aplicar exclusão de disciplinas
-        df_base_local = df_base_local[~df_base_local['DISCIPLINA'].isin(disciplinas_excluidas)]
+        # ===============================
+        # FILTROS USUÁRIO
+        # ===============================
+        if turma_selecionada:
+            df_base_local = df_base_local[df_base_local['TURMADISC'].isin(turma_selecionada)]
 
-        # Ajustar formato do RA para padronizar e filtrar só alunos do simulado
+        if disciplinas_excluidas:
+            df_base_local = df_base_local[~df_base_local['DISCIPLINA'].isin(disciplinas_excluidas)]
+
+        # ===============================
+        # PADRONIZA RA
+        # ===============================
         df_base_local['RA'] = df_base_local['RA'].astype(str).str.zfill(7)
-        r_as_simulado = df['RA'].astype(str).str.zfill(7).unique()
+        df['RA'] = df['RA'].astype(str).str.zfill(7)
+
+        # Mantém apenas alunos que estão no simulado
+        r_as_simulado = df['RA'].unique()
         df_base_local = df_base_local[df_base_local['RA'].isin(r_as_simulado)]
 
-        # Calcular questões só para alunos do simulado
+        # ===============================
+        # CALCULAR QUESTÕES ESPERADAS
+        # ===============================
         df_questoes = calcula_qtd_questoes(df_base_local)
 
-        df['RA'] = df['RA'].astype(str).str.zfill(7)
-        df_simulado_pontos = df.groupby('RA')['Possible Points'].sum().reset_index()
-        df_simulado_pontos.rename(columns={'Possible Points': 'PontosSimulado'}, inplace=True)
+        # ===============================
+        # PONTOS POSSÍVEIS DO SIMULADO
+        # ===============================
+        df_simulado_pontos = (
+            df.groupby('RA', as_index=False)['Possible Points']
+            .sum()
+            .rename(columns={'Possible Points': 'PontosSimulado'})
+        )
 
-        # Garantir RA formatado antes do merge
-        df_questoes['RA'] = df_questoes['RA'].astype(str).str.zfill(7)
-        df_simulado_pontos['RA'] = df_simulado_pontos['RA'].astype(str).str.zfill(7)
+        # ===============================
+        # VALIDAÇÃO
+        # ===============================
+        df_validacao = df_questoes.merge(df_simulado_pontos, on='RA', how='left')
+        df_validacao['PontosSimulado'] = df_validacao['PontosSimulado'].fillna(0)
+        df_validacao['DiferencaQuestoes'] = df_validacao['Questoes'] - df_validacao['PontosSimulado']
 
-        df_validacao = pd.merge(df_questoes, df_simulado_pontos, on='RA', how='left')
-        df_validacao['DiferencaQuestoes'] = df_validacao['Questoes'] - df_validacao['PontosSimulado'].fillna(0)
+        if not df_validacao[df_validacao['DiferencaQuestoes'] != 0].empty:
+            st.subheader("⚠ Discrepâncias encontradas")
+            st.dataframe(
+                df_validacao[df_validacao['DiferencaQuestoes'] != 0]
+                [['ALUNO', 'RA', 'Questoes', 'PontosSimulado', 'DiferencaQuestoes']]
+            )
 
-        df_discrepancias = df_validacao[df_validacao['DiferencaQuestoes'] != 0]
+        # ===============================
+        # AJUSTE POSSIBLE POINTS (NULOS)
+        # ===============================
+        df['Possible Points Ajustado'] = df['Possible Points']
 
-        if not df_discrepancias.empty:
-            st.subheader("Alunos com Discrepâncias entre Questões Esperadas e Pontos do Simulado")
-            st.warning("Ajuste manual necessário.")
-            st.dataframe(df_discrepancias[['ALUNO', 'RA', 'Questoes', 'PontosSimulado', 'DiferencaQuestoes']])
-
-            st.subheader("Correção Manual de Pontos no Simulado")
-            with st.form("form_correcoes"):
-                novas_pontuacoes = {}
-
-                for _, row in df_discrepancias.iterrows():
-                    ra = row['RA']
-                    aluno = row['ALUNO']
-                    pontos_atual = row['PontosSimulado'] if pd.notna(row['PontosSimulado']) else 0
-                    esperado = row['Questoes']
-
-                    try:
-                        pontos_atual_float = float(pontos_atual)
-                    except:
-                        pontos_atual_float = 0.0
-
-                    esperado_float = float(esperado) if pd.notnull(esperado) else 0.0
-                    valor_inicial = min(pontos_atual_float, esperado_float)
-
-                    novo_valor = st.number_input(
-                        f"{aluno} (RA: {ra}) - Pontos atuais: {pontos_atual} | Esperado: {esperado}",
-                        min_value=0.0,
-                        max_value=esperado_float,
-                        value=valor_inicial,
-                        step=0.1,
-                        key=f"correcao_{ra}"
-                    )
-
-                    novas_pontuacoes[ra] = novo_valor
-
-                submitted = st.form_submit_button("Aplicar Correções")
-                if submitted:
-                    for ra, novo_ponto in novas_pontuacoes.items():
-                        df.loc[df['RA'] == ra, 'Possible Points'] = novo_ponto
-                    st.success("Correções aplicadas. Recalcule as notas.")
-
-        df['Earned Points Original'] = df['Earned Points'].fillna(0)
-        # Ajustar Possible Points para os alunos selecionados
         if alunos_ajustar:
             df['Possible Points Ajustado'] = df.apply(
-                lambda row: row['Possible Points'] - alunos_ajustar.get(row['RA'], 0),
+                lambda row: max(
+                    row['Possible Points'] - alunos_ajustar.get(row['RA'], 0),
+                    0
+                ),
                 axis=1
             )
-        else:
-            df['Possible Points Ajustado'] = df['Possible Points']
 
         # Evitar divisão por zero
-        df['Possible Points Ajustado'] = df['Possible Points Ajustado'].replace(0, np.nan)
+        df['Possible Points Ajustado'].replace(0, np.nan, inplace=True)
 
-        ids = df['RA'].astype(str).str.zfill(7)
+        # ===============================
+        # BÔNUS QUESTÕES ANULADAS
+        # ===============================
+        ids = df['RA']
         bonus_total = pd.Series(0, index=ids.unique())
 
         for q in questoes_anuladas:
-            coluna = f"#{q} Points Earned"
-            if coluna in df.columns:
-                ganhos = (df[coluna].fillna(0) == 0).astype(int)
-                bonus = pd.Series(ganhos.values, index=ids).groupby(level=0).sum()
+            col = f"#{q} Points Earned"
+            if col in df.columns:
+                bonus = (df[col].fillna(0) == 0).astype(int)
+                bonus = pd.Series(bonus.values, index=ids).groupby(level=0).sum()
                 bonus_total = bonus_total.add(bonus, fill_value=0)
 
         df['Bonus Anuladas'] = ids.map(bonus_total).fillna(0)
-        df['Earned Points Final'] = df['Earned Points Original'] + df['Bonus Anuladas']
-        df['NOTAS'] = np.minimum((df['Earned Points Final'] * 1.25) / df['Possible Points Ajustado'], 1).fillna(0) * 10
 
+        # ===============================
+        # NOTA FINAL
+        # ===============================
+        df['Earned Points Final'] = df['Earned Points'].fillna(0) + df['Bonus Anuladas']
 
-        st.subheader("Dados Originais com Notas")
-        st.dataframe(df)
+        df['NOTAS'] = (
+            (df['Earned Points Final'] * 1.25) /
+            df['Possible Points Ajustado']
+        ).clip(0, 1).fillna(0) * 10
 
-        df_base_local['RA'] = df_base_local['RA'].astype(str).str.zfill(7)
-        df['RA'] = df['RA'].astype(str).str.zfill(7)
+        # ===============================
+        # MERGE FINAL
+        # ===============================
+        df_final = df_base_local.merge(
+            df[['RA', 'NOTAS']],
+            on='RA',
+            how='left'
+        )
 
-        df_final = pd.merge(df_base_local, df[['RA', 'NOTAS']], on='RA', how='left')
         df_final['CODETAPA'] = codetapa
         df_final['CODPROVA'] = codprova
         df_final['TIPOETAPA'] = tipoetapa
         df_final['PROVA'] = prova
         df_final['ETAPA'] = etapa
 
-        colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA', 'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
-        df_final = df_final[colunas]
+        colunas = [
+            'CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC',
+            'DISCIPLINA', 'RA', 'ALUNO',
+            'ETAPA', 'PROVA', 'TIPOETAPA',
+            'CODETAPA', 'CODPROVA', 'NOTAS'
+        ]
 
-        return df_final
+        return df_final[colunas]
+
 
 
     # Interface Streamlit
@@ -290,7 +309,6 @@ def carregar():
                 else:
                     st.success("Nenhum aluno deixou questões em branco.")
 
-
                 etapa = "P3"
                 prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação'])
                 tipoetapa = 'N'
@@ -301,6 +319,7 @@ def carregar():
                 questoes_anuladas = [int(q.strip()) for q in questoes_anuladas_input.split(",") if q.strip().isdigit()]
 
                 if st.button("Calcular Notas com Anulações"):
+                    
                     df_limpo = limpar_dados(df_ajustado_zipgrade, prova, etapa, codetapa, codprova, tipoetapa, questoes_anuladas, disciplinas_excluidas, turma_selecionada)
                     
                     df_limpo['NOTAS'] = pd.to_numeric(df_limpo['NOTAS'], errors='coerce').round(2)
