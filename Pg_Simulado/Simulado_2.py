@@ -179,6 +179,7 @@ def aplicar_anuladas_e_calcular_notas(
 
     col_info = detectar_colunas_zipgrade(df_zip)
     points_cols = col_info['points_cols']
+    
     response_cols = col_info['response_cols']
 
     # soma possible points por RA
@@ -336,6 +337,24 @@ def carregar():
     col_info = detectar_colunas_zipgrade(df_ajustado)
     response_cols = col_info['response_cols']
     points_cols = col_info['points_cols']
+    # ---------- NOVA REGRA: Quantidade REAL de questões vem do ZipGrade ----------
+    # Cada coluna "#X Points Earned" representa 1 questão
+    qtd_questoes_zipgrade = len(points_cols)
+
+    # Criar tabela por aluno
+    df_questoes_zip = (
+        df_ajustado.groupby("RA")
+        .size()
+        .reset_index(name="Linhas")
+    )
+
+    # Adicionar total de questões por aluno (igual para todos)
+    df_questoes_zip["Questoes"] = qtd_questoes_zipgrade
+
+    st.subheader("📌 Quantidade de Questões Detectada pelo ZipGrade")
+    st.info(f"A prova possui **{qtd_questoes_zipgrade}** questões reais (detectadas pelas colunas '#X Points Earned').")
+    st.dataframe(df_questoes_zip)
+
 
     if response_cols:
         df_ajustado['Nao_Respondidas'] = df_ajustado[response_cols].isna().sum(axis=1)
