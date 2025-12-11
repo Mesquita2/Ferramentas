@@ -382,33 +382,6 @@ def carregar():
                 (df_base['TURMADISC'].isin(turma_selecionada)) &
                 (~df_base['DISCIPLINA'].isin(disciplinas_excluidas))
             ].copy()
-            # ---------- NOVA TABELA DE CONTROLE DE QUESTÕES ----------
-            # Tabela com questões esperadas por aluno
-            df_qtd = df_questoes.copy()
-            df_qtd = df_qtd.rename(columns={'Questoes': 'Questoes_Esperadas'})
-
-            # Quantas questões anuladas no total
-            qtd_anuladas = len(questoes_anuladas)
-
-            df_qtd['Questoes_Anuladas'] = qtd_anuladas
-            df_qtd['Questoes_Apos_Anuladas'] = df_qtd['Questoes_Esperadas'] - df_qtd['Questoes_Anuladas']
-
-            # Possible Points do ZipGrade (já ajustado se tiver alunos_ajustar)
-            df_possible = df_ajustado.groupby('RA')['Possible Points'].sum().reset_index()
-            df_possible = df_possible.rename(columns={'Possible Points': 'PossiblePoints_Atual'})
-
-            # Juntar com tabela de questões
-            df_qtd = pd.merge(df_qtd, df_possible, on='RA', how='left')
-
-            # Diferença final — se ≠ 0, significa divergência
-            df_qtd['Diferenca'] = df_qtd['Questoes_Apos_Anuladas'] - df_qtd['PossiblePoints_Atual'].fillna(0)
-
-            st.subheader("📊 Controle de Quantidade de Questões por Aluno")
-            st.info("Esta tabela mostra questões esperadas, anuladas e o total considerado no cálculo.")
-
-            st.dataframe(df_qtd[['RA', 'ALUNO', 'Questoes_Esperadas', 
-                                'Questoes_Anuladas', 'Questoes_Apos_Anuladas',
-                                'PossiblePoints_Atual', 'Diferenca']].sort_values('RA'))
 
 
             df_final, df_discrepancias, df_zip_processado = aplicar_anuladas_e_calcular_notas(
