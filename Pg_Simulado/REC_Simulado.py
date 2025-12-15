@@ -21,7 +21,7 @@ def carregar():
     def limpar_rec(df):
         if df is None:
             st.warning("Não existe arquivo REC, volte à página Inicial!")
-            return pd.DataFrame()
+            return pd.DataFrame(), pd.DataFrame()
 
         df_base = st.session_state["dados"].get(ARQUIVOBASE).copy()
 
@@ -33,17 +33,16 @@ def carregar():
         if "NOME" in df.columns:
             df.rename(columns={'NOME': 'ALUNO'}, inplace=True)
 
-        # Remove duplicados da planilha REC
+        # 🔍 Captura duplicados do arquivo REC
+        duplicados_rec = df[df.duplicated(subset=['RA'], keep=False)]
+
+        # Remove duplicados mantendo apenas 1
         df = df.drop_duplicates(subset=['RA'])
 
-        # MERGE para buscar turma
-        df = df.merge(
-            df_base[['RA', 'CODTURMA']],
-            on='RA',
-            how='left'
-        )
+        # Merge para buscar turma
+        df = df.merge(df_base[['RA', 'CODTURMA']], on='RA', how='left')
 
-        # 🚫 Remove duplicatas causadas pelo df_base (caso um RA apareça mais de 1 vez na base)
+        # Remove duplicatas causadas pela base
         df = df.drop_duplicates(subset=['RA'], keep='first')
 
         # Identifica RA sem turma
@@ -53,7 +52,8 @@ def carregar():
             st.dataframe(sem_turma)
             st.stop()
 
-        return df
+        return df, duplicados_rec
+
 
     # --------------------------
     # CABEÇALHO E RODAPÉ
@@ -62,7 +62,6 @@ def carregar():
         section = doc.sections[0]
         header = section.header
         paragraph = header.paragraphs[0]
-        section.header_distance = Inches(0.2)
         run = paragraph.add_run()
         run.add_picture(imagem_cabecalho, width=Inches(7.5), height=Inches(1))
 
@@ -70,12 +69,12 @@ def carregar():
         section = doc.sections[0]
         footer = section.footer
         paragraph = footer.paragraphs[0]
-        section.footer_distance = Inches(0.2)
         run = paragraph.add_run()
         run.add_picture(imagem_rodape, width=Inches(7.5), height=Inches(1))
 
+
     # --------------------------
-    # GERAR RELATÓRIO DE ASSINATURA
+    # GERA RELATÓRIO ASSINATURA
     # --------------------------
     def gerar_relatorio(df_filtrado, turmas_escolhidas):
         df = df_filtrado.copy()
@@ -120,6 +119,7 @@ def carregar():
         buf.seek(0)
         return buf
 
+
     # --------------------------
     # GERAR PLANILHA EXCEL
     # --------------------------
@@ -135,8 +135,9 @@ def carregar():
         out.seek(0)
         return out
 
+
     # --------------------------
-    # INTERFACE STREAMLIT
+    # INTERFACE
     # --------------------------
     st.title("Limpeza e Tratamento de NOTAS da REC")
 
@@ -150,8 +151,13 @@ def carregar():
         st.warning("Nenhum arquivo REC carregado!")
         st.stop()
 
-    # Faz limpeza e inclui turma automaticamente
-    df_rec = limpar_rec(df_cadastro.copy())
+    # --- Limpeza REC + captura duplicados ---
+    df_rec, duplicados_rec = limpar_rec(df_cadastro.copy())
+
+    # Exibe duplicados encontrados
+    if not duplicados_rec.empty:
+        st.error("⚠ Foram encontrados alunos duplicados na planilha REC enviada!")
+        st.dataframe(duplicados_rec)
 
     turmas = sorted(df_rec["CODTURMA"].unique().tolist())
 
@@ -174,7 +180,7 @@ def carregar():
     st.dataframe(df_filtrado[["RA", "ALUNO", "CODTURMA"]])
 
     # --------------------------
-    # BOTÕES DE DOWNLOAD
+    # DOWNLOADS
     # --------------------------
     excel = gerar_excel(df_filtrado)
     st.download_button(
