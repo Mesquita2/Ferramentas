@@ -8,7 +8,7 @@ from typing import List, Dict
 # Config
 # ---------------------------
 st.set_page_config(page_title="Tratamento de Notas - Simulado", layout="wide")
-EXCLUIR_PADRAO = r'(?:Projeto de Extensão|Seminários|Liga dos Campeões|Estágio|TCC|Trabalho de Conclusão de Curso)'
+EXCLUIR_PADRAO = r'(?:Projeto de Extensão|Seminários|Liga dos Campeões|Estágio|TCC|Trabalho de Conclusão de Curso|Métodologia da Pesquisa|Métodologia)'
 
 # ---------------------------
 # Util: carregar excel com cache
@@ -28,7 +28,6 @@ def carregar_excel_bytes(uploaded_file) -> pd.DataFrame:
 def preparar_base_alunos(df_alunos_raw: pd.DataFrame) -> pd.DataFrame:
     """Prepara a base de alunos: remove padrões e renomeia colunas se necessário."""
     df = df_alunos_raw.copy()
-    # Sevier para renomear se as colunas estiverem em nomes alternativos
     rename_map = {}
     if 'NOMEDISCIPLINA' in df.columns and 'DISCIPLINA' not in df.columns:
         rename_map['NOMEDISCIPLINA'] = 'DISCIPLINA'
@@ -39,93 +38,35 @@ def preparar_base_alunos(df_alunos_raw: pd.DataFrame) -> pd.DataFrame:
     if rename_map:
         df = df.rename(columns=rename_map)
 
-    # Filtrar padroes indesejados
     if 'DISCIPLINA' in df.columns:
         df = df[~df['DISCIPLINA'].astype(str).str.contains(EXCLUIR_PADRAO, case=False, na=False)].reset_index(drop=True)
 
-    # garantir colunas básicas existam
     for c in ['CURSO', 'TURMADISC', 'RA', 'ALUNO', 'DISCIPLINA']:
         if c not in df.columns:
             df[c] = np.nan
 
-    # padronizar RA
     df['RA'] = df['RA'].astype(str).fillna('').apply(lambda x: x.zfill(7) if x.strip() != '' else x)
     return df
-
-def calcula_qtd_questoes(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calcula numero de questoes por aluno seguindo regras:
-      - Administração: NUMCREDITOSCOB 4 -> 12, 2 -> 6
-      - Direito: idem
-      - Engenharia: por aluno 30 se tiver TURMADISC == '037C', senão 60 (não soma por disciplina)
-    Retorna df com colunas ['ALUNO','RA','Questoes'] (RA zeropadded)
-    """
-    df = df.copy()
-    df['Questoes'] = 0
-
-    credito_to_questoes = {4: 12, 2: 6}
-
-    mask_adm = df['CURSO'] == 'Bacharelado em Administração de Empresas'
-    mask_dir = df['CURSO'] == 'Bacharelado em Direito'
-    mask_eng = df['CURSO'] == 'Bacharelado em Engenharia de Software'
-
-    if 'NUMCREDITOSCOB' in df.columns:
-        df.loc[mask_adm, 'Questoes'] = df.loc[mask_adm, 'NUMCREDITOSCOB'].map(credito_to_questoes).fillna(0).astype(int)
-        df.loc[mask_dir, 'Questoes'] = df.loc[mask_dir, 'NUMCREDITOSCOB'].map(credito_to_questoes).fillna(0).astype(int)
-
-    # Engenharia: determinar por aluno
-    df.loc[mask_eng, 'TURMADISC'] = df.loc[mask_eng, 'TURMADISC'].astype(str).str.upper().str.strip()
-    alunos_eng = df.loc[mask_eng, ['ALUNO', 'RA', 'TURMADISC']].drop_duplicates()
-    if not alunos_eng.empty:
-        alunos_eng['Tem_037C'] = alunos_eng['TURMADISC'].fillna('').apply(lambda x: x.strip().upper() == '037C')
-        questoes_por_aluno = alunos_eng.groupby(['ALUNO', 'RA'])['Tem_037C'].any().reset_index()
-        questoes_por_aluno['Questoes'] = questoes_por_aluno['Tem_037C'].apply(lambda x: 30 if x else 60)
-        questoes_por_aluno = questoes_por_aluno.drop(columns='Tem_037C')
-    else:
-        questoes_por_aluno = pd.DataFrame(columns=['ALUNO','RA','Questoes'])
-
-    # Zerar engenharia na base original para não somar por disciplina
-    df.loc[mask_eng, 'Questoes'] = 0
-
-    # Somar ADM e DIR por aluno
-    if not df.loc[~mask_eng].empty and 'ALUNO' in df.columns and 'RA' in df.columns:
-        df_adm_dir = df.loc[~mask_eng].groupby(['ALUNO', 'RA'])['Questoes'].sum().reset_index()
-    else:
-        df_adm_dir = pd.DataFrame(columns=['ALUNO','RA','Questoes'])
-
-    # Concatenar e agrupar
-    df_final = pd.concat([df_adm_dir, questoes_por_aluno], ignore_index=True, sort=False)
-    if not df_final.empty:
-        df_final = df_final.groupby(['ALUNO','RA'], as_index=False)['Questoes'].sum()
-        df_final['RA'] = df_final['RA'].astype(str).str.zfill(7)
-    else:
-        df_final = pd.DataFrame(columns=['ALUNO','RA','Questoes'])
-
-    return df_final
 
 def ajustar_dataframe_zipgrade(df_zip: pd.DataFrame) -> pd.DataFrame:
     """
     Ajustes do DataFrame ZipGrade: padroniza RA, nomes e remove linhas inválidas.
-    Espera colunas como: 'Student ID' ou 'RA', 'Student First Name', 'Student Last Name'
     """
     df = df_zip.copy()
-    # definir RA a partir de Student ID ou RA
     if 'Student ID' in df.columns:
         df['Student ID'] = df['Student ID'].astype(str).fillna('').apply(lambda x: x.zfill(7) if x.strip() != '' else x)
         df.rename(columns={'Student ID': 'RA'}, inplace=True)
     elif 'RA' in df.columns:
         df['RA'] = df['RA'].astype(str).fillna('').apply(lambda x: x.zfill(7) if x.strip() != '' else x)
     else:
-        # criar RA vazio para não quebrar
         df['RA'] = ''
 
-    # montar nome do aluno
     first = df.get('Student First Name', pd.Series(['']*len(df)))
     last  = df.get('Student Last Name', pd.Series(['']*len(df)))
     df['NOMEALUNO'] = (first.fillna('') + ' ' + last.fillna('')).str.strip()
-    # filtrar linhas sem RA ou sem nome
+
     df = df[(df['RA'].astype(str) != '') & (df['NOMEALUNO'] != '')].copy()
-    # garantir colunas de pontos e earned existam
+
     if 'Earned Points' not in df.columns:
         df['Earned Points'] = 0
     if 'Possible Points' not in df.columns:
@@ -135,22 +76,16 @@ def ajustar_dataframe_zipgrade(df_zip: pd.DataFrame) -> pd.DataFrame:
 
 def detectar_colunas_zipgrade(df: pd.DataFrame) -> Dict[str, List[str]]:
     """
-    Detecta:
-      - points_cols: '#{n} Points Earned'
-      - response_cols: '#{n} Student Response' ou '#{n} Student Answer'
-    Retorna dicionario.
+    Detecta pontos e respostas no DataFrame (por arquivo).
     """
     points_cols = [c for c in df.columns if c.startswith('#') and 'Points Earned' in c]
     response_cols = [c for c in df.columns if c.startswith('#') and ('Student Response' in c or 'Student Answer' in c)]
-    # fallback: se nao houver response_cols, usar points_cols para estimar respostas
     if not response_cols and points_cols:
         response_cols = points_cols.copy()
     return {'points_cols': points_cols, 'response_cols': response_cols}
 
-
-
 def aplicar_anuladas_e_calcular_notas(
-    df_zip: pd.DataFrame,
+    df_zip_all: pd.DataFrame,
     df_alunos_base: pd.DataFrame,
     questoes_anuladas: List[int],
     alunos_ajustar: Dict[str, int],
@@ -161,121 +96,98 @@ def aplicar_anuladas_e_calcular_notas(
     tipoetapa: str
 ):
     """
-    Aplica anuladas e calcula NOTAS.
-    Retorna: df_final (por aluno), df_discrepancias (questoes vs possible points), df_zip_processado (com notas por linha)
+    Recebe df_zip_all (concat de todos os arquivos; cada linha tem coluna 'Questoes_Prova' e 'SourceFile').
+    Calcula bônus, NOTAS e retorna df_final, df_discrepancias, df_zip_all_processado.
     """
+    # base local apenas com RAs presentes no zip
     df_base_local = df_alunos_base.copy()
     df_base_local['RA'] = df_base_local['RA'].astype(str).str.zfill(7)
-
-    # limitar base aos RAs presentes
-    presentes = df_zip['RA'].astype(str).str.zfill(7).unique()
+    presentes = df_zip_all['RA'].astype(str).str.zfill(7).unique()
     df_base_local = df_base_local[df_base_local['RA'].isin(presentes)].copy()
 
-    # calcular questoess esperadas
-    df_questoes = calcula_qtd_questoes(df_base_local)
-
-    # garantir RA formatado no zip
-    df_zip['RA'] = df_zip['RA'].astype(str).str.zfill(7)
-
-    col_info = detectar_colunas_zipgrade(df_zip)
-    points_cols = col_info['points_cols']
-    
-    response_cols = col_info['response_cols']
-
-    # soma possible points por RA
-    df_simulado_pontos = df_zip.groupby('RA')['Possible Points'].sum().reset_index().rename(columns={'Possible Points': 'PontosSimulado'})
-
-    # merge para validação
+    # Construir df_questoes a partir da coluna 'Questoes_Prova' no df_zip_all
+    # Para cada RA, pegar valor único (já validado antes) -> Questoes
+    df_questoes = df_zip_all.groupby('RA')['Questoes_Prova'].first().reset_index().rename(columns={'Questoes_Prova': 'Questoes'})
     df_questoes['RA'] = df_questoes['RA'].astype(str).str.zfill(7)
-    df_simulado_pontos['RA'] = df_simulado_pontos['RA'].astype(str).str.zfill(7)
+
+    # soma possible points por RA (ajustado por alunos_ajustar)
+    df_zip_all['Possible Points Ajustado'] = df_zip_all['Possible Points']
+    if alunos_ajustar:
+        df_zip_all['Possible Points Ajustado'] = df_zip_all.apply(
+            lambda r: (r['Possible Points'] - alunos_ajustar.get(r['RA'], 0)) if pd.notna(r['Possible Points']) else r['Possible Points'],
+            axis=1
+        )
+    df_zip_all['Possible Points Ajustado'] = df_zip_all['Possible Points Ajustado'].replace(0, np.nan)
+
+    df_simulado_pontos = df_zip_all.groupby('RA')['Possible Points Ajustado'].sum().reset_index().rename(columns={'Possible Points Ajustado': 'PontosSimulado'})
+
+    # Merge para validação: Questoes (do Zip) x PontosSimulado
     df_validacao = pd.merge(df_questoes, df_simulado_pontos, on='RA', how='left')
     df_validacao['DiferencaQuestoes'] = df_validacao['Questoes'] - df_validacao['PontosSimulado'].fillna(0)
     df_discrepancias = df_validacao[df_validacao['DiferencaQuestoes'] != 0]
 
-    # preparar earned/possible
-    df_zip['Earned Points Original'] = df_zip.get('Earned Points', 0).fillna(0).astype(float)
+    # preparar earned points
+    df_zip_all['Earned Points Original'] = df_zip_all.get('Earned Points', 0).fillna(0).astype(float)
 
-    # ajustar Possible Points (por linha) com alunos_ajustar (map RA->qtdNaoRespondidas)
-    if alunos_ajustar:
-        df_zip['Possible Points Ajustado'] = df_zip.apply(
-            lambda r: (r['Possible Points'] - alunos_ajustar.get(r['RA'], 0)) if pd.notna(r['Possible Points']) else r['Possible Points'],
-            axis=1
-        )
+    # detectar colunas globais de pontos e respostas no df concatenado
+    points_cols_all = [c for c in df_zip_all.columns if c.startswith('#') and 'Points Earned' in c]
+    response_cols_all = [c for c in df_zip_all.columns if c.startswith('#') and ('Student Response' in c or 'Student Answer' in c)]
+    if not response_cols_all and points_cols_all:
+        response_cols_all = points_cols_all.copy()
+
+    # contagem de respostas por linha (usar response_cols_all)
+    if response_cols_all:
+        respostas_por_linha = df_zip_all[response_cols_all].notna().sum(axis=1)
+        df_zip_all = df_zip_all.assign(respostas_por_linha=respostas_por_linha)
+        respondidas_por_ra = df_zip_all.groupby('RA')['respostas_por_linha'].sum().to_dict()
     else:
-        df_zip['Possible Points Ajustado'] = df_zip['Possible Points']
+        respondidas_por_ra = {ra: 0 for ra in df_zip_all['RA'].unique()}
 
-    # evitar zeros
-    df_zip['Possible Points Ajustado'] = df_zip['Possible Points Ajustado'].replace(0, np.nan)
-
-    # calcular quantas respostas (nao NaN) por aluno usando response_cols
-    if response_cols:
-        # contagem por linha do número de respostas registradas
-        respostas_por_linha = df_zip[response_cols].notna().sum(axis=1)
-        # agora soma por RA -> total de respostas registradas por aluno (todas as linhas somadas)
-        respondidas_por_ra = df_zip.assign(respostas_por_linha=respostas_por_linha).groupby('RA')['respostas_por_linha'].sum().to_dict()
-    else:
-        # se não há colunas de resposta, considerar que todos responderam nada (0)
-        respondidas_por_ra = {ra: 0 for ra in df_zip['RA'].unique()}
-
-    # inicializar bonus_total por RA
-    unique_ras = np.unique(df_zip['RA'].astype(str))
+    # calcular bonus por RA usando as colunas '#{q} Points Earned' existentes
+    unique_ras = np.unique(df_zip_all['RA'].astype(str))
     bonus_total = pd.Series(0, index=unique_ras, dtype=int)
 
-    # Para cada questão anulada, somar bonus apenas para linhas em que:
-    # (col == 0) and (col notna) and (aluno respondeu ao menos 1 questao no conjunto)
     for q in questoes_anuladas:
         coluna = f"#{q} Points Earned"
-        if coluna in df_zip.columns:
+        if coluna in df_zip_all.columns:
             ganhos_linha = (
-                (df_zip[coluna] == 0) &         # nota zero (errou)
-                (df_zip[coluna].notna()) &      # não é NaN -> respondeu
-                (df_zip['RA'].map(lambda ra: respondidas_por_ra.get(ra, 0)) > 0)  # aluno respondeu ao menos 1 questão
+                (df_zip_all[coluna] == 0) &
+                (df_zip_all[coluna].notna()) &
+                (df_zip_all['RA'].map(lambda ra: respondidas_por_ra.get(ra, 0)) > 0)
             ).astype(int)
-            # agrupar por RA e somar
-            bonus = pd.Series(ganhos_linha.values, index=df_zip['RA'].astype(str)).groupby(level=0).sum()
+            bonus = pd.Series(ganhos_linha.values, index=df_zip_all['RA'].astype(str)).groupby(level=0).sum()
             bonus_total = bonus_total.add(bonus, fill_value=0).astype(int)
 
-    # mapear bonus para linhas
-    df_zip['Bonus Anuladas'] = df_zip['RA'].map(bonus_total).fillna(0).astype(int)
+    df_zip_all['Bonus Anuladas'] = df_zip_all['RA'].map(bonus_total).fillna(0).astype(int)
+    df_zip_all['Earned Points Final'] = df_zip_all['Earned Points Original'] + df_zip_all['Bonus Anuladas']
+    df_zip_all['NOTAS'] = np.minimum((df_zip_all['Earned Points Final'] * 1.25) / df_zip_all['Possible Points Ajustado'], 1).fillna(0) * 10
 
-    # calcular nota final por linha e depois agregar por RA
-    df_zip['Earned Points Final'] = df_zip['Earned Points Original'] + df_zip['Bonus Anuladas']
-    df_zip['NOTAS'] = np.minimum((df_zip['Earned Points Final'] * 1.25) / df_zip['Possible Points Ajustado'], 1).fillna(0) * 10
+    # Agregar NOTAS por RA -> média (compatibilidade)
+    df_notas_por_ra = df_zip_all.groupby('RA', as_index=False).agg({'NOTAS': 'mean'})
 
-    # Agregar NOTAS por RA -> média (mantendo compatibilidade com lógica prévia)
-    df_notas_por_ra = df_zip.groupby('RA', as_index=False).agg({'NOTAS': 'mean'})
-
-    # Merge com base de alunos (para colunas adicionais)
     df_final = pd.merge(df_base_local, df_notas_por_ra, on='RA', how='left')
 
-    # adicionar metadados
     df_final['CODETAPA'] = codetapa
     df_final['CODPROVA'] = codprova
     df_final['TIPOETAPA'] = tipoetapa
     df_final['PROVA'] = prova
     df_final['ETAPA'] = etapa
 
-    # selecionar colunas de saída padronizadas (apenas as que existem)
     colunas = ['CODCOLIGADA', 'CURSO', 'TURMADISC', 'IDTURMADISC', 'DISCIPLINA',
                'RA', 'ALUNO', 'ETAPA', 'PROVA', 'TIPOETAPA', 'CODETAPA', 'CODPROVA', 'NOTAS']
     existentes = [c for c in colunas if c in df_final.columns]
     df_final = df_final[existentes]
 
-    # arredondar notas
     if 'NOTAS' in df_final.columns:
         df_final['NOTAS'] = pd.to_numeric(df_final['NOTAS'], errors='coerce').round(2)
 
-    return df_final, df_discrepancias, df_zip
+    return df_final, df_discrepancias, df_zip_all
 
 # ---------------------------
-# Função principal: carregar() (ponto de entrada para pages)
+# Função principal: carregar()
 # ---------------------------
 def carregar():
-    """
-    Função de entrada que renderiza TODA a interface Streamlit (upload, filtros, cálculos e downloads).
-    Não retorna nada — mesma lógica de uso pelas pages do seu projeto.
-    """
-    st.title("Tratamento de Notas - Simulado (Versão Integrada)")
+    st.title("Tratamento de Notas - Simulado (ZipGrade como única fonte)")
 
     # verificar session_state com base de alunos
     if "dados" not in st.session_state or "alunosxdisciplinas" not in st.session_state["dados"]:
@@ -285,7 +197,6 @@ def carregar():
     df_alunos_raw = st.session_state["dados"].get("alunosxdisciplinas")
     df_base = preparar_base_alunos(df_alunos_raw)
 
-    # filtros: curso, turma, disciplinas
     cursos_disponiveis = sorted(df_base['CURSO'].dropna().unique())
     if not cursos_disponiveis:
         st.error("Nenhum curso disponível na base de alunos.")
@@ -300,7 +211,6 @@ def carregar():
         st.info("Selecione ao menos uma turma para continuar.")
         return
 
-    # disciplinas disponiveis (após filtros)
     disciplinas_disponiveis = sorted(
         df_base[
             (df_base['CURSO'] == curso_selecionado) &
@@ -310,80 +220,83 @@ def carregar():
 
     disciplinas_excluidas = st.multiselect("Disciplinas que NÃO são aplicadas no Simulado:", options=disciplinas_disponiveis, default=[])
 
-    # upload múltiplo
     uploaded_files = st.file_uploader("Envie um ou mais arquivos de notas (Excel - ZipGrade)", type=["xlsx"], accept_multiple_files=True)
     if not uploaded_files:
         st.info("Envie pelo menos um arquivo Excel com as notas (ZipGrade).")
         return
 
-    # carregar e concatenar
+    # Processar cada arquivo separadamente e detectar quantidade de questões por arquivo
     lista_dfs = []
+    ra_counts_map: Dict[str, List[Dict[str, int]]] = {}  # RA -> list of {'file': name, 'count': n}
     for uf in uploaded_files:
         df_temp = carregar_excel_bytes(uf)
-        if not df_temp.empty:
-            lista_dfs.append(df_temp)
+        if df_temp.empty:
+            continue
+        df_temp_adj = ajustar_dataframe_zipgrade(df_temp)
+        col_info = detectar_colunas_zipgrade(df_temp_adj)
+        points_cols = col_info['points_cols']
+        n_questions = len(points_cols)
+
+        # adicionar informações meta no df
+        df_temp_adj['Questoes_Prova'] = n_questions
+        df_temp_adj['SourceFile'] = getattr(uf, 'name', str(uf))
+
+        # popular mapa RA -> counts
+        for ra, nome in zip(df_temp_adj['RA'], df_temp_adj['NOMEALUNO']):
+            ra = str(ra).zfill(7)
+            entry = {'file': getattr(uf, 'name', str(uf)), 'count': n_questions, 'nome': nome}
+            ra_counts_map.setdefault(ra, []).append(entry)
+
+        lista_dfs.append(df_temp_adj)
+
     if not lista_dfs:
         st.error("Nenhum arquivo válido carregado.")
         return
 
-    df_original = pd.concat(lista_dfs, ignore_index=True, sort=False)
-    st.subheader("Dados Originais (consolidados)")
-    st.dataframe(df_original.head(200))
+    # Verificar conflitos: RA presente em mais de um arquivo com counts diferentes
+    conflitos = []
+    for ra, infos in ra_counts_map.items():
+        counts = sorted({info['count'] for info in infos})
+        if len(counts) > 1:
+            # conflito detectado
+            conflito_entry = {
+                'RA': ra,
+                'Nome': infos[0].get('nome', ''),
+                'Counts_Per_File': "; ".join([f"{i['file']} -> {i['count']}" for i in infos])
+            }
+            conflitos.append(conflito_entry)
 
-    # ajustar zipgrade
-    df_ajustado = ajustar_dataframe_zipgrade(df_original)
+    if conflitos:
+        st.subheader("⚠️ Conflitos detectados: aluno presente em múltiplos arquivos com quantidades diferentes de questões")
+        st.error("Você escolheu regra 4: isso é tratado como ERRO. Corrija os arquivos ou remova duplicatas.")
+        df_conflitos = pd.DataFrame(conflitos)
+        st.dataframe(df_conflitos)
+        return
 
-    # detectar colunas e contar NaNs por linha (respostas)
-    col_info = detectar_colunas_zipgrade(df_ajustado)
-    response_cols = col_info['response_cols']
-    points_cols = col_info['points_cols']
-    # ---------- NOVA REGRA: Quantidade REAL de questões vem do ZipGrade ----------
-    # Cada coluna "#X Points Earned" representa 1 questão
-    qtd_questoes_zipgrade = len(points_cols)
+    # Se não há conflitos, concatenar todos os dfs
+    df_all = pd.concat(lista_dfs, ignore_index=True, sort=False)
 
-    # Criar tabela por aluno
-    df_questoes_zip = (
-        df_ajustado.groupby("RA")
-        .size()
-        .reset_index(name="Linhas")
-    )
+    # Construir df_questoes por RA (agrupar e pegar o valor de Questoes_Prova)
+    df_questoes = df_all.groupby('RA')['Questoes_Prova'].first().reset_index().rename(columns={'Questoes_Prova': 'Questoes'})
+    df_questoes['RA'] = df_questoes['RA'].astype(str).str.zfill(7)
 
-    # Adicionar total de questões por aluno (igual para todos)
-    df_questoes_zip["Questoes"] = qtd_questoes_zipgrade
+    # Exibir tabela de controle de questões por aluno (questões detectadas, anuladas, ajustadas, possible points, diferença)
+    st.subheader("📊 Controle de Quantidade de Questões por Aluno (baseado no ZipGrade)")
+    qtd_anuladas = None  # será preenchido após input do usuário
+    st.info("A coluna 'Questoes' abaixo foi obtida diretamente de cada arquivo ZipGrade (cada coluna '#X Points Earned' = 1 questão).")
 
-    st.subheader("📌 Quantidade de Questões Detectada pelo ZipGrade")
-    st.info(f"A prova possui **{qtd_questoes_zipgrade}** questões reais (detectadas pelas colunas '#X Points Earned').")
-    st.dataframe(df_questoes_zip)
+    # Vamos exibir por agora: RA, NOMEALUNO (pegar do df_all), Questoes (detectadas), PossiblePoints_Atual (soma por RA)
+    df_possible_actual = df_all.groupby('RA')['Possible Points'].sum().reset_index().rename(columns={'Possible Points': 'PossiblePoints_Atual'})
+    # pegar nome do aluno (primeira ocorrência)
+    df_nome = df_all.groupby('RA')['NOMEALUNO'].first().reset_index()
+    df_qtd = pd.merge(df_questoes, df_nome, on='RA', how='left')
+    df_qtd = pd.merge(df_qtd, df_possible_actual, on='RA', how='left')
+    df_qtd['Questoes_Anuladas'] = 0  # placeholder, será atualizado depois
+    df_qtd['Questoes_Apos_Anuladas'] = df_qtd['Questoes'] - df_qtd['Questoes_Anuladas']
+    df_qtd['Diferenca'] = df_qtd['Questoes_Apos_Anuladas'] - df_qtd['PossiblePoints_Atual'].fillna(0)
+    st.dataframe(df_qtd[['RA', 'NOMEALUNO', 'Questoes', 'Questoes_Anuladas', 'Questoes_Apos_Anuladas', 'PossiblePoints_Atual', 'Diferenca']].sort_values('RA'))
 
-
-    if response_cols:
-        df_ajustado['Nao_Respondidas'] = df_ajustado[response_cols].isna().sum(axis=1)
-    else:
-        df_ajustado['Nao_Respondidas'] = 0
-
-    # exibir alunos que deixaram questões em branco (NaN)
-    df_nulos = df_ajustado[df_ajustado['Nao_Respondidas'] > 0][['RA', 'NOMEALUNO', 'Nao_Respondidas']].copy()
-    if not df_nulos.empty:
-        st.subheader("Alunos com questões não respondidas (NaN)")
-        st.warning(f"{len(df_nulos)} linhas com questões não respondidas.")
-        st.dataframe(df_nulos.sort_values("Nao_Respondidas", ascending=False))
-
-    # selecionar alunos para ajustar Possible Points (desconsiderar NaNs)
-    selecionados_nomes = st.multiselect(
-        "Selecionar alunos (por nome) para ajustar Possible Points (desconsiderar NaNs):",
-        options=df_nulos['NOMEALUNO'].unique().tolist()
-    )
-
-    # montar mapeamento RA -> qtd de NaNs para ajustar
-    alunos_ajustar = {}
-    if selecionados_nomes:
-        df_sel = df_nulos[df_nulos['NOMEALUNO'].isin(selecionados_nomes)].copy()
-        # somar NaNs por RA (caso haja múltiplas linhas)
-        mapeamento = df_sel.groupby('RA')['Nao_Respondidas'].sum().to_dict()
-        alunos_ajustar = {str(k).zfill(7): int(v) for k, v in mapeamento.items()}
-
-    # parametros da prova
-    etapa = "P3"
+    # Parâmetros da prova e inputs do usuário
     prova = st.selectbox('Selecione o tipo de prova', ['Prova', 'Recuperação'])
     tipoetapa = 'N'
     codetapa = 3
@@ -391,25 +304,58 @@ def carregar():
 
     questoes_anuladas_input = st.text_input("Informe questões anuladas (separadas por vírgula):", value="")
     questoes_anuladas = [int(q.strip()) for q in questoes_anuladas_input.split(",") if q.strip().isdigit()]
+    # atualizar a tabela de controle com quantidade de anuladas
+    qtd_anuladas = len(questoes_anuladas)
+    df_qtd['Questoes_Anuladas'] = qtd_anuladas
+    df_qtd['Questoes_Apos_Anuladas'] = df_qtd['Questoes'] - df_qtd['Questoes_Anuladas']
+    df_qtd['Diferenca'] = df_qtd['Questoes_Apos_Anuladas'] - df_qtd['PossiblePoints_Atual'].fillna(0)
+    st.subheader("📊 Controle (após informar questões anuladas)")
+    st.dataframe(df_qtd[['RA', 'NOMEALUNO', 'Questoes', 'Questoes_Anuladas', 'Questoes_Apos_Anuladas', 'PossiblePoints_Atual', 'Diferenca']].sort_values('RA'))
 
-    # botao calcular
+    # Exibir alunos com NaNs e permitir ajustes (desconsiderar NaNs -> ajustar Possible Points)
+    col_info_all = detectar_colunas_zipgrade(df_all)
+    response_cols_all = col_info_all['response_cols']
+
+    if response_cols_all:
+        df_all['Nao_Respondidas'] = df_all[response_cols_all].isna().sum(axis=1)
+    else:
+        df_all['Nao_Respondidas'] = 0
+
+    df_nulos = df_all[df_all['Nao_Respondidas'] > 0][['RA', 'NOMEALUNO', 'Nao_Respondidas']].copy()
+    if not df_nulos.empty:
+        st.subheader("Alunos com questões não respondidas (NaN)")
+        st.warning(f"{len(df_nulos)} linhas com questões não respondidas.")
+        st.dataframe(df_nulos.sort_values("Nao_Respondidas", ascending=False))
+
+    selecionados_nomes = st.multiselect(
+        "Selecionar alunos (por nome) para ajustar Possible Points (desconsiderar NaNs):",
+        options=df_nulos['NOMEALUNO'].unique().tolist()
+    )
+
+    alunos_ajustar = {}
+    if selecionados_nomes:
+        df_sel = df_nulos[df_nulos['NOMEALUNO'].isin(selecionados_nomes)].copy()
+        mapeamento = df_sel.groupby('RA')['Nao_Respondidas'].sum().to_dict()
+        alunos_ajustar = {str(k).zfill(7): int(v) for k, v in mapeamento.items()}
+
+    # Botão de calcular
     if st.button("Calcular Notas com Anulações"):
         with st.spinner("Processando..."):
-            # filtrar base alunos por curso/turma e excluir disciplinas
+            # filtrar base de alunos por curso/turma e excluir disciplinas (ainda usamos base para metadados)
             df_base_filtrada = df_base[
                 (df_base['CURSO'] == curso_selecionado) &
                 (df_base['TURMADISC'].isin(turma_selecionada)) &
                 (~df_base['DISCIPLINA'].isin(disciplinas_excluidas))
             ].copy()
 
-
+            # Chamar função principal de cálculo (df_all contém 'Questoes_Prova' por linha)
             df_final, df_discrepancias, df_zip_processado = aplicar_anuladas_e_calcular_notas(
-                df_zip=df_ajustado,
+                df_zip_all=df_all,
                 df_alunos_base=df_base_filtrada,
                 questoes_anuladas=questoes_anuladas,
                 alunos_ajustar=alunos_ajustar,
                 prova=prova,
-                etapa=etapa,
+                etapa="P3",
                 codetapa=codetapa,
                 codprova=codprova,
                 tipoetapa=tipoetapa
@@ -417,7 +363,7 @@ def carregar():
 
         # exibir discrepancias
         if not df_discrepancias.empty:
-            st.subheader("Discrepâncias entre questões esperadas e pontos do simulado")
+            st.subheader("Discrepâncias entre questões esperadas (Zip) e pontos do simulado")
             st.warning("Alguns alunos têm diferença entre Questoes esperadas e Pontos do Simulado. Ajuste manualmente se necessário.")
             st.dataframe(df_discrepancias)
 
