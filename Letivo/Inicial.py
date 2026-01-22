@@ -14,7 +14,10 @@ def carregar():
     agora = datetime.now()
     ano = agora.year
     semestre = 1 if agora.month <= 6 else 2
-    opcoes = [f"{ano}.{semestre}", f"{ano}.{1 if semestre == 2 else 2}"]
+    opcoes = [f"{ano}.{semestre}", 
+              f"{ano}.{1 if semestre == 2 else 2}",
+            ]
+    opcoes.append("2025.4")
 
     # Selectbox para usuário escolher
     periodo = st.selectbox("Selecione o período letivo:", opcoes, index=0)
@@ -67,7 +70,7 @@ def carregar():
 
     # Recupera o DataFrame do estado da sessão
     df_alunos = st.session_state["dados"].get("alunosxdisciplinas", pd.DataFrame())
-
+    df_alunos = limpeza_alunos_disciplinas(df_alunos)
 
     # Criar abas
     tab1, tab2 = st.tabs(["Visualizar dados", "Substituir arquivos"])
