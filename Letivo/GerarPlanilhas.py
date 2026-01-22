@@ -9,8 +9,44 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from googleapiclient.discovery import build
 
+def gerar_excel_unico(df, disciplinas, prova):
+        dfs = []
+
+        for disciplina in disciplinas:
+            turmas = sorted(
+                df[df["DISCIPLINA"] == disciplina]["TURMADISC"].unique()
+            )
+
+            for turma in turmas:
+                df_filtrado = df[
+                    (df["DISCIPLINA"] == disciplina) &
+                    (df["TURMADISC"] == turma)
+                ].copy()
+
+                colunas = [
+                    "CODCOLIGADA", "CURSO", "DISCIPLINA",
+                    "TURMADISC", "IDTURMADISC",
+                    "RA", "ALUNO"
+                ]
+                df_filtrado = df_filtrado[colunas]
+
+                # Colunas de identificação
+                df_filtrado[prova] = 0
+
+                dfs.append(df_filtrado)
+
+        df_final = pd.concat(dfs, ignore_index=True)
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            df_final.to_excel(writer, index=False, sheet_name="Notas")
+
+        output.seek(0)
+        output.name = f"notas_{prova}_todas_disciplinas.xlsx"
+        return output
 
 def carregar():
+    
     st.title("Gerador e Envio de Planilhas de Notas. ")
 
     # === Autenticação Gmail ===
@@ -88,7 +124,7 @@ def carregar():
         gmail_service.users().messages().send(userId="me", body={"raw": raw}).execute()
     
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     # === Botão para gerar e baixar arquivos XLSX ===
     import io
     import zipfile
@@ -173,3 +209,19 @@ def carregar():
                     time.sleep(1.5)
 
             st.success(f" Processo concluído! {total_envios} e-mails enviados com sucesso.")
+    
+    with col3: 
+        # Botao para excel unico de per especial
+        if st.button("PER-ESPECIAL Baixar Excel único"):
+            arquivo_excel_unico = gerar_excel_unico(
+                df=df_alunos,
+                disciplinas=disciplinas_selecionadas,
+                prova=prova
+            )
+
+            st.download_button(
+                label="Baixar planilha única",
+                data=arquivo_excel_unico,
+                file_name=arquivo_excel_unico.name,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
