@@ -8,7 +8,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import pydeck as pdk
-
 import numpy as np
 import pydeck as pdk
 
@@ -123,7 +122,31 @@ def mapa_alunos(df):
     )
 
     st.subheader("Mapa de Concentração por Estado")
-    st.pydeck_chart(deck)
+
+
+    alunos_estado["size"] = np.log1p(alunos_estado["Qtd Alunos"]) * 15
+
+
+    fig = px.scatter_mapbox(
+    alunos_estado,
+    lat="lat",
+    lon="lon",
+    size="size",
+    color="Qtd Alunos",
+    hover_name="ESTADO",
+    hover_data={"Qtd Alunos": True, "% Alunos": True, "lat": False, "lon": False},
+    zoom=3,
+    height=600,
+    )
+
+
+    fig.update_layout(
+    mapbox_style="carto-darkmatter", # pode trocar por "open-street-map"
+    margin={"r":0,"t":0,"l":0,"b":0},
+    )
+
+
+    st.plotly_chart(fig, use_container_width=True)
 
 def carregar():
 
