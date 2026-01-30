@@ -5,7 +5,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
-NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx", "rec_simulado.xlsx", "dashnotas.xlsx", "alunosxdisciplinas_geral.xlsx", "cancelamentospos", "alunospos.XLSX"]
+NOME_ARQUIVOS = ["alunosxdisciplinas.xlsx", "disciplina.xlsx", "rec.xlsx", "rec_simulado.xlsx", "dashnotas.xlsx", "alunosxdisciplinas_geral.xlsx", "cancelamentospos", "alunospos.XLSX", "AlunosPósporregião.xlsx", "relatorio_geografia_pos.xlsx"]
 
 def carregar_arquivo_drive(drive_service, nome_arquivo):
     response = drive_service.files().list(
