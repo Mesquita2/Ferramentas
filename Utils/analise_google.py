@@ -99,7 +99,7 @@ def carregar():
     df_csv = pd.read_csv(arquivo_csv)
 
     # Ajusta nomes padrão do CSV
-    df_csv.columns = df_csv.columns.str.strip()
+    df_csv.columns = df_csv.columns.str.replace('\ufeff', '', regex=False).str.strip()
 
     if "Member Email" not in df_csv.columns:
         st.error("O CSV precisa ter a coluna 'Member Email'")
