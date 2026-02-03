@@ -9,6 +9,19 @@ from datetime import datetime
 # 👉 USA SEU JEITO DE CARREGAR DADOS
 from carregamento import carregar_drive, carregar_totvs, limpeza_alunos_disciplinas
 
+def limpar_para_streamlit(df):
+    df = df.copy()
+
+    # Remove colunas "Unnamed"
+    df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
+
+    # Converte tudo pra string (Arrow ama isso)
+    for col in df.columns:
+        df[col] = df[col].astype(str)
+
+    return df
+
+
 
 # ------------------------------
 # FUNÇÃO PRINCIPAL
@@ -123,6 +136,10 @@ def carregar():
 
     # No curso mas não no CSV
     so_no_totvs = df_curso[~df_curso["EMAILALUNO"].isin(emails_csv)][["ALUNO", "EMAILALUNO"]]
+    
+    
+    so_no_csv = limpar_para_streamlit(so_no_csv)
+    so_no_totvs = limpar_para_streamlit(so_no_totvs)
 
     # ==============================
     # 6️⃣ EXIBIÇÃO
@@ -149,6 +166,9 @@ def carregar():
     st.subheader("Alunos com email fora do padrão institucional")
 
     fora_padrao = df_curso[~df_curso["EMAIL_VALIDO"]][["ALUNO", "EMAILALUNO"]]
+
+    fora_padrao = limpar_para_streamlit(fora_padrao)
+
 
     if fora_padrao.empty:
         st.success("Todos os alunos deste curso possuem email institucional.")
