@@ -6,7 +6,7 @@ from datetime import datetime
 # PROJETO SIMPLES – COMPARADOR
 # ==============================
 
-# USA SEU JEITO DE CARREGAR DADOS
+# 👉 USA SEU JEITO DE CARREGAR DADOS
 from carregamento import carregar_drive, carregar_totvs, limpeza_alunos_disciplinas
 
 
@@ -22,7 +22,7 @@ def carregar():
         st.session_state["dados"] = {}
 
     # ==============================
-    #  CARREGAR DADOS (SEU PADRÃO)
+    # 1️⃣ CARREGAR DADOS (SEU PADRÃO)
     # ==============================
     carregar_drive()
 
@@ -58,7 +58,7 @@ def carregar():
         st.success("Dados carregados.")
 
     # ==============================
-    #  DATAFRAME DE ALUNOS
+    # 2️⃣ DATAFRAME DE ALUNOS
     # ==============================
     df_alunos = st.session_state["dados"].get("alunosxdisciplinas_email", pd.DataFrame()).copy()
 
@@ -72,7 +72,7 @@ def carregar():
     df_alunos["EMAILALUNO"] = df_alunos["EMAILALUNO"].astype(str).str.strip().str.lower()
 
     # ==============================
-    #  UPLOAD DO CSV
+    # 3️⃣ UPLOAD DO CSV
     # ==============================
     st.divider()
     st.subheader("Envie o CSV de membros (export do Google)")
@@ -96,7 +96,7 @@ def carregar():
     df_csv["Member Email"] = df_csv["Member Email"].astype(str).str.strip().str.lower()
 
     # ==============================
-    # SELECT DE CURSO
+    # 4️⃣ SELECT DE CURSO
     # ==============================
     curso_escolhido = st.selectbox(
         "Selecione o curso",
@@ -106,9 +106,16 @@ def carregar():
     df_curso = df_alunos[df_alunos["CURSO"] == curso_escolhido].drop_duplicates("RA")
 
     # ==============================
-    # COMPARAÇÃO
+    # 5️⃣ COMPARAÇÃO
     # ==============================
-    emails_totvs = set(df_curso["EMAILALUNO"])
+    # ==============================
+    # REGRA: ACEITAR SOMENTE EMAIL INSTITUCIONAL
+    # ==============================
+    dominio_valido = "@somosicev.com"
+
+    df_curso["EMAIL_VALIDO"] = df_curso["EMAILALUNO"].str.endswith(dominio_valido)
+
+    emails_totvs = set(df_curso[df_curso["EMAIL_VALIDO"]]["EMAILALUNO"])  # só emails institucionais entram na comparação
     emails_csv = set(df_csv["Member Email"])
 
     # No CSV mas não no curso
@@ -117,14 +124,16 @@ def carregar():
     # No curso mas não no CSV
     so_no_totvs = df_curso[~df_curso["EMAILALUNO"].isin(emails_csv)][["ALUNO", "EMAILALUNO"]]
 
-    
+    # ==============================
+    # 6️⃣ EXIBIÇÃO
+    # ==============================
     st.divider()
     st.subheader(f"Resultados — {curso_escolhido}")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("### No CSV mas NÃO matriculados no curso")
+        st.markdown("###  No CSV mas NÃO matriculados no curso")
         st.dataframe(so_no_csv, use_container_width=True)
         st.metric("Total", len(so_no_csv))
 
@@ -133,24 +142,40 @@ def carregar():
         st.dataframe(so_no_totvs, use_container_width=True)
         st.metric("Total", len(so_no_totvs))
 
+    # ==============================
+    # 8️⃣ EMAILS FORA DO PADRÃO
+    # ==============================
+    st.divider()
+    st.subheader("Alunos com email fora do padrão institucional")
 
-        
+    fora_padrao = df_curso[~df_curso["EMAIL_VALIDO"]][["ALUNO", "EMAILALUNO"]]
+
+    if fora_padrao.empty:
+        st.success("Todos os alunos deste curso possuem email institucional.")
+    else:
+        st.warning("Existem alunos com email diferente de @somosicev.com")
+        st.dataframe(fora_padrao, use_container_width=True)
+
+        # ==============================
+        # 7️⃣ GERAR CSV NO TEMPLATE DO GOOGLE
+        # ==============================
         if not so_no_totvs.empty:
-            # CSV no template padrão do Google Groups
+            df_validos_export = so_no_totvs[so_no_totvs["EMAILALUNO"].str.endswith("@somosicev.com")]
+
+
             df_export = pd.DataFrame({
                 "Group Email [Required]": "substituir@somosicev.com",
-                "Member Email": so_no_totvs["EMAILALUNO"].values,
+                "Member Email": df_validos_export["EMAILALUNO"].values,
                 "Member Type": "USER",
                 "Member Role": "MEMBER",
             })
 
-
             csv_bytes = df_export.to_csv(index=False).encode("utf-8")
 
-
             st.download_button(
-            " Baixar CSV pronto para importar no Google",
-            data=csv_bytes,
-            file_name=f"membros_para_adicionar_{curso_escolhido}.csv",
-            mime="text/csv"
+                "Baixar CSV pronto para importar no Google",
+                data=csv_bytes,
+                file_name=f"membros_para_adicionar_{curso_escolhido}.csv",
+                mime="text/csv"
             )
+
