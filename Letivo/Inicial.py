@@ -60,6 +60,21 @@ def carregar():
         else:
             st.session_state["dados"]["professores"] = df_prof
             st.success("Dados de professores carregados.")
+            
+        # ======================
+        alunos_dados = carregar_totvs("caminho_alunos_dados", periodo)
+
+        if isinstance(alunos_dados, dict):
+            alunos_lista = list(alunos_dados.values())
+        else:
+            alunos_lista = alunos_dados
+
+        df_alunos_dados = pd.DataFrame(alunos_lista)
+        if df_alunos_dados is None or df_alunos_dados.empty:
+            st.warning("Nenhum dado retornado do TOTVS para alunos.")
+        else:
+            st.session_state["dados"]["alunosxdisciplinas_email"] = df_alunos_dados
+            st.success("Dados de alunos carregados.")
 
         # === Atualiza o período salvo ===
         st.session_state["periodo_carregado"] = periodo

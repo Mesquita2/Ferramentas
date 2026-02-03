@@ -30,49 +30,9 @@ def limpar_para_streamlit(df):
 def carregar():
     st.title("Comparador de Membros (CSV) x Alunos por Curso")
 
-    # Garante estrutura no session_state
-    if "dados" not in st.session_state:
-        st.session_state["dados"] = {}
-
-    # ==============================
-    # 1️⃣ CARREGAR DADOS (SEU PADRÃO)
-    # ==============================
+    
     carregar_drive()
 
-    agora = datetime.now()
-    ano = agora.year
-    semestre = 1 if agora.month <= 6 else 2
-
-    opcoes = [f"{ano}.{semestre}", f"{ano}.{1 if semestre == 2 else 2}"]
-    periodo = st.selectbox("Selecione o período letivo:", opcoes, index=0)
-
-    if (
-        "periodo_carregado" not in st.session_state
-        or st.session_state["periodo_carregado"] != periodo
-    ):
-        st.info("Carregando dados do TOTVS...")
-
-        arquivo = carregar_totvs("caminho_alunos_dados", periodo)
-
-        if isinstance(arquivo, dict):
-            lista = list(arquivo.values())
-        else:
-            lista = arquivo
-
-        df = pd.DataFrame(lista)
-
-        if df is None or df.empty:
-            st.warning("Nenhum dado retornado do TOTVS.")
-            return
-
-        df_limpo = limpeza_alunos_disciplinas(df)
-        st.session_state["dados"]["alunosxdisciplinas_email"] = df_limpo
-        st.session_state["periodo_carregado"] = periodo
-        st.success("Dados carregados.")
-
-    # ==============================
-    # 2️⃣ DATAFRAME DE ALUNOS
-    # ==============================
     df_alunos = st.session_state["dados"].get("alunosxdisciplinas_email", pd.DataFrame()).copy()
 
     if df_alunos.empty:
@@ -81,7 +41,7 @@ def carregar():
 
     # Padronização
     df_alunos.columns = df_alunos.columns.str.strip().str.upper()
-    df_alunos["CURSO"] = df_alunos["CURSO"].astype(str).str.strip().str.upper()
+    df_alunos["NOMECURSO"] = df_alunos["NOMECURSO"].astype(str).str.strip().str.upper()
     df_alunos["EMAILALUNO"] = df_alunos["EMAILALUNO"].astype(str).str.strip().str.lower()
 
     # ==============================
@@ -113,10 +73,10 @@ def carregar():
     # ==============================
     curso_escolhido = st.selectbox(
         "Selecione o curso",
-        sorted(df_alunos["CURSO"].unique())
+        sorted(df_alunos["NOMECURSO"].unique())
     )
 
-    df_curso = df_alunos[df_alunos["CURSO"] == curso_escolhido].drop_duplicates("RA")
+    df_curso = df_alunos[df_alunos["NOMECURSO"] == curso_escolhido].drop_duplicates("RA")
 
     # ==============================
     # 5️⃣ COMPARAÇÃO
@@ -135,7 +95,7 @@ def carregar():
     so_no_csv = df_csv[~df_csv["Member Email"].isin(emails_totvs)][["Member Name", "Member Email"]]
 
     # No curso mas não no CSV
-    so_no_totvs = df_curso[~df_curso["EMAILALUNO"].isin(emails_csv)][["ALUNO", "EMAILALUNO"]]
+    so_no_totvs = df_curso[~df_curso["EMAILALUNO"].isin(emails_csv)][["NOMEALUNO", "EMAILALUNO"]]
     
     
     so_no_csv = limpar_para_streamlit(so_no_csv)
@@ -165,7 +125,7 @@ def carregar():
     st.divider()
     st.subheader("Alunos com email fora do padrão institucional")
 
-    fora_padrao = df_curso[~df_curso["EMAIL_VALIDO"]][["ALUNO", "EMAILALUNO"]]
+    fora_padrao = df_curso[~df_curso["EMAIL_VALIDO"]][["NOMEALUNO", "EMAILALUNO"]]
 
     fora_padrao = limpar_para_streamlit(fora_padrao)
 
