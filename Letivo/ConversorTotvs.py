@@ -131,11 +131,11 @@ def carregar():
         Retorna o DataFrame limpo e um dicionário com metadados das colunas.
         """
 
-        mapa_etapa = {"P1": 1, "P2": 2, "P3": 3}
-        mapa_prova = {"PROVA": 1, "RECUPERAÇÃO": 2, "QUIZZ": 3}
+        mapa_etapa = {"P1": 1, "P2": 2, "P3": 3, "P5": 5}
+        mapa_prova = {"PROVA": 1, "RECUPERAÇÃO": 2, "QUIZZ": 3, "RECFINAL": 1}
 
         # Aceita colunas como "P1", "Quiz P1", "Rec P2", "Recuperação P3", "Prova P1"
-        padrao = re.compile(r"(?:(QUIZ|QUIZZ|RECUPERAÇÃO|REC|PROVA)\s*)?(P1|P2|P3)", re.IGNORECASE)
+        padrao = re.compile(r"(?:(QUIZ|QUIZZ|RECUPERAÇÃO|REC|PROVA|RECFINAL)\s*)?(P1|P2|P3|P5)", re.IGNORECASE)
 
         mapeamento = {}
 
@@ -154,9 +154,10 @@ def carregar():
                     tipo = "QUIZZ"
                 elif tipo_raw == "PROVA":
                     tipo = "PROVA"
+                elif tipo_raw == "RECFINAL":
+                    tipo = "RECFINAL"
                 else: 
                     st.warning("COLUNA NAO RECONHECIDA")
-
                     
                 mapeamento[col] = {
                     "etapa": etapa,
@@ -227,7 +228,7 @@ def carregar():
                     st.info(f"{prova_tipo} {etapa} — {disciplina}: sem notas válidas — pulando.")
                     continue
                 
-                if etapa == "P1" or etapa == "P2" or etapa == "P3":
+                if etapa == "P1" or etapa == "P2" or etapa == "P3" or etapa == "P5":
                     df_temp["NOTAS"] = df_temp["NOTAS"].fillna(0)
                 else: 
                     "ta de boa"
