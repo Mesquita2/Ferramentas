@@ -170,7 +170,7 @@ def carregar():
             total_envios = 0
 
             for disciplina in disciplinas_selecionadas:
-                st.write("Selecionada:", repr(disciplina))
+                st.write("Selecionada:", repr(disciplina)) # ====
                 
                 st.markdown(f"### {disciplina}")
                 prof_disciplina = df_professor[df_professor["DISCIPLINA"] == disciplina]    
