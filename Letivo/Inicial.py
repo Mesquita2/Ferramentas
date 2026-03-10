@@ -45,6 +45,7 @@ def carregar():
             df_limpo = limpeza_alunos_disciplinas(df)
             st.session_state["dados"]["alunosxdisciplinas"] = df_limpo
             st.success("Dados de alunos x disciplinas carregados.")
+            st.write(df_limpo.columns)
 
         # === 2. Buscar dados de professores ===
         professores = carregar_totvs("caminho_periodo_professores", periodo)
@@ -95,7 +96,7 @@ def carregar():
         for chave, df in st.session_state["dados"].items():
             st.subheader(f"{chave}")
             colunas = {
-                "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "NOME_SOCIAL", "RA"],
+                "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "NOME_SOCIAL", "RA", "DISCIPLINA"],
                 "professores": ["CODPROF","PROFESSOR","CURSO", "DISCIPLINA"],
                 "disciplina": ["CODTURMA", "NOME", "IDMOODLE"],
                 "rec": ["DISCIPLINA", "NOME"],
