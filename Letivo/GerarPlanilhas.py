@@ -159,12 +159,21 @@ def carregar():
     with col2:
         # === Botão único para envio ===
         if st.button("Gerar e enviar planilhas para todas as disciplinas selecionadas"):
+            #df_professor = pd.DataFrame(df_professor)
+            
+            st.write(df_professor.columns)
+            st.dataframe(df_professor[["PROFESSOR", "DISCIPLINA", "EMAIL"]])
+            df_professor["DISCIPLINA"] = df_professor["DISCIPLINA"].str.strip().str.upper()
+            df_alunos["DISCIPLINA"] = df_alunos["DISCIPLINA"].str.strip().str.upper()
+            
             remetente = "me"
             total_envios = 0
 
             for disciplina in disciplinas_selecionadas:
+                st.write("Selecionada:", repr(disciplina))
+                
                 st.markdown(f"### {disciplina}")
-                prof_disciplina = df_professor[df_professor["DISCIPLINA"] == disciplina]
+                prof_disciplina = df_professor[df_professor["DISCIPLINA"] == disciplina]    
 
                 if prof_disciplina.empty:
                     st.warning(f"Nenhum professor encontrado para {disciplina}.")
