@@ -160,9 +160,7 @@ def carregar():
         # === Botão único para envio ===
         if st.button("Gerar e enviar planilhas para todas as disciplinas selecionadas"):
             #df_professor = pd.DataFrame(df_professor)
-            
-            st.write(df_professor.columns)
-            st.dataframe(df_professor[["PROFESSOR", "DISCIPLINA", "EMAIL"]])
+        
             df_professor["DISCIPLINA"] = df_professor["DISCIPLINA"].str.strip().str.upper()
             df_alunos["DISCIPLINA"] = df_alunos["DISCIPLINA"].str.strip().str.upper()
             
