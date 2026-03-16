@@ -103,6 +103,10 @@ def carregar():
         on="CODDISC",
         how="left"
     )
+    
+    df_merge = df_merge.drop_duplicates(
+        subset=["RA", "CODDISC", "TURMADISC"]
+    )
 
     # ==============================
     # Seleção de curso
