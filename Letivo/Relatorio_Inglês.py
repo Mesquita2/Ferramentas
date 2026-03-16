@@ -11,6 +11,14 @@ def carregar():
     imagem_rodape = "./Endereço.jpeg"
     imagem_cabecalho = "./Logo.jpg"
     ARQUIVOBASE = "alunosxdisciplinas_geral"
+    
+    import unicodedata
+
+    def normalizar_texto(s):
+        s = str(s).strip().lower()
+        s = unicodedata.normalize("NFKD", s)
+        s = "".join(c for c in s if not unicodedata.combining(c))
+        return s
 
     def gerar_relatorio_assinatura(df_alunos, curso, periodo, turma, data_hoje, imagem_cabecalho, imagem_rodape):
         data_hoje = data_hoje.strftime("%d/%m/%Y")
@@ -524,8 +532,22 @@ def carregar():
                             file_name=f"Relatorio_Notas_{prova}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
+
     with tab3:
-        st.subheader("Formatar para Questionário (ZipGrade/Google Forms) — DEBUG e Formatar")
+        st.header("Formatar para Questionário (ZipGrade/Google Forms)")
+
+        # tentar localizar df_base no session_state conforme seu padrão
+        df_base = None
+        if "dados" in st.session_state and isinstance(st.session_state["dados"], dict):
+            df_base = st.session_state["dados"].get("alunosxdisciplinas")
+            df_base = df_base.drop_duplicates(subset=['RA']) if df_base is not None else None
+        if df_base is None:
+            st.warning("df_base não encontrado em session_state. Carregue o banco 'alunosxdisciplinas' antes.")
+            st.stop()
+
+        st.write("Colunas do banco (df_base):", df_base.columns.tolist())
+        st.dataframe(df_base.head(6))
+
         uploaded_file_format = st.file_uploader(
             "Envie o arquivo de notas (Excel/CSV)",
             type=["xlsx", "csv"],
@@ -536,21 +558,23 @@ def carregar():
             st.info("Envie um arquivo para formatar (aba Formatar).")
         else:
             import io
-            # leitura robusta
+            import re
+            import unicodedata
+
+            # ---------- leitura robusta ----------
             try:
                 name = str(uploaded_file_format.name).lower()
-                if name.endswith(".xlsx"):
-                    df_env = pd.read_excel(uploaded_file_format, engine="openpyxl")
+                if name.endswith('.xlsx'):
+                    df_env = pd.read_excel(uploaded_file_format, engine='openpyxl')
                 else:
-                    # tenta ; então , então utf-8/latin1
                     try:
-                        df_env = pd.read_csv(uploaded_file_format, sep=";")
+                        df_env = pd.read_csv(uploaded_file_format, sep=';')
                     except Exception:
                         try:
-                            df_env = pd.read_csv(uploaded_file_format, sep=",")
+                            df_env = pd.read_csv(uploaded_file_format, sep=',')
                         except Exception:
                             uploaded_file_format.seek(0)
-                            df_env = pd.read_csv(uploaded_file_format, sep=",", encoding="latin1")
+                            df_env = pd.read_csv(uploaded_file_format, sep=',', encoding='latin1')
             except Exception as e:
                 st.error(f"Erro ao ler o arquivo enviado: {e}")
                 df_env = None
@@ -558,112 +582,249 @@ def carregar():
             if df_env is None:
                 st.warning("Não foi possível ler o arquivo. Verifique o formato/encoding.")
             else:
-                # ----- DIAGNÓSTICO RÁPIDO -----
-                st.write("### Diagnóstico rápido")
+                st.write("### Diagnóstico rápido (arquivo enviado)")
                 st.write("Colunas detectadas:")
                 st.write(df_env.columns.tolist())
-                st.write("Preview (10 linhas):")
-                st.dataframe(df_env.head(10))
-                buf = io.StringIO()
-                df_env.info(buf=buf)
-                st.text(buf.getvalue())
-                st.write("Contagem de valores não-nulos por coluna:")
-                st.write(df_env.notnull().sum())
+                st.dataframe(df_env.head(6))
 
-                # opção para usar ajustes_dataframe (útil para testar se ela filtra tudo)
-                usar_ajustes = st.checkbox("Usar ajustes_dataframe() (se existir)", value=False)
-                if usar_ajustes:
+                # ---------- utilidades ----------
+                def find_column(df, candidates):
+                    cols = df.columns.tolist()
+                    for cand in candidates:
+                        for c in cols:
+                            if c.strip().lower() == cand.strip().lower():
+                                return c
+                    # busca por substring
+                    for cand in candidates:
+                        for c in cols:
+                            if cand.strip().lower() in c.strip().lower():
+                                return c
+                    return None
+
+                def normalize_text(s):
+                    """Lower, strip, remove accents, collapse spaces."""
+                    if pd.isna(s):
+                        return ""
+                    s = str(s).strip().lower()
+                    # normalize unicode (remove accents)
+                    s = unicodedata.normalize("NFKD", s)
+                    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+                    # collapse multiple spaces
+                    s = re.sub(r"\s+", " ", s)
+                    return s
+
+                def normalize_email(e):
+                    if pd.isna(e):
+                        return ""
+                    e = str(e).strip().lower()
+                    # remove stray spaces
+                    e = re.sub(r"\s+", "", e)
+                    return e
+
+                # ---------- detectar colunas relevantes ----------
+                col_nome_env = find_column(df_env, ['Nome completo', 'Nome', 'Aluno', 'Full Name', 'name'])
+                col_email_env = find_column(df_env, ['Email institucional', 'Email', 'E-mail', 'email', 'E-mail institucional'])
+                col_periodo_env = find_column(df_env, ['Período', 'Periodo', 'Período atual', 'Periodo atual', 'Período letivo'])
+
+                # colunas do banco (conforme você descreveu)
+                ra_col_base = find_column(df_base, ['RA', 'Ra', 'ra', 'registro', 'matricula'])
+                nome_col_base = find_column(df_base, ['Aluno', 'NOMEALUNO', 'Nome completo', 'Nome', 'ALUNO'])
+                email_col_base = find_column(df_base, ['E-mail', 'EMAILALUNO', 'Email institucional', 'Email', 'email'])
+                periodo_col_base = find_column(df_base, ['Período letivo', 'Periodo letivo', 'PERIODO', 'Periodo', 'Período'])
+
+                if col_nome_env is None and col_email_env is None:
+                    st.error('Não foi possível localizar colunas de nome ou email no arquivo enviado.')
+                    st.stop()
+
+                # ---------- cópias de trabalho ----------
+                df_env_proc = df_env.copy()
+                df_base_proc = df_base.copy()
+
+                # ---------- normalização ----------
+                if col_email_env:
+                    df_env_proc[col_email_env] = df_env_proc[col_email_env].apply(normalize_email)
+                if col_nome_env:
+                    df_env_proc[col_nome_env] = df_env_proc[col_nome_env].apply(normalize_text)
+                if col_periodo_env:
+                    df_env_proc[col_periodo_env] = df_env_proc[col_periodo_env].astype(str).fillna("").str.strip()
+
+                if email_col_base:
+                    df_base_proc[email_col_base] = df_base_proc[email_col_base].apply(normalize_email)
+                if nome_col_base:
+                    df_base_proc[nome_col_base] = df_base_proc[nome_col_base].apply(normalize_text)
+                if periodo_col_base:
+                    df_base_proc[periodo_col_base] = df_base_proc[periodo_col_base].astype(str).fillna("").str.strip()
+
+                # ---------- MATCH 1: email + periodo (se possível) ----------
+                merged_list = []   # guardará os encontrados
+                unmatched = df_env_proc.copy()
+
+                if col_email_env and email_col_base and col_periodo_env and periodo_col_base:
+                    m1 = unmatched.merge(
+                        df_base_proc,
+                        left_on=[col_email_env, col_periodo_env],
+                        right_on=[email_col_base, periodo_col_base],
+                        how='left',
+                        suffixes=('_env','_base'),
+                        indicator='merge_email_period'
+                    )
+                    found_m1 = m1[m1['merge_email_period'] == 'both'].copy()
+                    if not found_m1.empty:
+                        merged_list.append(found_m1)
+                    # manter só os que não encontraram
+                    unmatched = m1[m1['merge_email_period'] != 'both'].drop(columns=['merge_email_period'])
+                # else: pular esta etapa
+
+                # ---------- MATCH 2: email apenas ----------
+                if col_email_env and email_col_base and len(unmatched) > 0:
+                    m2 = unmatched.merge(
+                        df_base_proc,
+                        left_on=col_email_env,
+                        right_on=email_col_base,
+                        how='left',
+                        suffixes=('_env','_base'),
+                        indicator='merge_email'
+                    )
+                    found_m2 = m2[m2['merge_email'] == 'both'].copy()
+                    if not found_m2.empty:
+                        merged_list.append(found_m2)
+                    unmatched = m2[m2['merge_email'] != 'both'].drop(columns=[c for c in ['merge_email'] if c in m2.columns])
+
+                # ---------- MATCH 3: nome normalizado (fallback) ----------
+                # garantir que col_nome_env e nome_col_base existam
+                if col_nome_env and nome_col_base and len(unmatched) > 0:
+                    # normalize already applied above
+                    m3 = unmatched.merge(
+                        df_base_proc,
+                        left_on=col_nome_env,
+                        right_on=nome_col_base,
+                        how='left',
+                        suffixes=('_env','_base'),
+                        indicator='merge_nome'
+                    )
+                    found_m3 = m3[m3['merge_nome'] == 'both'].copy()
+                    if not found_m3.empty:
+                        merged_list.append(found_m3)
+                    nao_encontrados = m3[m3['merge_nome'] != 'both'].copy()
+                else:
+                    # se não puder fazer match por nome, tudo o que sobrou é não encontrado
+                    nao_encontrados = unmatched.copy()
+
+                # ---------- concatenar TODOS os encontrados ----------
+                if merged_list:
+                    df_encontrados = pd.concat(merged_list, ignore_index=True, sort=False)
+                else:
+                    df_encontrados = pd.DataFrame()
+
+                # garantir df_nao_encontrados definido
+                df_nao_encontrados = nao_encontrados if 'nao_encontrados' in locals() else pd.DataFrame()
+
+                # ---------- extrair RA, nome e período (fallback de colunas) ----------
+                def get_first_existing(row, candidates):
+                    for c in candidates:
+                        if c and (c in row) and pd.notna(row[c]) and str(row[c]).strip() != '':
+                            return row[c]
+                    return ''
+
+                ra_candidates = [ra_col_base, 'RA', 'Ra', 'ra']
+                nome_candidates = [nome_col_base, 'Aluno', 'NOMEALUNO', col_nome_env]
+                periodo_candidates = [col_periodo_env, periodo_col_base, 'Período letivo', 'Periodo letivo', 'PERIODO']
+
+                # prepara df_encontrados com colunas extraídas
+                if not df_encontrados.empty:
+                    df_encontrados['RA_extracted'] = df_encontrados.apply(lambda r: get_first_existing(r, ra_candidates), axis=1)
+                    df_encontrados['NOME_extracted'] = df_encontrados.apply(lambda r: get_first_existing(r, nome_candidates), axis=1)
+                    df_encontrados['PERIODO_extracted'] = df_encontrados.apply(lambda r: get_first_existing(r, periodo_candidates), axis=1)
+                else:
+                    df_encontrados = pd.DataFrame(columns=['RA_extracted', 'NOME_extracted', 'PERIODO_extracted'])
+
+                # ---------- formatar Student ID (RA) como 7 dígitos sem caracteres ----------
+                def fmt_ra(v):
                     try:
-                        df_adj = ajustes_dataframe(df_env.copy())
-                        st.success("ajustes_dataframe() aplicada.")
-                        st.write("Linhas após ajustes_dataframe:", len(df_adj))
-                    except Exception as e:
-                        st.warning(f"ajustes_dataframe() não pôde ser executada: {e}")
-                        df_adj = df_env.copy()
-                else:
-                    df_adj = df_env.copy()
+                        s = str(v)
+                        s = re.sub(r"\D", "", s)
+                        return s.zfill(7) if s != '' else ''
+                    except Exception:
+                        return ''
 
-                # mostrar colunas candidatas a nome e RA
-                possíveis_nomes = [c for c in df_adj.columns if any(k in c.lower() for k in ['nome','aluno','name'])]
-                possíveis_ras = [c for c in df_adj.columns if any(k in c.lower() for k in ['ra','student','id'])]
+                df_encontrados['Student ID'] = df_encontrados['RA_extracted'].apply(fmt_ra)
 
-                st.write("Possíveis colunas de nome encontradas:", possíveis_nomes)
-                st.write("Possíveis colunas RA/ID encontradas:", possíveis_ras)
+                # dividir nome em First/Last
+                # usar nome original do banco em CAIXA ALTA
+                df_encontrados['NOME_FINAL'] = df_encontrados[nome_col_base].astype(str).str.upper().str.strip()
+                split_nome = df_encontrados['NOME_FINAL'].str.split(n=1, expand=True)
+                df_encontrados['First Name'] = split_nome.iloc[:, 0].fillna('') if split_nome.shape[1] >= 1 else ''
+                df_encontrados['Last Name'] = split_nome.iloc[:, 1].fillna('') if split_nome.shape[1] > 1 else ''
 
-                # --- Construir NOMEALUNO se não existir ---
-                if 'NOMEALUNO' not in df_adj.columns or df_adj['NOMEALUNO'].isna().all():
-                    # tenta colunas comuns
-                    for cand in ['ALUNO','Aluno','Nome completo','Nome','Student Name','Student']:
-                        if cand in df_adj.columns:
-                            df_adj['NOMEALUNO'] = df_adj[cand].astype(str).fillna('')
-                            break
-                    else:
-                        # concatena colunas que pareçam nome (última tentativa)
-                        name_cols = [c for c in df_adj.columns if 'nome' in c.lower() or 'name' in c.lower() or 'aluno' in c.lower()]
-                        if name_cols:
-                            df_adj['NOMEALUNO'] = df_adj[name_cols].astype(str).agg(' '.join, axis=1).str.replace(r'\s+', ' ', regex=True).str.strip()
-                        else:
-                            df_adj['NOMEALUNO'] = ''
+                # colunas obrigatórias solicitadas
+                df_encontrados['Teacher Name'] = ''
+                df_encontrados['Gender'] = ''
+                df_encontrados['Grade'] = ''
 
-                # --- Gerar Student ID de forma segura ---
-                if 'RA' in df_adj.columns and df_adj['RA'].notna().any():
-                    df_adj['Student ID'] = df_adj['RA'].astype(str).fillna('').apply(lambda x: str(x).split('.')[0])
-                    df_adj['Student ID'] = df_adj['Student ID'].str.replace(r'\D', '', regex=True).apply(lambda x: x.zfill(7) if x != '' else '')
-                elif 'Student ID' in df_adj.columns and df_adj['Student ID'].notna().any():
-                    df_adj['Student ID'] = df_adj['Student ID'].astype(str).fillna('').apply(lambda x: str(x).split('.')[0])
-                else:
-                    # tenta detectar coluna numérica curta que pareça ID
-                    candidate_numeric = None
-                    for c in df_adj.columns:
-                        s = df_adj[c].astype(str).str.replace(r'\D','', regex=True)
-                        # se ao menos metade das linhas tiver dígitos e comprimentos razoáveis
-                        if (s.str.len() > 0).sum() >= max(1, int(0.4*len(s))) and s.str.len().mean() > 4:
-                            candidate_numeric = c
-                            break
-                    if candidate_numeric:
-                        st.info(f"Usando coluna {candidate_numeric} como Student ID (detectada automaticamente).")
-                        df_adj['Student ID'] = df_adj[candidate_numeric].astype(str).fillna('').apply(lambda x: str(x).split('.')[0]).str.replace(r'\D', '', regex=True).apply(lambda x: x.zfill(7) if x != '' else '')
-                    else:
-                        df_adj['Student ID'] = ''
+                # Class Name = período (extrair número se existir)
+                def normalize_periodo(v):
+                    if pd.isna(v) or str(v).strip() == '':
+                        return ''
+                    s = str(v).strip()
+                    m = re.search(r"(\d+)", s)
+                    if m:
+                        return m.group(1)
+                    return s
 
-                # --- Dividir nome de forma segura ---
-                names = df_adj['NOMEALUNO'].astype(str).fillna('').str.strip()
-                split = names.str.split(n=1, expand=True)
-                # primeira coluna
-                if hasattr(split, "shape") and split.shape[1] >= 1:
-                    df_adj['First Name'] = split.iloc[:, 0].fillna('').astype(str)
-                else:
-                    df_adj['First Name'] = names
-                # segunda coluna (pode não existir)
-                if hasattr(split, "shape") and split.shape[1] >= 2:
-                    df_adj['Last Name'] = split.iloc[:, 1].fillna('').astype(str)
-                else:
-                    df_adj['Last Name'] = ''
+                df_encontrados['Class Name'] = df_encontrados['PERIODO_extracted'].apply(normalize_periodo)
 
-                # montar df de saída (apenas colunas requisitadas)
-                df_out = df_adj.loc[:, [c for c in ['Student ID','Teacher Name', 'First Name', 'Last Name','Gender', 'PERIODO', 'CURSO'] if c in df_adj.columns]].copy()
-                # Criar nova coluna
-                df_out['Class Name'] = df_out.apply(
-                    lambda row: f"{sigla_curso(row['CURSO'])} {para_romano(int(row['PERIODO'].split()[0]))}",
-                    axis=1
-                )
-                st.write(df_out.columns.tolist())
-                df_out.rename(columns={'CURSO': 'Class Name'}, inplace=True)
-                    
+                # montar df_out na ordem pedida
+                cols_required = [
+                    'Student ID',
+                    'Teacher Name',
+                    'First Name',
+                    'Last Name',
+                    'Gender',
+                    'Grade',
+                    'Class Name'
+                ]
+                for c in cols_required:
+                    if c not in df_encontrados.columns:
+                        df_encontrados[c] = ''
 
-                st.write("Linhas totais após processamento:", len(df_adj))
-                st.write("Contagem de Student ID não vazio:", (df_out['Student ID'].astype(str).str.strip() != '').sum() if 'Student ID' in df_out.columns else 0)
-                st.write("Contagem de First Name não vazio:", (df_out['First Name'].astype(str).str.strip() != '').sum())
-                st.write("Contagem de Aluno (nome completo) não vazio:", (df_out['Aluno'].astype(str).str.strip() != '').sum() if 'Aluno' in df_out.columns else 0)
+                df_out = df_encontrados[cols_required].copy()
 
-                st.subheader("Resultado formatado (preview)")
+                # ---------- mostrar resultados ----------
+                st.subheader('Preview - Alunos encontrados e formatados')
                 st.dataframe(df_out.head(200))
 
-                # botão para download
+                # downloads
                 csv_bytes = df_out.to_csv(index=False).encode('utf-8-sig')
-                st.download_button("Baixar CSV", csv_bytes, file_name="formatado.csv", mime="text/csv")
+                st.download_button('Baixar CSV (formatado)', csv_bytes, file_name='formatado.csv', mime='text/csv')
+
                 xlsx_io = io.BytesIO()
                 with pd.ExcelWriter(xlsx_io, engine='openpyxl') as writer:
                     df_out.to_excel(writer, index=False, sheet_name='Formatado')
                 xlsx_io.seek(0)
-                st.download_button("Baixar XLSX", xlsx_io, file_name="formatado.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button('Baixar XLSX (formatado)', xlsx_io, file_name='formatado.xlsx', mime='application/vnd.openxmlformats-officedocument-spreadsheetml.sheet')
+
+                # ---------- Mostrar não encontrados ----------
+                st.subheader('Alunos NÃO encontrados no banco (precisa revisar)')
+                if not df_nao_encontrados.empty:
+                    cols_show = []
+                    if col_nome_env:
+                        cols_show.append(col_nome_env)
+                    if col_email_env:
+                        cols_show.append(col_email_env)
+                    if col_periodo_env:
+                        cols_show.append(col_periodo_env)
+                    # evitar erro se cols_show vazia
+                    cols_show = [c for c in cols_show if c in df_nao_encontrados.columns]
+                    if cols_show:
+                        st.dataframe(df_nao_encontrados[cols_show].drop_duplicates().head(200))
+                        csv_nf = df_nao_encontrados[cols_show].drop_duplicates().to_csv(index=False).encode('utf-8-sig')
+                        st.download_button('Baixar NÃO encontrados (CSV)', csv_nf, file_name='nao_encontrados.csv', mime='text/csv')
+                    else:
+                        st.write(df_nao_encontrados.head(200))
+                else:
+                    st.write('Todos os registros foram encontrados por email ou nome.')
+
+                # resumo simples
+                st.write(f"Linhas no arquivo: {len(df_env)}")
+                st.write(f"Encontrados: {len(df_out)}")
+                st.write(f"Não encontrados: {len(df_nao_encontrados)}")
