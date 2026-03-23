@@ -10,8 +10,9 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 def carregar():
     imagem_rodape = "./Endereço.jpeg"
     imagem_cabecalho = "./Logo.jpg"
-    ARQUIVOBASE = "alunosxdisciplinas_geral"
-    
+    ARQUIVOBASE = "alunosxdisciplinas"
+
+
     import unicodedata
 
     def normalizar_texto(s):
@@ -223,7 +224,10 @@ def carregar():
 
                 # --- prepara df_base local (ja validado antes dos tabs) ---
                 # assume que df_base foi carregado e padronizado antes (veja seu fluxo)
-                df_base_local = st.session_state["dados"].get(ARQUIVOBASE).copy()
+                if df_base_local is None:
+                    st.error("Base 'alunosxdisciplinas' não encontrada.")
+                    st.stop()
+                df_base_local = df_base_local.copy()
                 df_base_local.rename(columns={
                     'Curso': 'CURSO','Aluno': 'ALUNO','Nome completo': 'ALUNO',
                     'Período atual': 'PERIODO','Período': 'PERIODO',
@@ -343,7 +347,7 @@ def carregar():
         ARQUIVOBASE = "alunosxdisciplinas_geral"
         df_base = None
         if "dados" in st.session_state and isinstance(st.session_state["dados"], dict):
-            df_base = st.session_state["dados"].get(ARQUIVOBASE)
+            df_base = st.session_state["dados"]["alunosxdisciplinas"]
         if df_base is None:
             df_base = st.session_state.get(ARQUIVOBASE)
 
@@ -427,11 +431,7 @@ def carregar():
 
                 # Inputs de cálculo (simples)
                 provas = [f'Nivelamento {romano}' for romano in ['I','II','III','IV','V','VI','VII','VIII']]
-                prova = st.selectbox(
-                    'Selecione o tipo de prova',
-                    provas,
-                    key="sel_tipo_prova_notas"
-                )
+                prova = df_upload.iloc[0]["Class"] if "Class" in df_upload.columns else st.selectbox("Selecione a prova/avaliação", provas, key="sel_prova_notas")
 
                 questoes_anuladas_input = st.text_input("Informe questões anuladas (separadas por vírgula):", value="", key="anuladas_notas")
                 questoes_anuladas = [int(q.strip()) for q in questoes_anuladas_input.split(",") if q.strip().isdigit()]
@@ -544,7 +544,7 @@ def carregar():
         # tentar localizar df_base no session_state conforme seu padrão
         df_base = None
         if "dados" in st.session_state and isinstance(st.session_state["dados"], dict):
-            df_base = st.session_state["dados"].get("alunosxdisciplinas")
+            df_base = st.session_state["dados"]["alunosxdisciplinas"]
             df_base = df_base.drop_duplicates(subset=['RA']) if df_base is not None else None
         if df_base is None:
             st.warning("df_base não encontrado em session_state. Carregue o banco 'alunosxdisciplinas' antes.")
