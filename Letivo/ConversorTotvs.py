@@ -65,7 +65,13 @@ def carregar():
     def limpar_dados(df, prova, etapa, codetapa, codprova, tipoetapa):
         df_aluno = st.session_state["dados"].get("alunosxdisciplinas")
         df_base = df_aluno.copy()
-
+        
+        st.write(df_base["DISCIPLINA"].head(20))
+        st.write(df_base["DISCIPLINA"].isna().sum())
+        
+        disciplina_arquivo = df['DISCIPLINA'].iloc[0]
+        df_base = df_base[df_base['DISCIPLINA'] == disciplina_arquivo]
+        
         df_base['RA'] = df_base['RA'].astype(str).str.zfill(7)
         df['RA'] = df['RA'].astype(str).str.zfill(7)
         
@@ -82,6 +88,8 @@ def carregar():
         if 'DISCIPLINA' in df.columns and not df['DISCIPLINA'].empty:
             disciplina_arquivo = df['DISCIPLINA'].iloc[0]
             df_base = df_base[df_base['DISCIPLINA'] == disciplina_arquivo]
+            st.write("Disciplina no arquivo:", disciplina_arquivo)
+            st.write("Disciplinas no df_base:", df_base["DISCIPLINA"].unique())
         else:
             st.warning("Coluna 'DISCIPLINA' não encontrada ou vazia no arquivo enviado.")
             return pd.DataFrame()
@@ -197,6 +205,7 @@ def carregar():
         df, mapeamento= detectar_etapas_provas(df_original)
         st.write(df, mapeamento)
         
+        
         # lista para armazenar resultados por prova+disciplina
         dfs_limpos = []
         
@@ -232,9 +241,11 @@ def carregar():
                     df_temp["NOTAS"] = df_temp["NOTAS"].fillna(0)
                 else: 
                     "ta de boa"
+                    
 
                 # chama a função de limpeza (usa só DISCIPLINA, RA, NOTAS)
                 df_limpo = limpar_dados(df_temp, prova_tipo, etapa, codetapa, codprova, tipoetapa)
+                ## LIMPO 
                 
                 if df_limpo is None or df_limpo.empty:
                     st.info(f"{prova_tipo} {etapa} — {disciplina}: nenhum registro após limpeza.")

@@ -426,7 +426,12 @@ def carregar():
                     alunos_ajustar = {}
 
                 # Inputs de cálculo (simples)
-                prova = st.selectbox('Selecione o tipo de prova', ['Nivelamento'], key="sel_tipo_prova_notas")
+                provas = [f'Nivelamento {romano}' for romano in ['I','II','III','IV','V','VI','VII','VIII']]
+                prova = st.selectbox(
+                    'Selecione o tipo de prova',
+                    provas,
+                    key="sel_tipo_prova_notas"
+                )
 
                 questoes_anuladas_input = st.text_input("Informe questões anuladas (separadas por vírgula):", value="", key="anuladas_notas")
                 questoes_anuladas = [int(q.strip()) for q in questoes_anuladas_input.split(",") if q.strip().isdigit()]
