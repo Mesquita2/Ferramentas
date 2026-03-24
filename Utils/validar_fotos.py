@@ -45,7 +45,8 @@ def carregar_planilha_fotos(drive_service):
     return df
 
 def carregar():
-    
+    st.write("Em Manutenção - Em breve estará disponível para uso.")
+    st.stop()
 
     df_totvs_email = st.session_state["dados"].get(
         "alunosxdisciplinas_email", pd.DataFrame()
