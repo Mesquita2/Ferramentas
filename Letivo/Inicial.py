@@ -4,7 +4,13 @@ import pandas as pd
 from carregamento import carregar_drive, limpeza_alunos_disciplinas, carregar_totvs
 import datetime
 from datetime import date, datetime
-
+def padronizar_colunas(df):
+    mapa = {
+        "ALU_NOME": "ALUNO",
+        "NOME_ALUNO": "ALUNO",
+        "ALUNO_NOME": "ALUNO",
+    }
+    return df.rename(columns={k: v for k, v in mapa.items() if k in df.columns})
 
 def carregar():
     st.title("Início")
@@ -91,9 +97,10 @@ def carregar():
     # Criar abas
     tab1, tab2 = st.tabs(["Visualizar dados", "Substituir arquivos"])
     
-    for chave, df in st.session_state["dados"].items():
-        if "ALU_NOME" in df.columns:
-            st.session_state["dados"][chave] = df.rename(columns={"ALU_NOME": "ALUNO"})
+    df_limpo = limpeza_alunos_disciplinas(df)
+    df_limpo = padronizar_colunas(df_limpo)
+
+    st.session_state["dados"]["alunosxdisciplinas"] = df_limpo
             
     with tab1:
         
