@@ -58,21 +58,21 @@ def carregar_drive():
         st.success("Arquivos carregados com sucesso!")
         st.rerun()
 
-def limpeza_alunos_disciplinas(df):
-    if 'NOME_SOCIAL' in df.columns:
-        df['NOMEALUNO'] = df['NOME_SOCIAL'].where(
-            df['NOME_SOCIAL'].notna() & (df['NOME_SOCIAL'] != ''),
-            df['NOMEALUNO']
-        )
-        df.drop(columns=['NOME_SOCIAL'], inplace=True) 
+# def limpeza_alunos_disciplinas(df):
+#     if 'NOME_SOCIAL' in df.columns:
+#         df['NOMEALUNO'] = df['NOME_SOCIAL'].where(
+#             df['NOME_SOCIAL'].notna() & (df['NOME_SOCIAL'] != ''),
+#             df['NOMEALUNO']
+#         )
+#         df.drop(columns=['NOME_SOCIAL'], inplace=True) 
 
-    df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
-                       'NOMECURSO': 'CURSO',
-                       'NOMEALUNO': 'ALUNO'}, inplace=True)
-    df = df[df['NOMESTATUS'] != 'Cancelamento']
-    df = df[df['NOMESTATUS'] != 'Aproveitamento de Estudo']
-    df = df.assign(RA=df['RA'].apply(str).str.zfill(7))
-    return df
+#     df.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
+#                        'NOMECURSO': 'CURSO',
+#                        'NOMEALUNO': 'ALUNO'}, inplace=True)
+#     df = df[df['NOMESTATUS'] != 'Cancelamento']
+#     df = df[df['NOMESTATUS'] != 'Aproveitamento de Estudo']
+#     df = df.assign(RA=df['RA'].apply(str).str.zfill(7))
+#     return df
 
 def carregar_totvs(chave_caminho: str, parametro: str = ""):
     """

@@ -90,13 +90,17 @@ def carregar():
 
     # Criar abas
     tab1, tab2 = st.tabs(["Visualizar dados", "Substituir arquivos"])
-
+    
+    for chave, df in st.session_state["dados"].items():
+        if "ALU_NOME" in df.columns:
+            st.session_state["dados"][chave] = df.rename(columns={"ALU_NOME": "ALUNO"})
+            
     with tab1:
         
         for chave, df in st.session_state["dados"].items():
             st.subheader(f"{chave}")
             colunas = {
-                "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "NOME_SOCIAL", "RA", "DISCIPLINA"],
+                "alunosxdisciplinas": ["CODTURMA", "CURSO", "ALUNO", "RA", "DISCIPLINA"],
                 "professores": ["CODPROF","PROFESSOR","CURSO", "DISCIPLINA"],
                 "disciplina": ["CODTURMA", "NOME", "IDMOODLE"],
                 "rec": ["DISCIPLINA", "NOME"],
