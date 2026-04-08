@@ -54,7 +54,6 @@ def carregar():
     def limpar_rec(df_rec):
         if df_rec is not None:
             df_base = st.session_state["dados"].get("alunosxdisciplinas").copy()
-            #df_base = limpeza_alunos_disciplinas(df_base)
 
             df_rec['DISCIPLINA'] = (
                 df_rec['DISCIPLINA']
@@ -62,24 +61,39 @@ def carregar():
                 .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True)
                 .str.strip()
             )
+            df_base['DISCIPLINA'] = (
+                df_base['DISCIPLINA']
+                .astype(str)
+                .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)
+                .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True)
+                .str.strip()
+            )
 
             df_rec["RA"] = df_rec["RA"].astype(str).str.zfill(7)
             df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
-
-            df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
-                                    'NOMEALUNO': 'ALU_NOME'}, inplace=True)
+            
 
             # Filtrar somente alunos com "Período em Curso"
-            df_base = df_base[df_base['NOMESTATUS'] == 'Período em Curso']
+            df_base['NOMESTATUS'] = (
+                df_base['NOMESTATUS']
+                .astype(str)
+                .str.strip()
+                .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True)
+            )
 
+            df_base = df_base[df_base['NOMESTATUS'].str.lower() == 'período em curso']
+            
             # Merge para trazer TURMADISC e validar se está em curso
             df_merged = pd.merge(
                 df_rec,
-                df_base[['RA', 'DISCIPLINA', 'TURMADISC', 'ALUNO']],
-                on=['RA', 'DISCIPLINA'],
-                how='inner'  # só mantém quem está nas duas bases
+                df_base[['RA','DISCIPLINA','ALUNO', 'TURMADISC']],
+                left_on=['RA','DISCIPLINA'],
+                right_on=['RA','DISCIPLINA'],
+                how='inner'
             )
-
+            
+            st.write("DF MERGED", df_merged)
+            
             df_merged = df_merged.drop_duplicates(subset=['RA', 'DISCIPLINA', 'TURMADISC'])
             df_merged = df_merged[df_merged['RA'].notna()]
             
@@ -227,7 +241,6 @@ def carregar():
 
 
     st.title("Gerador de Planilha de Notas para REC")
-
     df_rec = limpar_rec(df)
     if df_rec.empty:
         st.stop()
