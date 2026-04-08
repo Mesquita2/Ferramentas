@@ -9,7 +9,7 @@ import io
 from carregamento import limpeza_alunos_disciplinas
 imagem_rodape = "Endereço.jpeg"
 imagem_cabecalho = 'Logo.jpg'
-ARQUIVOBASE = "alunosxdisciplinas"
+ARQUIVOBASE = st.session_state["dados"].get("alunosxdisciplinas", pd.DataFrame())
 ARQUIVOREC = "rec"
 
 
