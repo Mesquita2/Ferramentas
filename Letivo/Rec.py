@@ -53,7 +53,7 @@ def carregar():
 
     def limpar_rec(df_rec):
         if df_rec is not None:
-            df_base = st.session_state["dados"].get("alunosxdisciplinas", pd.DataFrame()).copy()
+            df_base = st.session_state["dados"].get("alunosxdisciplinas").copy()
             df_base = limpeza_alunos_disciplinas(df_base)
 
             df_rec['DISCIPLINA'] = (
@@ -67,7 +67,7 @@ def carregar():
             df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
 
             df_base.rename(columns={'NOMEDISCIPLINA': 'DISCIPLINA',
-                                    'NOMEALUNO': 'ALUNO'}, inplace=True)
+                                    'NOMEALUNO': 'ALU_NOME'}, inplace=True)
 
             # Filtrar somente alunos com "Período em Curso"
             df_base = df_base[df_base['NOMESTATUS'] == 'Período em Curso']
