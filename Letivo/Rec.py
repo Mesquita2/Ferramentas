@@ -54,7 +54,7 @@ def carregar():
     def limpar_rec(df_rec):
         if df_rec is not None:
             df_base = st.session_state["dados"].get("alunosxdisciplinas").copy()
-            df_base = limpeza_alunos_disciplinas(df_base)
+            #df_base = limpeza_alunos_disciplinas(df_base)
 
             df_rec['DISCIPLINA'] = (
                 df_rec['DISCIPLINA']
