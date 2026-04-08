@@ -120,9 +120,30 @@ def carregar():
     )
 
     df_curso = df_merge[df_merge["CURSO"] == curso_selecionado]
+    
+    # ==============================
+    # Seleção de turma (CODTURMA)
+    # ==============================
+    turmas_curso = sorted(
+        df_curso["CODTURMA"].dropna().unique().tolist()
+    )
+
+    turmas_selecionadas = st.multiselect(
+        "Escolha as turmas",
+        turmas_curso
+    )
+
+    if turmas_selecionadas:
+        df_turma = df_curso[df_curso["CODTURMA"].isin(turmas_selecionadas)]
+    else:
+        df_turma = pd.DataFrame()
+        
+    if not turmas_selecionadas:
+        st.info("Selecione pelo menos uma turma.")
+        st.stop()
 
     disciplinas_curso = sorted(
-        df_curso["DISCIPLINA"].dropna().unique().tolist()
+        df_turma["DISCIPLINA"].dropna().unique().tolist()
     )
 
     disciplinas_selecionadas = st.multiselect(
@@ -157,7 +178,7 @@ def carregar():
     if disciplinas_selecionadas:
 
         df_turmas = (
-            df_curso[df_curso["DISCIPLINA"].isin(disciplinas_selecionadas)]
+            df_turma[df_turma["DISCIPLINA"].isin(disciplinas_selecionadas)]
             [["CODDISC", "DISCIPLINA", "TURMADISC", "PROFESSOR", "EMAIL"]]
             .drop_duplicates()
             .sort_values(["DISCIPLINA", "TURMADISC"])
