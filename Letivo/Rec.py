@@ -9,7 +9,6 @@ import io
 from carregamento import limpeza_alunos_disciplinas
 imagem_rodape = "Endereço.jpeg"
 imagem_cabecalho = 'Logo.jpg'
-ARQUIVOBASE = st.session_state["dados"].get("alunosxdisciplinas", pd.DataFrame())
 ARQUIVOREC = "rec"
 
 
@@ -54,7 +53,7 @@ def carregar():
 
     def limpar_rec(df_rec):
         if df_rec is not None:
-            df_base = st.session_state["dados"].get(ARQUIVOBASE).copy()
+            df_base = st.session_state["dados"].get("alunosxdisciplinas", pd.DataFrame()).copy()
             df_base = limpeza_alunos_disciplinas(df_base)
 
             df_rec['DISCIPLINA'] = (
