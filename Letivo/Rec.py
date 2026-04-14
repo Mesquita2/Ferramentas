@@ -55,23 +55,18 @@ def carregar():
         if df_rec is not None:
             df_base = st.session_state["dados"].get("alunosxdisciplinas").copy()
 
-            df_rec['DISCIPLINA'] = (
+            # Extrai o CODDISC do campo DISCIPLINA do REC (o que está entre parênteses no final)
+            df_rec['CODDISC'] = (
                 df_rec['DISCIPLINA']
-                .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)
-                .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True)
+                .str.extract(r'\(([^()]+)\)\s*$')[0]
                 .str.strip()
             )
-            df_base['DISCIPLINA'] = (
-                df_base['DISCIPLINA']
-                .astype(str)
-                .str.replace(r'\s*\([^()]*\)\s*$', '', regex=True)
-                .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True)
-                .str.strip()
-            )
+            # Guarda a disciplina original do REC para exibir no relatório de não encontrados
+            df_rec['DISCIPLINA_REC'] = df_rec['DISCIPLINA']
 
             df_rec["RA"] = df_rec["RA"].astype(str).str.zfill(7)
             df_base["RA"] = df_base["RA"].astype(str).str.zfill(7)
-            
+            df_base["CODDISC"] = df_base["CODDISC"].astype(str).str.strip()
 
             # Filtrar somente alunos com "Período em Curso"
             df_base['NOMESTATUS'] = (
@@ -80,32 +75,34 @@ def carregar():
                 .str.strip()
                 .str.replace(r'[\u200b\u200e\u202c\u00a0]', '', regex=True)
             )
-
             df_base = df_base[df_base['NOMESTATUS'].str.lower() == 'período em curso']
-            
-            # Merge para trazer TURMADISC e validar se está em curso
+
+            # Merge por RA + CODDISC → traz DISCIPLINA e TURMADISC padronizados do df_base
             df_merged = pd.merge(
-                df_rec,
-                df_base[['RA','DISCIPLINA','ALUNO', 'TURMADISC']],
-                left_on=['RA','DISCIPLINA'],
-                right_on=['RA','DISCIPLINA'],
+                df_rec[['RA', 'NOME', 'CODDISC', 'DISCIPLINA_REC']],
+                df_base[['RA', 'CODDISC', 'DISCIPLINA', 'ALUNO', 'TURMADISC']],
+                on=['RA', 'CODDISC'],
                 how='inner'
             )
-            
+
             st.write("DF MERGED", df_merged)
-            
-            df_merged = df_merged.drop_duplicates(subset=['RA', 'DISCIPLINA', 'TURMADISC'])
+
+            df_merged = df_merged.drop_duplicates(subset=['RA', 'CODDISC', 'TURMADISC'])
             df_merged = df_merged[df_merged['RA'].notna()]
-            
-            nao_encontrados = df_rec.merge(df_merged[['RA', 'DISCIPLINA']], 
-                                        on=['RA', 'DISCIPLINA'], 
-                                        how='left', indicator=True)
-            nao_encontrados = nao_encontrados[nao_encontrados['_merge'] == 'left_only']
+
+            # Alunos do REC sem match (fora do período em curso ou não matriculados)
+            nao_encontrados = df_rec[['RA', 'NOME', 'CODDISC', 'DISCIPLINA_REC']].merge(
+                df_merged[['RA', 'CODDISC']],
+                on=['RA', 'CODDISC'],
+                how='left', indicator=True
+            )
+            nao_encontrados = nao_encontrados[nao_encontrados['_merge'] == 'left_only'].copy()
+            nao_encontrados = nao_encontrados.rename(columns={'DISCIPLINA_REC': 'DISCIPLINA'})
 
             if not nao_encontrados.empty:
                 st.warning(f"{len(nao_encontrados)} alunos não estão em 'Período em Curso' e foram removidos:")
                 st.dataframe(nao_encontrados[['RA', 'NOME', 'DISCIPLINA']])
-                
+
             buffer = gerar_relatorio_nao_encontrados(nao_encontrados)
 
             if buffer:
