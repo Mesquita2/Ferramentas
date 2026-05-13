@@ -213,7 +213,7 @@ def carregar():
                         for turma in turmas_selecionadas:
                             assunto, mensagem = create_assunto(
                                 curso, disciplina,
-                                df_base[(df_base["DISCIPLINA"] == disciplina) & (df_base["TURMADISC"] == turma)]['ALU_NOME'].count() + 5,
+                                df_base[(df_base["DISCIPLINA"] == disciplina) & (df_base["TURMADISC"] == turma)]['ALUNO'].count() + 5,
                                 tipo, tipo_prova, data_aplicar, turma
                             )
 
