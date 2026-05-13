@@ -161,7 +161,7 @@ def carregar():
             if turmas_selecionadas:
                 quantidade_total = (
                     df_base[(df_base["DISCIPLINA"] == disciplina) & 
-                            (df_base["TURMADISC"].isin(turmas_selecionadas))]['ALU_NOME'].count() + (5 * len(turmas_selecionadas))
+                            (df_base["TURMADISC"].isin(turmas_selecionadas))]['ALUNO'].count() + (5 * len(turmas_selecionadas))
                 )
 
                 st.markdown(f"**Quantidade de cópias (total):** {quantidade_total}")
